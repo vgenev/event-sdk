@@ -26,19 +26,45 @@
 'use strict'
 
 import { MessageType } from "./model/MessageType";
-
+const path = require('path');
 
 /**
  * SDK Client - NOT FINAL
 */
 class EventLogger {
+    client : any
 
+    constructor() {
+      let PROTO_PATH = path.join(__dirname,'./protos/message_type.proto');
+
+      let grpc = require('grpc')
+      let protoLoader = require('@grpc/proto-loader')
+      let packageDefinition = protoLoader.loadSync(
+        PROTO_PATH,
+        { keepCase: true,
+          longs: String,
+          enums: String,
+          defaults: true,
+          oneofs: true
+        })
+      let protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
+      // The protoDescriptor object has the full package hierarchy
+      let EventLogger = protoDescriptor.mojaloop.events.EventLogger
+        
+      let client = new EventLogger('localhost:50051',
+        grpc.credentials.createInsecure())
+      this.client = client
+      }
     /**
      * Log an event
      */
-    log = ( event: MessageType): any => {
-        console.log(`EventLogger.log: `, event);
-        return event;
+    log = async ( event: MessageType): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        this.client.log(event, (error: any, event: any) => {
+          if ( error ) {reject(error); }
+          resolve(event);
+        })
+      })
     }
 }
 

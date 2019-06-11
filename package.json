@@ -5,6 +5,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
+    "server": "tsc ; ts-node src/server/server.js",
     "test": "npm run test:unit | faucet",
     "pretest": "npm run build",
     "standard": "standard",
@@ -41,6 +42,8 @@
   },
   "homepage": "https://github.com/mojaloop/event-sdk#readme",
   "dependencies": {
+    "@grpc/proto-loader": "^0.5.1",
+    "grpc": "^1.21.1",
     "uuid4": "^1.1.4"
   },
   "devDependencies": {

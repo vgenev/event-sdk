@@ -27,9 +27,11 @@ import { MessageType } from "./model/MessageType";
  * SDK Client - NOT FINAL
 */
 declare class EventLogger {
+    client: any;
+    constructor();
     /**
      * Log an event
      */
-    log: (event: MessageType) => any;
+    log: (event: MessageType) => Promise<any>;
 }
 export { EventLogger };
