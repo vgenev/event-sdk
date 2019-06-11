@@ -18,7 +18,7 @@ console.log(EventLogger)
 
 function logEvent (call, callback) {
   let event = call.request
-  console.log('Server.logEvent: ', JSON.stringify(event, null, 2));
+  console.log('Server.logEvent: ', JSON.stringify(event, null, 2))
   callback(null, event)
 }
 function getServer () {

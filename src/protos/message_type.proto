@@ -30,28 +30,28 @@ package mojaloop.events;
 
 enum EnEventType {
   UNDEFINED = 0;
-  LOG = 1;
-  AUDIT = 2;
-  ERROR = 3;
-  TRACE = 4;
+  log = 1;
+  audit = 2;
+  error = 3;
+  trace = 4;
 }
 
 enum EnEventTypeAction {
   UNDEFINED = 0;
-  START = 1;
-  END = 2;
-  INFO = 3;
-  DEBUG = 4;
-  VERBOSE = 5;
-  PERF = 6;
-  INTERNAL = 7;
-  EXTERNAL = 8;
+  start = 1;
+  end = 2;
+  info = 3;
+  debug = 4;
+  verbose = 5;
+  perf = 6;
+  internal = 7;
+  external = 8;
 }
 
 enum EnEventStatus {
   UNDEFINED = 0;
-  SUCCESS = 1;
-  FAILED = 2;
+  success = 1;
+  failed = 2;
 }
 
 message ObTraceType {
