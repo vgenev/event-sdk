@@ -54,9 +54,9 @@ class ObTraceType {
   service: string
   traceId:	string
   spanId: string
-  parentSpanId:	string | null = null
-  sampled:	number | null = null
-  flags:	number | null = null
+  parentSpanId?:	string
+  sampled?:	number
+  flags?:	number
 
   constructor (service: string, traceId: string, spanId: string) {
     this.service = service
@@ -67,8 +67,8 @@ class ObTraceType {
 
 class ObStateType {
   status: EnEventStatus
-  code: string | null = null
-  description: string | null = null
+  code?: number
+  description?: string
 
   constructor ( status: EnEventStatus ) {
     this.status = status
@@ -79,7 +79,7 @@ class ObEventType {
   type: EnEventType
   action: EnEventTypeAction
   createdAt: string
-  responseTo: string | null = null
+  responseTo?: string
   state: ObStateType
 
   constructor ( id: string, type: EnEventType, action: EnEventTypeAction, createdAt: string, state: ObStateType ) {
@@ -103,15 +103,23 @@ class ObMetadataType {
 
 class MessageType {
   id: string = Uuid()
-  from: string | null = null
-  to: string | null = null
-  pp: string | null = null
-  metadata: ObMetadataType | null = null
-  type: string | null = null
-  content: object | null = null
+  from?: string
+  to?: string
+  pp?: string
+  metadata?: ObMetadataType
+  type?: string
+  content?: any
+
 }
 
 
 export {
-  MessageType
+  MessageType,
+  EnEventType,
+  EnEventTypeAction,
+  EnEventStatus,
+  ObMetadataType,
+  ObEventType,
+  ObStateType,
+  ObTraceType
 }

@@ -40,7 +40,9 @@
     "url": "https://github.com/mojaloop/event-sdk/issues"
   },
   "homepage": "https://github.com/mojaloop/event-sdk#readme",
-  "dependencies": {},
+  "dependencies": {
+    "uuid4": "^1.1.4"
+  },
   "devDependencies": {
     "@types/node": "11.9.4",
     "@types/tape": "4.2.33",
