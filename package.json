@@ -14,9 +14,11 @@
     "test:xunit": "npm run test:unit | tap-xunit",
     "test:coverage": "nyc --reporter=lcov --require ts-node/register tape test/unit/**/*.test.{ts,js} | tap-spec; nyc report ---reporter=text",
     "git:stagelib": "git add lib/*ts; git add lib/*.map; git add lib/*.js",
-    "git:standardFix": "standard --fix"
+    "git:standardFix": "standard --fix",
+    "warn-pre-commit": "echo \"pre commit tasks running. build and test\""
   },
   "pre-commit": [
+    "warn-pre-commit",
     "build",
     "git:standardFix",
     "test:unit",
