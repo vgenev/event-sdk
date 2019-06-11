@@ -22,13 +22,14 @@
 
  --------------
  ******/
-/** Wrapper class for prom-client. */
+import { MessageType } from "./model/MessageType";
+/**
+ * SDK Client - NOT FINAL
+*/
 declare class EventLogger {
-    /** The options passed to the setup */
-    private _options;
     /**
      * Log an event
      */
-    log: (source: string, id: string, metadata: Object, data: Object) => Object;
+    log: (event: MessageType) => any;
 }
 export { EventLogger };

@@ -25,26 +25,21 @@
 
 'use strict'
 
+import { MessageType } from "./model/MessageType";
 
-/** Wrapper class for prom-client. */
+
+/**
+ * SDK Client - NOT FINAL
+*/
 class EventLogger {
-    /** The options passed to the setup */
-    private _options: Object = { prefix: '', timeout: 0 }
 
     /**
      * Log an event
      */
-    log = (source: string, id: string, metadata: Object, data: Object): Object => {
-        let event = {
-            source,
-            id,
-            metadata,
-            data
-        };
+    log = ( event: MessageType): any => {
         console.log(`EventLogger.log: `, event);
         return event;
     }
-
 }
 
 export {

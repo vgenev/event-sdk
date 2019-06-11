@@ -36,7 +36,7 @@ import { MessageType,
 Test('EventLogger Class Test', (eventLoggerTests: any) => {
 
     eventLoggerTests.test('messageType', (messageTypeTest: any) => {
-        messageTypeTest.test('should create a MessageType', async (test: any) => {
+        messageTypeTest.test('should create and log a MessageType', async (test: any) => {
             try {
                 const event : MessageType = {
                     from: "noresponsepayeefsp",
@@ -73,10 +73,10 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                         }
                     }
                 }
-                console.log(event);
+                const eventLogger: EventLogger = new EventLogger()
+                eventLogger.log(event);
                 test.equal(event.content.headers.date, "2019-05-28T16:34:41.000Z", 'OK!')
                 test.equal(event.metadata!.event.state.code, 0, 'OK!')
-
                 test.end()
             } catch (e) {
                 test.fail(`Error Thrown - ${e}`)
@@ -84,21 +84,6 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
             }
         })
         messageTypeTest.end()
-    })
-
-    eventLoggerTests.test('log', (logTest: any) => {
-        logTest.test('should console log a simple event', async (test: any) => {
-            try {
-                const eventLogger: EventLogger = new EventLogger()
-                eventLogger.log("dfsp1", "some_unique_id_here", {version: 1}, { hello: 'world'});
-                test.equal(true, true, 'OK!')
-                test.end()
-            } catch (e) {
-                test.fail(`Error Thrown - ${e}`)
-                test.end()
-            }
-        })
-        logTest.end()
     })
     eventLoggerTests.end()
 })
