@@ -73,5 +73,10 @@
     "extension": [
       ".ts"
     ]
-  }
+  },
+  "standard": {
+    "ignore": [
+      "/lib"
+    ]
+  }  
 }
