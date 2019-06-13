@@ -36,6 +36,7 @@ const path = require('path');
 class EventLogger {
     client : any
 
+    // FIXME All this code creting the "client" will be moved to EventLoggingServiceClient who has the gRPC client code
     constructor() {
       let PROTO_PATH = path.join(__dirname,'../protos/message_type.proto');
 
@@ -56,7 +57,8 @@ class EventLogger {
       let client = new EventLoggerService('localhost:50051',
         grpc.credentials.createInsecure())
       this.client = client
-      }
+    }
+    
     /**
      * Log an event
      */
@@ -73,6 +75,7 @@ class EventLogger {
     }
 }
 
+// FIXME move to EventLoggingServiceClient
 function convertJSONtoStruct ( data : any) {
   var toString = Object.prototype.toString;
   var result : any = {};

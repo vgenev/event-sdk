@@ -1,4 +1,4 @@
-// FIXME Refactor. Create class EventLoggingServiceClient which is an EventEmitter
+// FIXME Refactor. Create class EventLoggingServiceServer which is an EventEmitter
 
 const path = require('path')
 let PROTO_PATH = path.join(__dirname, '../../protos/message_type.proto')
@@ -17,19 +17,20 @@ let protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
 // The protoDescriptor object has the full package hierarchy
 let EventLoggerService = protoDescriptor.mojaloop.events.EventLoggerService
 
-function logEventReceived (call, callback) {
+function logEventReceivedHandler (call, callback) {
   let event = call.request
-  // We're on plain JavaScript, so although this *should* be a EventMessage sin gRPC is typed, let's be sure
+  // We're on plain JavaScript, so although this *should* be a EventMessage since gRPC is typed, let's be sure
   if (!event.id) {
     callback(new Error(`Couldn't parse message parameter. It doesn't have an id property. parameter: ${event}`))
   }
   console.log('Server.logEvent: ', JSON.stringify(event, null, 2))
 
-  // Convert content wich is an Struct to a plan object
+  // Convert the event.content wich is an Struct to a plan object
   if (event.content) {
     event.content = structToJson(event.content.fields)
   }
   // Emit event
+  // FIXME
   console.log('Server.logEvent content parsed:: ', JSON.stringify(event, null, 2))
 
   // send response
@@ -40,7 +41,7 @@ function logEventReceived (call, callback) {
 function protoValueToJs (val) {
   var kind = val.kind
   var value = val[kind]
-  if (kind === 'listValue') { // FIXME not checked
+  if (kind === 'listValue') { // FIXME check this
     return value.values.map(function (value) {
       return protoValueToJs(value)
     })
@@ -59,15 +60,15 @@ function structToJson (struct) {
   return result
 }
 
-function getServer () {
+function createServer () {
   var server = new grpc.Server()
   server.addService(EventLoggerService.service, {
-    log: logEventReceived
+    log: logEventReceivedHandler
   })
   return server
 }
 
-var routeServer = getServer()
-routeServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure())
-routeServer.start()
+var eventLoggerServer = createServer()
+eventLoggerServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure())
+eventLoggerServer.start()
 console.log('Server listening')
