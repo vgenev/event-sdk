@@ -22,9 +22,11 @@
 
  --------------
  ******/
-import { MessageType } from "./model/MessageType";
+import { EventMessage } from "./model/EventMessage";
 /**
  * SDK Client - NOT FINAL
+ *
+ * FIXME: Split in two, EventLogger with hooks to enrich/encrypt the message, and EventLoggingServiceClient who has the gRPC client code
 */
 declare class EventLogger {
     client: any;
@@ -32,6 +34,6 @@ declare class EventLogger {
     /**
      * Log an event
      */
-    log: (event: MessageType) => Promise<any>;
+    log: (event: EventMessage) => Promise<any>;
 }
 export { EventLogger };

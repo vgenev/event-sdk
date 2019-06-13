@@ -27,18 +27,19 @@
 
 const Test = require('tapes')(require('tape'))
 import { EventLogger } from "../../src/eventLogger"
-import { MessageType,
-    EnEventType,
-    EnEventTypeAction,
-    EnEventStatus,
-   } from "../../src/model/MessageType"
+import { EventMessage,
+    EventMetadata,
+    LogEventTypeAction,
+    LogEventAction,
+      EventStatusType,
+   } from "../../src/model/EventMessage"
 
 Test('EventLogger Class Test', (eventLoggerTests: any) => {
 
-    eventLoggerTests.test('messageType', (messageTypeTest: any) => {
-        messageTypeTest.test('should create and log a MessageType', async (test: any) => {
+    eventLoggerTests.test('EventMessage', (EventMessageTest: any) => {
+        EventMessageTest.test('should create and log a EventMessage', async (test: any) => {
             try {
-                const event : MessageType = {
+                const event : EventMessage = {
                     from: "noresponsepayeefsp",
                     to: "payerfsp",
                     id: "aa398930-f210-4dcd-8af0-7c769cea1660",
@@ -47,24 +48,25 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                             "content-type": "application/vnd.interoperability.transfers+json;version=1.0",
                             date: "2019-05-28T16:34:41.000Z",
                             "fspiop-source": "noresponsepayeefsp",
-                            "fspiop-destination": "payerfsp"
+                            "fspiop-destination": "payerfsp",
+                            priority: 100,
+                            blocking: false
                         },
                         payload: "data:application/vnd.interoperability.transfers+json;version=1.0;base64,ewogICJmdWxmaWxtZW50IjogIlVObEo5OGhaVFlfZHN3MGNBcXc0aV9VTjN2NHV0dDdDWkZCNHlmTGJWRkEiLAogICJjb21wbGV0ZWRUaW1lc3RhbXAiOiAiMjAxOS0wNS0yOVQyMzoxODozMi44NTZaIiwKICAidHJhbnNmZXJTdGF0ZSI6ICJDT01NSVRURUQiCn0"
                     },
                     type: "application/json",
                     metadata: {
-                        event: {
-                            id: "3920382d-f78c-4023-adf9-0d7a4a2a3a2f",
-                            type: EnEventType.log,
-                            action: EnEventTypeAction.start,
-                            createdAt: "2019-05-29T23:18:32.935Z",
-                            state: {
-                                status: EnEventStatus.success,
+                        event: new EventMetadata (
+                            "3920382d-f78c-4023-adf9-0d7a4a2a3a2f",
+                            new LogEventTypeAction(LogEventAction.debug),
+                            "2019-05-29T23:18:32.935Z",
+                            "1a396c07-47ab-4d68-a7a0-7a1ea36f0012",
+                            {
+                                status: EventStatusType.success,
                                 code: 0,
                                 description: "action successful"
-                            },
-                            responseTo: "1a396c07-47ab-4d68-a7a0-7a1ea36f0012"
-                        },
+                            })
+                        ,
                         trace: {
                             service: "central-ledger-prepare-handler",
                             traceId: "bbd7b2c7-3978-408e-ae2e-a13012c47739",
@@ -73,13 +75,14 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                         }
                     }
                 }
+                
                 const eventLogger: EventLogger = new EventLogger()
                 let result = await eventLogger.log(event);
-                test.equal(event.content.headers.date, "2019-05-28T16:34:41.000Z", 'OK!')
+                // test.equal(event.content.headers.date, "2019-05-28T16:34:41.000Z", 'OK!')
                 test.equal(event.metadata!.event.state.code, 0, 'OK!')
                 test.equal(result.metadata!.event.state.code, 0, 'OK!')
 
-                console.log(result.content);
+                console.log('Got back: ', JSON.stringify(result, null, 2));
 
                 test.end()
             } catch (e) {
@@ -87,7 +90,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                 test.end()
             }
         })
-        messageTypeTest.end()
+        EventMessageTest.end()
     })
     eventLoggerTests.end()
 })

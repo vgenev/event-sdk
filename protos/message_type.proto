@@ -26,9 +26,11 @@
 syntax = "proto3";
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
 package mojaloop.events;
 
-enum EnEventType {
+enum EventType {
   UNDEFINED = 0;
   log = 1;
   audit = 2;
@@ -36,7 +38,7 @@ enum EnEventType {
   trace = 4;
 }
 
-enum EnEventTypeAction {
+enum EventTypeAction {
   UNDEFINED = 0;
   start = 1;
   end = 2;
@@ -48,13 +50,13 @@ enum EnEventTypeAction {
   external = 8;
 }
 
-enum EnEventStatus {
+enum EventStatusType {
   UNDEFINED = 0;
   success = 1;
   failed = 2;
 }
 
-message ObTraceType {
+message EventTraceMetadata {
   string service = 1;
   string traceId = 2;
   string spanId = 3;
@@ -63,36 +65,37 @@ message ObTraceType {
   int32 flags = 6; // Optional
 }
 
-message ObStateType {
-  EnEventStatus status = 1;
+message EventStateMetadata {
+  EventStatusType status = 1;
   int32 code = 2; // Optional
   string description = 3; // Optional
 }
 
-message ObEventType {
+message EventMetadata {
   string id = 1;
-  EnEventType type = 2; 
-  EnEventTypeAction action = 3;
+  EventType type = 2; 
+  EventTypeAction action = 3;
   string createdAt = 4; // FIXME use google.protobuf.Timestamp  - First need to know how to represent in JSON
   string responseTo = 5; // Optional
-  ObStateType state = 6;
+  EventStateMetadata state = 6;
 }
 
-message ObMetadataType {
-  ObEventType event = 1;
-  ObTraceType trace = 2;
+message MessageMetadata {
+  EventMetadata event = 1;
+  EventTraceMetadata trace = 2;
 }
 
-message MessageType {
+message EventMessage {
   string id = 1;
   string from = 2; // Optional
   string to = 3; // Optional
   string pp = 4; // Optional
-  ObMetadataType metadata = 5; // Optional 
+  MessageMetadata metadata = 5; // Optional 
   string type = 6; // Optional
-  google.protobuf.Any content = 7;
+  google.protobuf.Struct content = 7;
 }
 
-service EventLogger {
-  rpc Log (MessageType) returns (MessageType);
+service EventLoggerService {
+  // FIXME this should return either void or a success|error object
+  rpc Log (EventMessage) returns (EventMessage);
 }

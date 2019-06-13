@@ -22,6 +22,10 @@
 
  --------------
  ******/
+/**
+ * EventType represents the different types of events.
+ * This enum is not exported; see `EventTypeAction` below.
+ */
 declare enum EventType {
     undefined = "undefined",
     log = "log",
@@ -29,45 +33,64 @@ declare enum EventType {
     error = "error",
     trace = "trace"
 }
-declare abstract class EventAction {
-    type: EventType;
-    action: string;
-}
-declare class EventActionLog extends EventAction {
-    type: EventType;
-    action: EventTypeActionLog;
-}
-declare class EventActionAudit extends EventAction {
-    type: EventType;
-    action: EventTypeActionAudit;
-}
-declare class EventActionError extends EventAction {
-    type: EventType;
-    action: EventTypeActionError;
-}
-declare class EventActionTrace extends EventAction {
-    type: EventType;
-    action: EventTypeActionTrace;
-}
-declare enum EventTypeActionLog {
-    undefined = "undefined",
+declare enum LogEventAction {
     info = "info",
     debug = "debug",
     verbose = "verbose",
     perf = "perf"
 }
-declare enum EventTypeActionAudit {
-    undefined = "undefined"
+declare enum AuditEventAction {
+    default = "default"
 }
-declare enum EventTypeActionError {
-    undefined = "undefined",
+declare enum ErrorEventAction {
     internal = "internal",
     external = "external"
 }
-declare enum EventTypeActionTrace {
-    undefined = "undefined",
+declare enum TraceEventAction {
     start = "start",
     end = "end"
+}
+declare enum NullEventAction {
+    undefined = "undefined"
+}
+/**
+ * This `EventTypeAction` hierarchy models the restrictions between types and actions.
+ * Each `EventType` can only have a specific set of `EventActions`
+ * Each concrete subclass defines the EventType as the static readonly prop `type`,
+ * and the `action` property is restricted to the specific enum type.
+ * `EventTypeAction` is not exported, clients need to use the concrete subclasses.
+ */
+declare abstract class EventTypeAction {
+    static readonly type: EventType;
+    action: AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction;
+    /**
+     * Returns the `EventType` specific to each subclass.
+     */
+    abstract getType(): EventType;
+}
+declare class LogEventTypeAction extends EventTypeAction {
+    static readonly type: EventType;
+    action: LogEventAction | NullEventAction;
+    getType(): EventType;
+    constructor(action: LogEventAction | NullEventAction);
+}
+declare class AuditEventTypeAction extends EventTypeAction {
+    static readonly type: EventType;
+    action: AuditEventAction | NullEventAction;
+    getType(): EventType;
+    constructor(action: AuditEventAction | NullEventAction);
+}
+declare class ErrorEventTypeAction extends EventTypeAction {
+    static readonly type: EventType;
+    action: ErrorEventAction | NullEventAction;
+    getType(): EventType;
+    constructor(action: ErrorEventAction | NullEventAction);
+}
+declare class TraceEventTypeAction extends EventTypeAction {
+    static readonly type: EventType;
+    action: TraceEventAction | NullEventAction;
+    getType(): EventType;
+    constructor(action: TraceEventAction | NullEventAction);
 }
 declare enum EventStatusType {
     success = "success",
@@ -90,12 +113,12 @@ declare class EventStateMetadata {
 }
 declare class EventMetadata {
     id: string;
-    type: EventType;
-    action: string;
+    private type;
+    private action;
     createdAt: string;
     responseTo?: string;
     state: EventStateMetadata;
-    constructor(id: string, typeAction: EventAction, createdAt: string, state: EventStateMetadata);
+    constructor(id: string, typeAction: EventTypeAction, createdAt: string, responseTo: string, state: EventStateMetadata);
 }
 declare class MessageMetadata {
     event: EventMetadata;
@@ -111,4 +134,4 @@ declare class EventMessage {
     type?: string;
     content?: any;
 }
-export { EventMessage, EventType, EventActionLog, EventActionAudit, EventActionTrace, EventActionError, EventTypeActionLog, EventTypeActionAudit, EventTypeActionTrace, EventTypeActionError, EventStatusType, MessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, };
+export { EventMessage, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, MessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, };
