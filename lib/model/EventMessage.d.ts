@@ -33,6 +33,7 @@ declare enum EventType {
     error = "error",
     trace = "trace"
 }
+declare type EventAction = AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction;
 declare enum LogEventAction {
     info = "info",
     debug = "debug",
@@ -55,14 +56,14 @@ declare enum NullEventAction {
 }
 /**
  * This `EventTypeAction` hierarchy models the restrictions between types and actions.
- * Each `EventType` can only have a specific set of `EventActions`
+ * Each `EventType` can only have a specific set of `EventAction`s
  * Each concrete subclass defines the EventType as the static readonly prop `type`,
  * and the `action` property is restricted to the specific enum type.
  * `EventTypeAction` is not exported, clients need to use the concrete subclasses.
  */
 declare abstract class EventTypeAction {
     static readonly type: EventType;
-    action: AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction;
+    action: EventAction;
     /**
      * Returns the `EventType` specific to each subclass.
      */

@@ -22,19 +22,41 @@
 
  --------------
  ******/
-import { EventMessage } from "./model/EventMessage";
-import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-/**
- * SDK Client - NOT FINAL
- *
- * FIXME: Split in two, EventLogger with hooks to enrich/encrypt the message, and EventLoggingServiceClient who has the gRPC client code
-*/
-declare class EventLogger {
-    client: EventLoggingServiceClient;
-    constructor();
-    /**
-     * Log an event
-     */
-    log: (event: EventMessage) => Promise<any>;
+import { EventMessage } from "../model/EventMessage";
+import { convertJSONtoStruct } from "./JsonToStructMapper";
+import { loadEventLoggerService } from "./EventLoggerServiceLoader";
+
+const path = require('path');
+const grpc = require('grpc')
+
+class EventLoggingServiceClient {
+
+  private grpcClient : any;
+
+  constructor(host : string, port: number ) {
+
+    let eventLoggerService = loadEventLoggerService();
+
+    let client = new eventLoggerService(`${host}:${port}`, grpc.credentials.createInsecure())
+    this.grpcClient = client
+  }
+  
+  /**
+   * Log an event
+   */
+  log = async ( event: EventMessage): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      let wireEvent : any = Object.assign({}, event);
+      wireEvent.content = convertJSONtoStruct(event.content);
+      console.log('Sending wireEvent: ', JSON.stringify(wireEvent, null, 2));
+      this.grpcClient.log(wireEvent, (error: any, response: any) => {
+        if ( error ) {reject(error); }
+        resolve(response);
+      })
+    })
+  }
 }
-export { EventLogger };
+
+export {
+  EventLoggingServiceClient
+}

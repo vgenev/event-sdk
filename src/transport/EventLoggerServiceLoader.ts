@@ -22,19 +22,29 @@
 
  --------------
  ******/
-import { EventMessage } from "./model/EventMessage";
-import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-/**
- * SDK Client - NOT FINAL
- *
- * FIXME: Split in two, EventLogger with hooks to enrich/encrypt the message, and EventLoggingServiceClient who has the gRPC client code
-*/
-declare class EventLogger {
-    client: EventLoggingServiceClient;
-    constructor();
-    /**
-     * Log an event
-     */
-    log: (event: EventMessage) => Promise<any>;
+
+const path = require('path');
+const grpc = require('grpc')
+const protoLoader = require('@grpc/proto-loader')
+
+const PROTO_PATH = path.join(__dirname,'../../protos/message_type.proto');
+
+function loadEventLoggerService() : any {
+  let packageDefinition = protoLoader.loadSync(
+    PROTO_PATH,
+    { keepCase: true,
+      longs: String,
+      enums: String,
+      defaults: true,
+      oneofs: true
+    })
+  let protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
+  // The protoDescriptor object has the full package hierarchy
+  let eventLoggerService = protoDescriptor.mojaloop.events.EventLoggerService
+
+  return eventLoggerService;
 }
-export { EventLogger };
+
+export {
+  loadEventLoggerService
+}

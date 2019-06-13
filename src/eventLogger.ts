@@ -26,7 +26,8 @@
 'use strict'
 
 import { EventMessage } from "./model/EventMessage";
-const path = require('path');
+import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
+const Config = require('./config/default.json')
 
 /**
  * SDK Client - NOT FINAL
@@ -34,91 +35,20 @@ const path = require('path');
  * FIXME: Split in two, EventLogger with hooks to enrich/encrypt the message, and EventLoggingServiceClient who has the gRPC client code
 */
 class EventLogger {
-    client : any
+    client : EventLoggingServiceClient
 
-    // FIXME All this code creting the "client" will be moved to EventLoggingServiceClient who has the gRPC client code
     constructor() {
-      let PROTO_PATH = path.join(__dirname,'../protos/message_type.proto');
-
-      let grpc = require('grpc')
-      let protoLoader = require('@grpc/proto-loader')
-      let packageDefinition = protoLoader.loadSync(
-        PROTO_PATH,
-        { keepCase: true,
-          longs: String,
-          enums: String,
-          defaults: true,
-          oneofs: true
-        })
-      let protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
-      // The protoDescriptor object has the full package hierarchy
-      let EventLoggerService = protoDescriptor.mojaloop.events.EventLoggerService
-
-      let client = new EventLoggerService('localhost:50051',
-        grpc.credentials.createInsecure())
-      this.client = client
+      this.client = new EventLoggingServiceClient(Config.SERVER_HOST, Config.SERVER_PORT);
     }
     
     /**
      * Log an event
      */
     log = async ( event: EventMessage): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        let wireEvent : any = Object.assign({}, event);
-        wireEvent.content = convertJSONtoStruct(event.content);
-        console.log('Sending wireEvent: ', JSON.stringify(wireEvent, null, 2));
-        this.client.log(wireEvent, (error: any, response: any) => {
-          if ( error ) {reject(error); }
-          resolve(response);
-        })
-      })
+      return this.client.log(event)
     }
 }
 
-// FIXME move to EventLoggingServiceClient
-function convertJSONtoStruct ( data : any) {
-  var toString = Object.prototype.toString;
-  var result : any = {};
-  Object.keys(data).forEach(function (key) {
-    var valueRep : any = {};
-    var value = data[key];
-    var typeString = toString.call(value);
-    switch (typeString) {
-      case '[object Null]':
-      case '[object Undefined]':
-        valueRep.nullValue = 0;
-        break;
-      case '[object Object]':
-          valueRep.structValue = convertJSONtoStruct(value);
-        break;
-      case '[object Array]':
-        var typed : any = convertJSONtoStruct(value);
-        var values = Object.keys(typed).map(function (key) {
-          return typed[key];
-        });
-        valueRep.listValue = values;
-        break;
-      case '[object Number]':
-        valueRep.numberValue = value;
-        break;
-      case '[object Boolean]':
-        valueRep.boolValue = value;
-        break;
-      case '[object String]':
-        valueRep.stringValue = value;
-        break;
-      case '[object Date]':
-          valueRep.stringValue = value;
-        break;
-      default:
-        throw new Error('Unsupported type: ' + typeString);
-    }
-    result[key] = valueRep;
-  });
-  return {
-    fields: result
-  };
-}
 
 export {
     EventLogger

@@ -22,19 +22,13 @@
 
  --------------
  ******/
-import { EventMessage } from "./model/EventMessage";
-import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-/**
- * SDK Client - NOT FINAL
- *
- * FIXME: Split in two, EventLogger with hooks to enrich/encrypt the message, and EventLoggingServiceClient who has the gRPC client code
-*/
-declare class EventLogger {
-    client: EventLoggingServiceClient;
-    constructor();
+import { EventMessage } from "../model/EventMessage";
+declare class EventLoggingServiceClient {
+    private grpcClient;
+    constructor(host: string, port: number);
     /**
      * Log an event
      */
     log: (event: EventMessage) => Promise<any>;
 }
-export { EventLogger };
+export { EventLoggingServiceClient };

@@ -28,7 +28,7 @@ const event : EventMessage = {
   },
   type: "application/json",
   metadata: {
-      event: new EventMetadata (
+      event: new EventMetadata (  // FIXME use EventMetadata.create and EventMetadata.createLog(...) EventMetadata.createTrace(...)
           "3920382d-f78c-4023-adf9-0d7a4a2a3a2f",
           new LogEventTypeAction(LogEventAction.debug),
           "2019-05-29T23:18:32.935Z",

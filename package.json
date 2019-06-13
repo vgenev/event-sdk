@@ -7,7 +7,7 @@
   "scripts": {
     "ts_app": "tsc ; ts-node src/examples/ts_app.ts",
     "js_app": "tsc ; ts-node src/examples/js_app.js",
-    "server": "tsc ; ts-node src/server/server.js",
+    "server": "tsc ; ts-node src/server/server.ts",
     "test": "npm run test:unit | faucet",
     "pretest": "npm run build",
     "standard": "standard",

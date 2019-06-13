@@ -167,7 +167,7 @@ class EventMetadata {
   id: string = Uuid()
   private type: EventType = EventType.undefined
   private action: EventAction = NullEventAction.undefined
-  createdAt: string
+  createdAt: string // FIXME this should be a Date
   responseTo?: string
   state: EventStateMetadata
 
