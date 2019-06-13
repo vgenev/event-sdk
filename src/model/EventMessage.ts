@@ -41,6 +41,8 @@ enum EventType {
   trace = "trace",
 }
 
+type EventAction = AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction
+
 enum LogEventAction {
   info = "info",
   debug = "debug",
@@ -68,14 +70,14 @@ enum NullEventAction {
 
 /**
  * This `EventTypeAction` hierarchy models the restrictions between types and actions.
- * Each `EventType` can only have a specific set of `EventActions`
+ * Each `EventType` can only have a specific set of `EventAction`s
  * Each concrete subclass defines the EventType as the static readonly prop `type`,
  * and the `action` property is restricted to the specific enum type.
  * `EventTypeAction` is not exported, clients need to use the concrete subclasses.
  */
 abstract class EventTypeAction {
   static readonly type: EventType = EventType.undefined
-  action: AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction = NullEventAction.undefined
+  action: EventAction = NullEventAction.undefined
 
   /**
    * Returns the `EventType` specific to each subclass.
@@ -164,7 +166,7 @@ class EventStateMetadata {
 class EventMetadata {
   id: string = Uuid()
   private type: EventType = EventType.undefined
-  private action: AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction = NullEventAction.undefined
+  private action: EventAction = NullEventAction.undefined
   createdAt: string
   responseTo?: string
   state: EventStateMetadata
