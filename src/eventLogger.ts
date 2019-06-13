@@ -30,9 +30,8 @@ import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient
 const Config = require('./config/default.json')
 
 /**
- * SDK Client - NOT FINAL
+ *
  * 
- * FIXME: Split in two, EventLogger with hooks to enrich/encrypt the message, and EventLoggingServiceClient who has the gRPC client code
 */
 class EventLogger {
     client : EventLoggingServiceClient

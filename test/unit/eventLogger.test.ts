@@ -76,13 +76,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                     }
                 }
                 
-                const eventLogger: EventLogger = new EventLogger()
-                let result = await eventLogger.log(event);
-                // test.equal(event.content.headers.date, "2019-05-28T16:34:41.000Z", 'OK!')
                 test.equal(event.metadata!.event.state.code, 0, 'OK!')
-                test.equal(result.metadata!.event.state.code, 0, 'OK!')
-
-                console.log('Got back: ', JSON.stringify(result, null, 2));
 
                 test.end()
             } catch (e) {
