@@ -30,7 +30,7 @@ const Uuid = require('uuid4')
 
 /**
  * EventType represents the different types of events.
- * This enum is not exported; see `EventTypeAction` below.
+ * This enum should not be used directly; see `EventTypeAction` below.
  */
 // FIXME enum values should be ALL CAPS ( typescript style ) ?
 enum EventType {
@@ -146,10 +146,13 @@ class EventTraceMetadata {
   sampled?:	number
   flags?:	number
 
-  constructor (service: string, traceId: string, spanId: string) {
+  constructor (service: string, traceId: string, spanId: string, parentSpanId?:	string, sampled?:	number, flags?:	number) {
     this.service = service
     this.traceId = traceId
     this.spanId = spanId
+    this.parentSpanId = parentSpanId
+    this.sampled = sampled
+    this.flags = flags
   }
 }
 
@@ -158,20 +161,46 @@ class EventStateMetadata {
   code?: number
   description?: string
 
-  constructor ( status: EventStatusType ) {
+  constructor ( status: EventStatusType, code?: number, description?: string ) {
     this.status = status
+    this.code = code
+    this.description = description
   }
 }
 
 class EventMetadata {
   id: string = Uuid()
-  private type: EventType = EventType.undefined
-  private action: EventAction = NullEventAction.undefined
+  readonly type: EventType = EventType.undefined
+  readonly action: EventAction = NullEventAction.undefined
   createdAt: string // FIXME this should be a Date
-  responseTo?: string
   state: EventStateMetadata
+  responseTo?: string
 
-  constructor ( id: string, typeAction: EventTypeAction, createdAt: string, responseTo: string, state: EventStateMetadata ) {
+  static create(id: string, typeAction: EventTypeAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
+    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
+  }
+
+  static log(id: string, action: LogEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
+    let typeAction = new LogEventTypeAction(action);
+    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
+  }
+
+  static trace(id: string, action: TraceEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
+    let typeAction = new TraceEventTypeAction(action);
+    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
+  }
+
+  static audit(id: string, action: AuditEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
+    let typeAction = new AuditEventTypeAction(action);
+    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
+  }
+
+  static error(id: string, action: ErrorEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
+    let typeAction = new ErrorEventTypeAction(action);
+    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
+  }
+
+  constructor ( id: string, typeAction: EventTypeAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) {
     this.id = id
     this.type = typeAction.getType()
     this.action = typeAction.action
@@ -203,6 +232,7 @@ class EventMessage {
 
 export {
   EventMessage,
+  EventType,
   LogEventTypeAction,
   AuditEventTypeAction,
   TraceEventTypeAction,
