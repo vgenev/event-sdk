@@ -32,12 +32,13 @@ const event : EventMessage = {
           "3920382d-f78c-4023-adf9-0d7a4a2a3a2f",
           LogEventAction.debug,
           "2019-05-29T23:18:32.935Z",
-          "1a396c07-47ab-4d68-a7a0-7a1ea36f0012",
           {
               status: EventStatusType.success,
               code: 0,
               description: "action successful"
-          })
+          },
+          "1a396c07-47ab-4d68-a7a0-7a1ea36f0012"
+          )
       ,
       trace: {
           service: "central-ledger-prepare-handler",

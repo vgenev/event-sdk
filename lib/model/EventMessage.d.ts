@@ -24,7 +24,7 @@
  ******/
 /**
  * EventType represents the different types of events.
- * This enum is not exported; see `EventTypeAction` below.
+ * This enum should not be used directly; see `EventTypeAction` below.
  */
 declare enum EventType {
     undefined = "undefined",
@@ -104,22 +104,27 @@ declare class EventTraceMetadata {
     parentSpanId?: string;
     sampled?: number;
     flags?: number;
-    constructor(service: string, traceId: string, spanId: string);
+    constructor(service: string, traceId: string, spanId: string, parentSpanId?: string, sampled?: number, flags?: number);
 }
 declare class EventStateMetadata {
     status: EventStatusType;
     code?: number;
     description?: string;
-    constructor(status: EventStatusType);
+    constructor(status: EventStatusType, code?: number, description?: string);
 }
 declare class EventMetadata {
     id: string;
-    private type;
-    private action;
+    readonly type: EventType;
+    readonly action: EventAction;
     createdAt: string;
-    responseTo?: string;
     state: EventStateMetadata;
-    constructor(id: string, typeAction: EventTypeAction, createdAt: string, responseTo: string, state: EventStateMetadata);
+    responseTo?: string;
+    static create(id: string, typeAction: EventTypeAction, createdAt: string, state: EventStateMetadata, responseTo?: string): EventMetadata;
+    static log(id: string, action: LogEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string): EventMetadata;
+    static trace(id: string, action: TraceEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string): EventMetadata;
+    static audit(id: string, action: AuditEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string): EventMetadata;
+    static error(id: string, action: ErrorEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string): EventMetadata;
+    constructor(id: string, typeAction: EventTypeAction, createdAt: string, state: EventStateMetadata, responseTo?: string);
 }
 declare class MessageMetadata {
     event: EventMetadata;
@@ -135,4 +140,4 @@ declare class EventMessage {
     type?: string;
     content?: any;
 }
-export { EventMessage, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, MessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, };
+export { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, MessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, };
