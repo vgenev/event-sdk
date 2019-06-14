@@ -51,7 +51,6 @@ class EventLoggingServiceServer extends events.EventEmitter{
     this.server = server;
     this.host = host;
     this.port = port;
-    console.log('this.on: ', this.on);
   }
 
   start() : any {
@@ -76,7 +75,6 @@ class EventLoggingServiceServer extends events.EventEmitter{
     // Convert it to a EventMessage
 
     let eventMessage : EventMessage = event;
-    console.log(this);
     this.emit(EVENT_RECEIVED, eventMessage);
     console.log('Server.logEvent content parsed:: ', JSON.stringify(event, null, 2))
   

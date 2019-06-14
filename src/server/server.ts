@@ -7,7 +7,7 @@ const Config = require('../config/default.json')
 
 let server = new EventLoggingServiceServer(Config.SERVER_HOST, Config.SERVER_PORT)
 server.on(EVENT_RECEIVED, (eventMessage : EventMessage) => {
-  console.log('Received: ', eventMessage)
+  console.log('Received: ', JSON.stringify(eventMessage, null, 2))
 });
 server.start();
 

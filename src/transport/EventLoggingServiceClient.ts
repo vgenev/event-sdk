@@ -23,7 +23,7 @@
  --------------
  ******/
 import { EventMessage } from "../model/EventMessage";
-import { convertJSONtoStruct } from "./JsonToStructMapper";
+import { convertJsontoStruct } from "./JsonToStructMapper";
 import { loadEventLoggerService } from "./EventLoggerServiceLoader";
 
 const path = require('path');
@@ -47,7 +47,7 @@ class EventLoggingServiceClient {
   log = async ( event: EventMessage): Promise<any> => {
     return new Promise((resolve, reject) => {
       let wireEvent : any = Object.assign({}, event);
-      wireEvent.content = convertJSONtoStruct(event.content);
+      wireEvent.content = convertJsontoStruct(event.content);
       console.log('Sending wireEvent: ', JSON.stringify(wireEvent, null, 2));
       this.grpcClient.log(wireEvent, (error: any, response: any) => {
         if ( error ) {reject(error); }

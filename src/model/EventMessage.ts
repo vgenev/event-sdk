@@ -226,8 +226,8 @@ class EventMessage {
   to?: string
   pp?: string
   metadata?: MessageMetadata
-  type?: string
-  content?: any
+  type?: string  // FIXME required
+  content?: any  // FIXME required
 }
 
 export {

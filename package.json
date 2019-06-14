@@ -14,6 +14,7 @@
     "build": "tsc; standard --fix",
     "watch": "tsc -w",
     "test:unit": "ts-node node_modules/tape/bin/tape 'test/unit/**/*.test.ts'",
+    "test:unit1": "ts-node node_modules/tape/bin/tape ",
     "test:xunit": "npm run test:unit | tap-xunit",
     "test:coverage": "nyc --reporter=lcov --require ts-node/register tape test/unit/**/*.test.{ts,js} | tap-spec; nyc report ---reporter=text",
     "git:stagelib": "git add lib/*ts; git add lib/*.map; git add lib/*.js",
@@ -46,6 +47,7 @@
   "dependencies": {
     "@grpc/proto-loader": "^0.5.1",
     "grpc": "^1.21.1",
+    "moment": "^2.24.0",
     "uuid4": "^1.1.4"
   },
   "devDependencies": {
@@ -78,5 +80,5 @@
     "ignore": [
       "/lib"
     ]
-  }  
+  }
 }

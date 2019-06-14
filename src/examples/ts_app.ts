@@ -11,6 +11,7 @@ import { EventMessage,
     EventStatusType,
    } from "../../src/model/EventMessage"
 
+const now = new Date();
 const event : EventMessage = {
   from: "noresponsepayeefsp",
   to: "payerfsp",
@@ -24,7 +25,25 @@ const event : EventMessage = {
           priority: 100,
           blocking: false
       },
-      payload: "data:application/vnd.interoperability.transfers+json;version=1.0;base64,ewogICJmdWxmaWxtZW50IjogIlVObEo5OGhaVFlfZHN3MGNBcXc0aV9VTjN2NHV0dDdDWkZCNHlmTGJWRkEiLAogICJjb21wbGV0ZWRUaW1lc3RhbXAiOiAiMjAxOS0wNS0yOVQyMzoxODozMi44NTZaIiwKICAidHJhbnNmZXJTdGF0ZSI6ICJDT01NSVRURUQiCn0"
+      payload: "data:application/vnd.interoperability.transfers+json;version=1.0;base64,ewogICJmdWxmaWxtZW50IjogIlVObEo5OGhaVFlfZHN3MGNBcXc0aV9VTjN2NHV0dDdDWkZCNHlmTGJWRkEiLAogICJjb21wbGV0ZWRUaW1lc3RhbXAiOiAiMjAxOS0wNS0yOVQyMzoxODozMi44NTZaIiwKICAidHJhbnNmZXJTdGF0ZSI6ICJDT01NSVRURUQiCn0",
+      data : {
+        str1: 'Hi world',
+        number1: 12345,
+        date1: now,
+        bool1: true,
+        nil1: null,
+        undef1: undefined,
+        array1: [ "Hello", 1234, now, true, null, undefined],
+        child:{
+            str2: 'Hi world',
+            number2: 12345,
+            date2:now,
+            bool2: true,
+            nil2: null,
+            undef2: undefined,
+            array2: [ "Hello", 1234, now, true, null, undefined],    
+        }
+    }
   },
   type: "application/json",
   metadata: {
