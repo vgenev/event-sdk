@@ -3,13 +3,13 @@
  *
  */
 
-import { EventLogger } from "../../src/eventLogger"
+import { EventLogger } from "../eventLogger"
 import { EventMessage,
     EventMetadata,
     LogEventTypeAction,
     LogEventAction,
     EventStatusType,
-   } from "../../src/model/EventMessage"
+   } from "../model/EventMessage"
 
 const now = new Date();
 const event : EventMessage = {

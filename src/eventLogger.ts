@@ -27,7 +27,7 @@
 
 import { EventMessage } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-const Config = require('./config/default.json')
+const Config = require('../src/config/default.json')
 
 /**
  *

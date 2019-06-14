@@ -29,6 +29,6 @@ declare class EventLoggingServiceClient {
     /**
      * Log an event
      */
-    log: (event: EventMessage) => Promise<any>;
+    log: (event: EventMessage) => Promise<EventMessage>;
 }
 export { EventLoggingServiceClient };

@@ -65,26 +65,22 @@ class EventLoggingServiceServer extends events.EventEmitter{
     if (!event.id) {
       callback(new Error(`Couldn't parse message parameter. It doesn't have an id property. parameter: ${event}`))
     }
-    console.log('Server.logEvent: ', JSON.stringify(event, null, 2))
+    console.log('Server.logEventReceivedHandler event: ', JSON.stringify(event, null, 2))
   
+    // Convert it to a EventMessage
+    let eventMessage : EventMessage = Object.assign({}, event);
     // Convert the event.content wich is an Struct to a plan object
-    if (event.content) {
-      event.content = convertStructToJson(event.content.fields)
+    if (eventMessage.content) {
+      eventMessage.content = convertStructToJson(eventMessage.content.fields)
     }
 
-    // Convert it to a EventMessage
-
-    let eventMessage : EventMessage = event;
     this.emit(EVENT_RECEIVED, eventMessage);
-    console.log('Server.logEvent content parsed:: ', JSON.stringify(event, null, 2))
   
     // FIXME Build the response.
       // {
       //   status: [pending|accepted],
       //   // ???
       // }
-  
-    
   
     // send response
     // FIXME WIP will return a success|error response. See proto file

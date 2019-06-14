@@ -23,7 +23,7 @@
  --------------
  ******/
 import { EventMessage } from "../model/EventMessage";
-import { convertJsontoStruct } from "./JsonToStructMapper";
+import { convertJsontoStruct, convertStructToJson } from "./JsonToStructMapper";
 import { loadEventLoggerService } from "./EventLoggerServiceLoader";
 
 const path = require('path');
@@ -44,14 +44,21 @@ class EventLoggingServiceClient {
   /**
    * Log an event
    */
-  log = async ( event: EventMessage): Promise<any> => {
+  log = async ( event: EventMessage): Promise<EventMessage> => {
     return new Promise((resolve, reject) => {
       let wireEvent : any = Object.assign({}, event);
       wireEvent.content = convertJsontoStruct(event.content);
-      console.log('Sending wireEvent: ', JSON.stringify(wireEvent, null, 2));
+      console.log('EventLoggingServiceClient.log sending wireEvent: ', JSON.stringify(wireEvent, null, 2));
       this.grpcClient.log(wireEvent, (error: any, response: any) => {
+        console.log('EventLoggingServiceClient.log  received response: ', JSON.stringify(response, null, 2));
         if ( error ) {reject(error); }
-        resolve(response);
+        let eventMessage = Object.assign({}, response);
+        // FIXME This is very specific, since we know that content is a Struct in this method.
+        // To make it more generic, and be able to use it in other methods, we could also check if there's a "fields" property and "kind", and assume its a Struct and then convert it
+        if ( eventMessage.content != null && eventMessage.content.fields != null )  {
+          eventMessage.content = convertStructToJson(eventMessage.content.fields)
+        }
+        resolve(eventMessage);
       })
     })
   }
