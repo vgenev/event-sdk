@@ -28,13 +28,13 @@
 const moment = require('moment');
 const Test = require('tapes')(require('tape'))
 
-import { convertStructToJson, convertJsontoStruct } from "../../src/transport/JsonToStructMapper";
+import { convertJsontoStruct } from "../../src/transport/JsonToStructMapper";
 
 Test('JsonToStructMapper Test', (jsonToStructMapperTests: any) => {
 
     jsonToStructMapperTests.test('jsonToStruct', (jsonToStructTest: any) => {
 
-        jsonToStructTest.test('should bla bla', async (test: any) => {
+        jsonToStructTest.test('should map a json with arrays and structs correctly to a Struct', async (test: any) => {
             const now = new Date();
             try {
                 const data = {
@@ -91,23 +91,27 @@ Test('JsonToStructMapper Test', (jsonToStructMapperTests: any) => {
             }
         })
 
-        jsonToStructTest.end()
-    })
-
-
-    jsonToStructMapperTests.test('structToJson', (structToJsonTest: any) => {
-
-        structToJsonTest.test('should bla bla', async (test: any) => {
+        jsonToStructTest.test('should map a json with arrays and structs correctly to a Struct', async (test: any) => {
             try {
-                // FIXME 
-                test.end()
+                const data = {
+                    set1: new Set([1])
+                }
+                let struct = convertJsontoStruct(data);
+                test.fail('Should have thrown Unsupported type exception')
             } catch (e) {
-                test.fail(`Error Thrown - ${e}`)
+                if ( e.message != 'Unsupported type: [object Set]') {
+                  test.fail(`Error Thrown - ${e}`)
+                }
                 test.end()
             }
         })
 
-        structToJsonTest.end()
+
+
+
+
+
+        jsonToStructTest.end()
     })
 
     jsonToStructMapperTests.end()
