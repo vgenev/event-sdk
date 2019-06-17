@@ -27,7 +27,7 @@
  *
  */
 
-const { EventLogger } = require('../../lib/eventLogger')
+const { DefaultEventLogger } = require('../../lib/DefaultEventLogger')
 const {
   LogEventTypeAction,
   LogEventAction,
@@ -72,7 +72,7 @@ const event = {
   }
 }
 
-const eventLogger = new EventLogger()
+const eventLogger = new DefaultEventLogger()
 console.log('app: sending event', JSON.stringify(event, null, 2))
 eventLogger.log(event)
   .then(result => {

@@ -27,7 +27,7 @@
  *
  */
 
-import { EventLogger } from "../eventLogger"
+import { DefaultEventLogger } from "../DefaultEventLogger"
 import { EventMessage,
     EventMetadata,
     LogEventTypeAction,
@@ -92,7 +92,7 @@ const event : EventMessage = {
   }
 }
 
-const logger = new EventLogger()
+const logger = new DefaultEventLogger()
 console.log('app: sending event', JSON.stringify(event, null, 2))
 logger.log(event)
   .then(result => {

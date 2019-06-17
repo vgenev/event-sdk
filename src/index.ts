@@ -26,6 +26,6 @@
 'use strict'
 
 
-import eventLogger = require('./eventLogger')
-export = new eventLogger.EventLogger()
+import { DefaultEventLogger } from './DefaultEventLogger'
+export = new DefaultEventLogger()
 

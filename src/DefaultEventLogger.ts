@@ -27,28 +27,44 @@
 
 import { EventMessage } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
+import { EventLogger } from './EventLogger';
+import { EventPostProcessor } from './EventPostProcessor';
+import { EventPreProcessor } from './EventPreProcessor';
+
 const Config = require('./lib/config')
 
 /**
- *
+ * DefaultEventLogger sends all the EventLogger commands to the default EventLoggingServiceClient.
+ * It provides null implementation of EventPreProcessor and EventPostProcessor.
+ * It can be extended to implement some of these methods.
  * 
 */
-class EventLogger {
+class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostProcessor {
     client : EventLoggingServiceClient
 
     constructor() {
       this.client = new EventLoggingServiceClient(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT);
     }
     
+    preProcess = (event: EventMessage): EventMessage => {
+      return event
+    }
+
+    postProcess = (result: any): any => {
+      return result
+    }
+
     /**
      * Log an event
      */
     log = async ( event: EventMessage): Promise<any> => {
-      return this.client.log(event)
+      let updatedEvent = this.preProcess(event);
+      let result = await this.client.log(updatedEvent)
+      return this.postProcess(result)
     }
 }
 
 
 export {
-    EventLogger
+  DefaultEventLogger
 }

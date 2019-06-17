@@ -22,6 +22,17 @@
 
  --------------
  ******/
-import { DefaultEventLogger } from './DefaultEventLogger';
-declare const _default: DefaultEventLogger;
-export = _default;
+
+ import { EventMessage } from "./model/EventMessage";
+
+/**
+ * Defines a method to pre process an Event object
+ */
+interface EventPreProcessor {
+
+  preProcess(event: EventMessage): EventMessage
+}
+
+export {
+  EventPreProcessor
+}

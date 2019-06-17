@@ -22,6 +22,25 @@
 
  --------------
  ******/
-import { DefaultEventLogger } from './DefaultEventLogger';
-declare const _default: DefaultEventLogger;
-export = _default;
+import { EventMessage } from "./model/EventMessage";
+import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
+import { EventLogger } from './EventLogger';
+import { EventPostProcessor } from './EventPostProcessor';
+import { EventPreProcessor } from './EventPreProcessor';
+/**
+ * DefaultEventLogger sends all the EventLogger commands to the default EventLoggingServiceClient.
+ * It provides null implementation of EventPreProcessor and EventPostProcessor.
+ * It can be extended to implement some of these methods.
+ *
+*/
+declare class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostProcessor {
+    client: EventLoggingServiceClient;
+    constructor();
+    preProcess: (event: EventMessage) => EventMessage;
+    postProcess: (result: any) => any;
+    /**
+     * Log an event
+     */
+    log: (event: EventMessage) => Promise<any>;
+}
+export { DefaultEventLogger };

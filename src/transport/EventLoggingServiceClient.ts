@@ -44,7 +44,7 @@ class EventLoggingServiceClient {
   /**
    * Log an event
    */
-  log = async ( event: EventMessage): Promise<EventMessage> => {
+  log = async ( event: EventMessage): Promise<any> => {
     return new Promise((resolve, reject) => {
       let wireEvent : any = Object.assign({}, event);
       wireEvent.content = convertJsontoStruct(event.content);

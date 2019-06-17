@@ -22,6 +22,25 @@
 
  --------------
  ******/
-import { DefaultEventLogger } from './DefaultEventLogger';
-declare const _default: DefaultEventLogger;
-export = _default;
+
+'use strict'
+
+import { EventMessage } from "./model/EventMessage";
+
+/**
+ * EventLogger defines the methods used to log events in the Event SDK.
+ * See DefaultEventLogger
+ * 
+*/
+interface EventLogger {
+
+    /**
+     * Log an event
+     */
+    log( event: EventMessage): Promise<any>;
+}
+
+
+export {
+    EventLogger
+}

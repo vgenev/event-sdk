@@ -26,7 +26,6 @@
 'use strict'
 
 const Test = require('tapes')(require('tape'))
-import { EventLogger } from "../../src/eventLogger"
 import { EventMessage,
     EventMetadata,
     LogEventTypeAction,

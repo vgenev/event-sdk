@@ -22,6 +22,10 @@
 
  --------------
  ******/
-import { DefaultEventLogger } from './DefaultEventLogger';
-declare const _default: DefaultEventLogger;
-export = _default;
+/**
+* Defines a method to process the result of an Event log
+*/
+interface EventPostProcessor {
+    postProcess(result: any): any;
+}
+export { EventPostProcessor };
