@@ -27,7 +27,7 @@
 
 import { EventMessage } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-const Config = require('../src/config/default.json')
+const Config = require('./lib/config')
 
 /**
  *
@@ -37,7 +37,7 @@ class EventLogger {
     client : EventLoggingServiceClient
 
     constructor() {
-      this.client = new EventLoggingServiceClient(Config.SERVER_HOST, Config.SERVER_PORT);
+      this.client = new EventLoggingServiceClient(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT);
     }
     
     /**

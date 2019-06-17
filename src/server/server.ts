@@ -26,10 +26,10 @@
 
 import { EventMessage } from "../model/EventMessage";
 import { EventLoggingServiceServer, EVENT_RECEIVED } from "../transport/EventLoggingServiceServer";
-const Config = require('../config/default.json')
+const Config = require('../lib/config')
 
 
-let server = new EventLoggingServiceServer(Config.SERVER_HOST, Config.SERVER_PORT)
+let server = new EventLoggingServiceServer(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT)
 server.on(EVENT_RECEIVED, (eventMessage : EventMessage) => {
   console.log('Received eventMessage: ', JSON.stringify(eventMessage, null, 2))
 });
