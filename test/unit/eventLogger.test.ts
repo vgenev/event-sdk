@@ -83,7 +83,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                     }
                 }
                 
-                test.equal(event.metadata!.event.state.code, 0, 'OK!')
+                test.equal(event.metadata!.event.state.code, 0)
 
                 test.end()
             } catch (e) {
@@ -133,7 +133,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                     }
                   }
                         
-                test.equal(event.metadata!.event.state.code, 0, 'OK!')
+                test.equal(event.metadata!.event.state.code, 0)
 
                 test.end()
             } catch (e) {
@@ -149,7 +149,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                     id: ID,
                   }
                         
-                test.equal(event.id, ID, 'OK!')
+                test.equal(event.id, ID)
 
                 test.end()
             } catch (e) {
@@ -168,7 +168,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                     new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
                 )
                         
-                test.equal(event.id, ID, 'OK!')
+                test.equal(event.id, ID)
 
                 test.end()
             } catch (e) {
@@ -186,37 +186,37 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
                     EventMetadata.create(ID, new LogEventTypeAction(LogEventAction.verbose), Date.now().toString(), new EventStateMetadata(EventStatusType.success)),
                     new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
                 )
-                test.equal(event.metadata.event.type, EventType.log, 'OK!')
-                test.equal(event.metadata.event.action, LogEventAction.verbose, 'OK!')
+                test.equal(event.metadata.event.type, EventType.log)
+                test.equal(event.metadata.event.action, LogEventAction.verbose)
 
 
                 event.metadata = new MessageMetadata(
                     EventMetadata.log(ID, LogEventAction.debug, Date.now().toString(), new EventStateMetadata(EventStatusType.success)),
                     new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
                 )
-                test.equal(event.metadata.event.type, EventType.log, 'OK!')
-                test.equal(event.metadata.event.action, LogEventAction.debug, 'OK!')
+                test.equal(event.metadata.event.type, EventType.log)
+                test.equal(event.metadata.event.action, LogEventAction.debug)
 
                 event.metadata = new MessageMetadata(
                     EventMetadata.audit(ID, AuditEventAction.default, Date.now().toString(), new EventStateMetadata(EventStatusType.success)),
                     new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
                 )
-                test.equal(event.metadata.event.type, EventType.audit, 'OK!')
-                test.equal(event.metadata.event.action, AuditEventAction.default, 'OK!')
+                test.equal(event.metadata.event.type, EventType.audit)
+                test.equal(event.metadata.event.action, AuditEventAction.default)
 
                 event.metadata = new MessageMetadata(
                     EventMetadata.trace(ID, TraceEventAction.start, Date.now().toString(), new EventStateMetadata(EventStatusType.success)),
                     new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
                 )
-                test.equal(event.metadata.event.type, EventType.trace, 'OK!')
-                test.equal(event.metadata.event.action, TraceEventAction.start, 'OK!')
+                test.equal(event.metadata.event.type, EventType.trace)
+                test.equal(event.metadata.event.action, TraceEventAction.start)
 
                 event.metadata = new MessageMetadata(
                     EventMetadata.error(ID, ErrorEventAction.internal, Date.now().toString(), new EventStateMetadata(EventStatusType.success)),
                     new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
                 )
-                test.equal(event.metadata.event.type, EventType.error, 'OK!')
-                test.equal(event.metadata.event.action, ErrorEventAction.internal, 'OK!')
+                test.equal(event.metadata.event.type, EventType.error)
+                test.equal(event.metadata.event.action, ErrorEventAction.internal)
                         
                 test.end()
             } catch (e) {
