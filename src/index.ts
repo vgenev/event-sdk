@@ -27,5 +27,56 @@
 
 
 import { DefaultEventLogger } from './DefaultEventLogger'
-export = new DefaultEventLogger()
+import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
+import { EventPostProcessor } from './EventPostProcessor';
+import { EventPreProcessor } from './EventPreProcessor';
+import {   EventMessage,
+  EventType,
+  LogEventTypeAction,
+  AuditEventTypeAction,
+  TraceEventTypeAction,
+  ErrorEventTypeAction,
+  LogEventAction,
+  AuditEventAction,
+  TraceEventAction,
+  ErrorEventAction,
+  EventStatusType,
+  MessageMetadata,
+  EventMetadata,
+  EventStateMetadata,
+  EventTraceMetadata,
+  LogResponseStatus,
+  LogResponse
+ } from "./model/EventMessage"
+
+
+let logger = new DefaultEventLogger()
+
+// Re-export definitions and components on the public API
+export {
+  logger,
+  DefaultEventLogger,
+  EventLoggingServiceServer,
+  EVENT_RECEIVED,
+  EventPostProcessor,
+  EventPreProcessor,
+  EventMessage,
+  EventType,
+  LogEventTypeAction,
+  AuditEventTypeAction,
+  TraceEventTypeAction,
+  ErrorEventTypeAction,
+  LogEventAction,
+  AuditEventAction,
+  TraceEventAction,
+  ErrorEventAction,
+  EventStatusType,
+  MessageMetadata,
+  EventMetadata,
+  EventStateMetadata,
+  EventTraceMetadata,
+  LogResponseStatus,
+  LogResponse
+
+}
 
