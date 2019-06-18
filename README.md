@@ -1,4 +1,5 @@
 # event-sdk
+
 **EXPERIMENTAL** Event SDK for Clients &amp; Server implementations
 
 
@@ -8,10 +9,13 @@
 [![NPM Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/npm/@mojaloop/event-sdk.svg?style=flat)](https://www.npmjs.com/package/@mojaloop/event-sdk)
 [![CircleCI](https://circleci.com/gh/mojaloop/event-sdk.svg?style=svg)](https://circleci.com/gh/mojaloop/event-sdk)
 
+Mojaloop Event SDK provides a simple API to log different kind of messages ( trace, log, error, audit ) and publish them to a central logging infrastructure. 
+
+The API is defined by the `EventLogger` interface and the `EventMessage` type. This library provides a default implementation `DefaultEventLogger` which sends all the messages to a logging sidecar.
+
+The logging behaviour can be modified as defined in the interfaces `EventPreProcessor` and `EventPostProcessor` which allow to use an `EventLogger` that processes `EventMessage`s before sending them and its response, respectively.
 
 ## Installation
-
-**TBD**
 
 ```bash
 npm install @mojaloop/event-sdk
@@ -19,13 +23,22 @@ npm install @mojaloop/event-sdk
 
 ## Usage
 
-**TBD**
-
 
 Import library:
 
-Set configuration options:
+```javascript
+import { DefaultEventLogger } from "../DefaultEventLogger"`
+```
 
-Initialise library:
+Create a Logger:
 
-Example:
+```javascript
+const logger = new DefaultEventLogger()`
+```
+
+Send an `EventMessage`
+
+```javascript
+let result = await logger.log(event);
+```
+
