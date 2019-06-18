@@ -147,6 +147,8 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
             try {
                 const event : EventMessage = {
                     id: ID,
+                    type: 'application/json',
+                    content: {}
                   }
                         
                 test.equal(event.id, ID)
@@ -161,8 +163,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
         EventMessageTest.test('should create an EventMessage building it', async (test: any) => {
             const ID = "aa398930-f210-4dcd-8af0-7c769cea1660";
             try {
-                const event : EventMessage = new EventMessage()
-                event.id = ID
+                const event : EventMessage = new EventMessage(ID, 'application/json', {})
                 event.metadata = new MessageMetadata(
                     new EventMetadata(ID, new LogEventTypeAction(LogEventAction.debug), (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
                     new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
@@ -180,8 +181,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
         EventMessageTest.test('should create an EventMessage using the EventMetadata factory methods', async (test: any) => {
             const ID = "aa398930-f210-4dcd-8af0-7c769cea1660";
             try {
-                const event : EventMessage = new EventMessage()
-                event.id = ID
+                const event : EventMessage = new EventMessage(ID, 'application/json', {})
                 event.metadata = new MessageMetadata(
                     EventMetadata.create(ID, new LogEventTypeAction(LogEventAction.verbose), (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
                     new EventTraceMetadata("service_1", "traceId_1", "spanId_1")

@@ -233,14 +233,15 @@ class MessageMetadata {
 
 class EventMessage {
   id: string = Uuid()
+  type: string
+  content: any
   from?: string
   to?: string
   pp?: string
   metadata?: MessageMetadata
-  type?: string
-  content?: any
 
-  constructor ( type?: string, content?: any) {
+  constructor ( id: string, type: string, content: any) {
+    this.id = id
     this.type = type
     this.content = content
   }

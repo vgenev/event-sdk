@@ -92,7 +92,7 @@ message EventMessage {
   string to = 3; // Optional
   string pp = 4; // Optional
   MessageMetadata metadata = 5; // Optional 
-  string type = 6; // Optional
+  string type = 6;
   google.protobuf.Struct content = 7;
 }
 

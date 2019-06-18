@@ -134,12 +134,12 @@ declare class MessageMetadata {
 }
 declare class EventMessage {
     id: string;
+    type: string;
+    content: any;
     from?: string;
     to?: string;
     pp?: string;
     metadata?: MessageMetadata;
-    type?: string;
-    content?: any;
-    constructor(type?: string, content?: any);
+    constructor(id: string, type: string, content: any);
 }
 export { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, MessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, };
