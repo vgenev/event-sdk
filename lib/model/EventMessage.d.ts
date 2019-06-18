@@ -104,7 +104,8 @@ declare class EventTraceMetadata {
     parentSpanId?: string;
     sampled?: number;
     flags?: number;
-    constructor(service: string, traceId: string, spanId: string, parentSpanId?: string, sampled?: number, flags?: number);
+    timestamp?: string;
+    constructor(service: string, traceId: string, spanId: string, parentSpanId?: string, sampled?: number, flags?: number, timestamp?: string | Date);
 }
 declare class EventStateMetadata {
     status: EventStatusType;
@@ -124,7 +125,7 @@ declare class EventMetadata {
     static trace(id: string, action: TraceEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string): EventMetadata;
     static audit(id: string, action: AuditEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string): EventMetadata;
     static error(id: string, action: ErrorEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string): EventMetadata;
-    constructor(id: string, typeAction: EventTypeAction, createdAt: string, state: EventStateMetadata, responseTo?: string);
+    constructor(id: string, typeAction: EventTypeAction, createdAt: string | Date, state: EventStateMetadata, responseTo?: string);
 }
 declare class MessageMetadata {
     event: EventMetadata;
@@ -139,5 +140,6 @@ declare class EventMessage {
     metadata?: MessageMetadata;
     type?: string;
     content?: any;
+    constructor(type?: string, content?: any);
 }
 export { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, MessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, };

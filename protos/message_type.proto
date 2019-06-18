@@ -63,6 +63,7 @@ message EventTraceMetadata {
   string parentSpanId = 4; // Optional
   int32 sampled = 5; // Optional
   int32 flags = 6; // Optional
+  string timestamp = 7; // Optional. ISO 8601
 }
 
 message EventStateMetadata {
@@ -75,7 +76,7 @@ message EventMetadata {
   string id = 1;
   EventType type = 2; 
   EventTypeAction action = 3;
-  string createdAt = 4; // FIXME use google.protobuf.Timestamp  - First need to know how to represent in JSON
+  string createdAt = 4; // ISO 8601
   string responseTo = 5; // Optional
   EventStateMetadata state = 6;
 }
