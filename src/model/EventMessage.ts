@@ -145,14 +145,21 @@ class EventTraceMetadata {
   parentSpanId?:	string
   sampled?:	number
   flags?:	number
+  timestamp?: string = (new Date()).toISOString() // ISO 8601
 
-  constructor (service: string, traceId: string, spanId: string, parentSpanId?:	string, sampled?:	number, flags?:	number) {
+  constructor (service: string, traceId: string, spanId: string, parentSpanId?:	string, sampled?:	number, flags?:	number, timestamp?: string | Date) {
     this.service = service
     this.traceId = traceId
     this.spanId = spanId
     this.parentSpanId = parentSpanId
     this.sampled = sampled
     this.flags = flags
+    if ( timestamp instanceof Date ) {
+      this.timestamp = timestamp.toISOString() // ISO 8601
+    } else {
+      this.timestamp = timestamp
+    }
+
   }
 }
 
@@ -172,7 +179,7 @@ class EventMetadata {
   id: string = Uuid()
   readonly type: EventType = EventType.undefined
   readonly action: EventAction = NullEventAction.undefined
-  createdAt: string // FIXME this should be a Date
+  createdAt: string // ISO 8601
   state: EventStateMetadata
   responseTo?: string
 
@@ -200,11 +207,15 @@ class EventMetadata {
     return new EventMetadata(id, typeAction, createdAt, state, responseTo);
   }
 
-  constructor ( id: string, typeAction: EventTypeAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) {
+  constructor ( id: string, typeAction: EventTypeAction, createdAt: string | Date, state: EventStateMetadata, responseTo?: string ) {
     this.id = id
     this.type = typeAction.getType()
     this.action = typeAction.action
-    this.createdAt = createdAt
+    if ( createdAt instanceof Date ) {
+      this.createdAt = createdAt.toISOString() // ISO 8601
+    } else {
+      this.createdAt = createdAt
+    }
     this.responseTo = responseTo
     this.state = state
   }
@@ -226,8 +237,13 @@ class EventMessage {
   to?: string
   pp?: string
   metadata?: MessageMetadata
-  type?: string  // FIXME required
-  content?: any  // FIXME required
+  type?: string
+  content?: any
+
+  constructor ( type?: string, content?: any) {
+    this.type = type
+    this.content = content
+  }
 }
 
 export {
