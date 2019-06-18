@@ -47,6 +47,9 @@ class EventLoggingServiceClient {
   log = async ( event: EventMessage): Promise<LogResponse> => {
     return new Promise((resolve, reject) => {
       let wireEvent : any = Object.assign({}, event);
+      if ( !event.content ) {
+        throw new Error('Invalid eventMessage: content is mandatory');
+      }
       wireEvent.content = convertJsontoStruct(event.content);
       console.log('EventLoggingServiceClient.log sending wireEvent: ', JSON.stringify(wireEvent, null, 2));
       this.grpcClient.log(wireEvent, (error: any, response: LogResponse) => {
