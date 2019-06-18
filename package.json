@@ -1,6 +1,6 @@
 {
   "name": "@mojaloop/event-sdk",
-  "version": "1.0.4-snapshot",
+  "version": "6.4.0-snapshot",
   "description": "Shared code for Event Logging",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -45,11 +45,11 @@
   },
   "homepage": "https://github.com/mojaloop/event-sdk#readme",
   "dependencies": {
-    "@grpc/proto-loader": "^0.5.1",
-    "grpc": "^1.21.1",
-    "moment": "^2.24.0",
-    "rc": "^1.2.8",
-    "uuid4": "^1.1.4"
+    "@grpc/proto-loader": "0.5.1",
+    "grpc": "1.21.1",
+    "moment": "2.24.0",
+    "rc": "1.2.8",
+    "uuid4": "1.1.4"
   },
   "devDependencies": {
     "@types/node": "11.9.4",
