@@ -96,7 +96,7 @@ function protoValueToJs (val: any) {
     })
   } else if (kind === 'structValue') {
     return convertStructToJson(value.fields)
-  } else { // FIXME convert date back to Date
+  } else { 
     return value
   }
 }

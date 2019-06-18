@@ -247,6 +247,21 @@ class EventMessage {
   }
 }
 
+enum LogResponseStatus {
+  UNDEFINED = 'undefined',
+  pending = 'pending',
+  accepted = 'accepted',
+  error = 'error'
+}
+
+class LogResponse {
+  status : LogResponseStatus = LogResponseStatus.UNDEFINED
+
+  constructor ( status: LogResponseStatus ) {
+    this.status = status
+  }
+}
+
 export {
   EventMessage,
   EventType,
@@ -263,5 +278,6 @@ export {
   EventMetadata,
   EventStateMetadata,
   EventTraceMetadata,
-
+  LogResponseStatus,
+  LogResponse
 }

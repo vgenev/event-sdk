@@ -22,7 +22,7 @@
 
  --------------
  ******/
-import { EventMessage } from "../model/EventMessage";
+import { EventMessage, LogResponse, LogResponseStatus } from "../model/EventMessage";
 import { convertStructToJson } from "./JsonToStructMapper";
 import { loadEventLoggerService } from "./EventLoggerServiceLoader";
 
@@ -67,24 +67,22 @@ class EventLoggingServiceServer extends events.EventEmitter{
     }
     console.log('Server.logEventReceivedHandler event: ', JSON.stringify(event, null, 2))
   
-    // Convert it to a EventMessage
-    let eventMessage : EventMessage = Object.assign({}, event);
-    // Convert the event.content wich is an Struct to a plan object
-    if (eventMessage.content) {
-      eventMessage.content = convertStructToJson(eventMessage.content.fields)
-    }
+    try {
+      // Convert it to a EventMessage
+      let eventMessage : EventMessage = Object.assign({}, event);
+      // Convert the event.content wich is an Struct to a plan object
+      if (eventMessage.content) {
+        eventMessage.content = convertStructToJson(eventMessage.content.fields)
+      }
 
-    this.emit(EVENT_RECEIVED, eventMessage);
-  
-    // FIXME Build the response.
-      // {
-      //   status: [pending|accepted],
-      //   // ???
-      // }
-  
-    // send response
-    // FIXME WIP will return a success|error response. See proto file
-    callback(null, event)
+      this.emit(EVENT_RECEIVED, eventMessage);
+    
+      let response = new LogResponse(LogResponseStatus.accepted)
+      callback(null, response)
+    } catch (error) {
+      let response = new LogResponse(LogResponseStatus.error)
+      callback(null, response)      
+    }
   }
   
 }

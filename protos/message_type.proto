@@ -96,7 +96,18 @@ message EventMessage {
   google.protobuf.Struct content = 7;
 }
 
+enum LogResponseStatus {
+  UNDEFINED = 0;
+  pending = 1;
+  accepted = 2;
+  error = 3;
+
+}
+
+message LogResponse {
+  LogResponseStatus status  = 1;
+}
+
 service EventLoggerService {
-  // FIXME this should return either void or a success|error object
-  rpc Log (EventMessage) returns (EventMessage);
+  rpc Log (EventMessage) returns (LogResponse);
 }

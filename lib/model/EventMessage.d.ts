@@ -142,4 +142,14 @@ declare class EventMessage {
     metadata?: MessageMetadata;
     constructor(id: string, type: string, content: any);
 }
-export { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, MessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, };
+declare enum LogResponseStatus {
+    UNDEFINED = "undefined",
+    pending = "pending",
+    accepted = "accepted",
+    error = "error"
+}
+declare class LogResponse {
+    status: LogResponseStatus;
+    constructor(status: LogResponseStatus);
+}
+export { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, MessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse };

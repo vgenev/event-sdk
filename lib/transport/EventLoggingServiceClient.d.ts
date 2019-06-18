@@ -22,13 +22,13 @@
 
  --------------
  ******/
-import { EventMessage } from "../model/EventMessage";
+import { EventMessage, LogResponse } from "../model/EventMessage";
 declare class EventLoggingServiceClient {
     private grpcClient;
     constructor(host: string, port: number);
     /**
      * Log an event
      */
-    log: (event: EventMessage) => Promise<any>;
+    log: (event: EventMessage) => Promise<LogResponse>;
 }
 export { EventLoggingServiceClient };
