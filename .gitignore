@@ -69,3 +69,4 @@ docs/
 # idea directory
 .idea/**
 **/*.iml
+private
