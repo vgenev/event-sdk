@@ -22,7 +22,7 @@
 
  --------------
  ******/
-import { EventMessage } from "./model/EventMessage";
+import { EventMessage, EventTraceMetadata } from "./model/EventMessage";
 /**
  * EventLogger defines the methods used to log events in the Event SDK.
  * See DefaultEventLogger
@@ -33,5 +33,37 @@ interface EventLogger {
      * Log an event
      */
     log(event: EventMessage): Promise<any>;
+    /**
+     * Creates a new EventTraceMetadata, with new traceId and spanId
+     *
+     * @param service Name of service producing trace. Example central-ledger-prepare-handler
+     * @param sampled
+     * @param flags
+     * @param timestamp
+     */
+    createNewTraceMetadata(service: string, sampled?: number, flags?: number, timestamp?: string): EventTraceMetadata;
+    /**
+     * Creates a new EventTraceMetadata, with the same traceId as the parent, and having the parent's spanId as parentSpanId
+     *
+     * @param parentTraceMetadata EventTraceMetadata from which to take the traceId and spanId
+     */
+    createChildTraceMetadata(parentTraceMetadata: EventTraceMetadata): EventTraceMetadata;
+    /**
+     * Logs a new EventMessage with the messageEnveloper data and new EventTraceMetadata created as in createNewTraceMetadata
+     *
+     * @param messageEnvelope A Message Envelope as defined in the Central Services Stream protocol
+     * @param service
+     * @param sampled
+     * @param flags
+     * @param timestamp
+     */
+    logNewTraceForMessageEnvelope(messageEnvelope: any, service: string, sampled?: number, flags?: number, timestamp?: string): EventMessage;
+    /**
+     * Logs a new EventMessage with the messageEnveloper data and new EventTraceMetadata created as in createChildTraceMetadata
+     *
+     * @param messageEnvelope  A Message Envelope as defined in the Central Services Stream protocol
+     * @param parentTraceMetadata
+     */
+    logChildTraceForMessageEnvelope(messageEnvelope: any, parentTraceMetadata: EventTraceMetadata): EventMessage;
 }
 export { EventLogger };

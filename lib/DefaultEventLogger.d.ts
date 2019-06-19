@@ -22,7 +22,7 @@
 
  --------------
  ******/
-import { EventMessage } from "./model/EventMessage";
+import { EventMessage, EventTraceMetadata } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
 import { EventLogger } from './EventLogger';
 import { EventPostProcessor } from './EventPostProcessor';
@@ -38,6 +38,10 @@ declare class DefaultEventLogger implements EventLogger, EventPreProcessor, Even
     constructor();
     preProcess: (event: EventMessage) => EventMessage;
     postProcess: (result: any) => any;
+    createNewTraceMetadata(service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | undefined): EventTraceMetadata;
+    createChildTraceMetadata(parentTraceMetadata: EventTraceMetadata): EventTraceMetadata;
+    logNewTraceForMessageEnvelope(messageEnvelope: any, service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | undefined): EventMessage;
+    logChildTraceForMessageEnvelope(messageEnvelope: any, parentTraceMetadata: EventTraceMetadata): EventMessage;
     /**
      * Log an event
      */

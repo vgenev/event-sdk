@@ -25,13 +25,14 @@
 
 'use strict'
 
-import { EventMessage } from "./model/EventMessage";
+import { EventMessage, EventTraceMetadata, MessageMetadata } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
 import { EventLogger } from './EventLogger';
 import { EventPostProcessor } from './EventPostProcessor';
 import { EventPreProcessor } from './EventPreProcessor';
 
 const Config = require('./lib/config')
+const Uuid = require('uuid4')
 
 /**
  * DefaultEventLogger sends all the EventLogger commands to the default EventLoggingServiceClient.
@@ -54,6 +55,37 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
       return result
     }
 
+    createNewTraceMetadata(service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | undefined): EventTraceMetadata {
+
+      let newMeta = new EventTraceMetadata(service, new Uuid(), new Uuid(), undefined, sampled, flags, timestamp);
+      return newMeta;
+    }
+
+    createChildTraceMetadata(parentTraceMetadata: EventTraceMetadata): EventTraceMetadata {
+      return new EventTraceMetadata(parentTraceMetadata.service, parentTraceMetadata.traceId, new Uuid(), parentTraceMetadata.spanId)
+    }
+
+    logNewTraceForMessageEnvelope(messageEnvelope: any, service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | undefined): EventMessage {
+      let eventMessage = new EventMessage(messageEnvelope.id, messageEnvelope.type, messageEnvelope.content);
+      eventMessage.from = messageEnvelope.from;
+      eventMessage.to = messageEnvelope.to;
+      eventMessage.pp = messageEnvelope.pp;
+      if (!(messageEnvelope.metadata && messageEnvelope.metadata.event)) {
+        throw new Error(`MessageEnvelope must have a metadata.event property ${messageEnvelope}`);
+      }
+      eventMessage.metadata = new MessageMetadata(messageEnvelope.metadata.event, this.createNewTraceMetadata(service, sampled, flags, timestamp));
+      return eventMessage;
+    }
+
+    logChildTraceForMessageEnvelope(messageEnvelope: any, parentTraceMetadata: EventTraceMetadata): EventMessage {
+      let eventMessage = new EventMessage(messageEnvelope.id, messageEnvelope.type, messageEnvelope.content);
+      eventMessage.from = messageEnvelope.from;
+      eventMessage.to = messageEnvelope.to;
+      eventMessage.pp = messageEnvelope.pp;
+      eventMessage.metadata = new MessageMetadata(messageEnvelope.metadata.event, this.createChildTraceMetadata(parentTraceMetadata));
+      return eventMessage;
+    }
+  
     /**
      * Log an event
      */
