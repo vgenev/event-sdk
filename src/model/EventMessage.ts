@@ -32,7 +32,6 @@ const Uuid = require('uuid4')
  * EventType represents the different types of events.
  * This enum should not be used directly; see `EventTypeAction` below.
  */
-// FIXME enum values should be ALL CAPS ( typescript style ) ?
 enum EventType {
   undefined = "undefined",
   log = "log",
