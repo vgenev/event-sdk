@@ -40,7 +40,9 @@ import {
   ErrorEventAction,
   EventType,
   LogResponse,
-  LogResponseStatus
+  LogResponseStatus,
+  newTraceId,
+  newSpanId
 } from "../../src/model/EventMessage"
 
 Test('EventLogger Class Test', (eventLoggerTests: any) => {
@@ -169,7 +171,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
         const event: EventMessage = new EventMessage(ID, 'application/json', {})
         event.metadata = new MessageMetadata(
           new EventMetadata(ID, new LogEventTypeAction(LogEventAction.debug), (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
-          new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
+          new EventTraceMetadata("service_1", newTraceId(), newSpanId())
         )
 
         test.equal(event.id, ID)
@@ -187,7 +189,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
         const event: EventMessage = new EventMessage(ID, 'application/json', {})
         event.metadata = new MessageMetadata(
           EventMetadata.create(ID, new LogEventTypeAction(LogEventAction.verbose), (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
-          new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
+          new EventTraceMetadata("service_1", newTraceId(), newSpanId())
         )
         test.equal(event.metadata.event.type, EventType.log)
         test.equal(event.metadata.event.action, LogEventAction.verbose)
@@ -195,28 +197,28 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
 
         event.metadata = new MessageMetadata(
           EventMetadata.log(ID, LogEventAction.debug, (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
-          new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
+          new EventTraceMetadata("service_1", newTraceId(), newSpanId())
         )
         test.equal(event.metadata.event.type, EventType.log)
         test.equal(event.metadata.event.action, LogEventAction.debug)
 
         event.metadata = new MessageMetadata(
           EventMetadata.audit(ID, AuditEventAction.default, (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
-          new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
+          new EventTraceMetadata("service_1", newTraceId(), newSpanId())
         )
         test.equal(event.metadata.event.type, EventType.audit)
         test.equal(event.metadata.event.action, AuditEventAction.default)
 
         event.metadata = new MessageMetadata(
           EventMetadata.trace(ID, TraceEventAction.start, (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
-          new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
+          new EventTraceMetadata("service_1", newTraceId(), newSpanId())
         )
         test.equal(event.metadata.event.type, EventType.trace)
         test.equal(event.metadata.event.action, TraceEventAction.start)
 
         event.metadata = new MessageMetadata(
           EventMetadata.error(ID, ErrorEventAction.internal, (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
-          new EventTraceMetadata("service_1", "traceId_1", "spanId_1")
+          new EventTraceMetadata("service_1", newTraceId(), newSpanId())
         )
         test.equal(event.metadata.event.type, EventType.error)
         test.equal(event.metadata.event.action, ErrorEventAction.internal)
@@ -237,7 +239,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
 
     EventMessageTest.test('should create an EventTraceMetadata using Date as the createdAt type', async (test: any) => {
       let now = new Date()
-      let meta = new EventTraceMetadata('a', 'b', 'c', undefined, undefined, undefined, now)
+      let meta = new EventTraceMetadata('a', newTraceId(), newSpanId(), undefined, undefined, undefined, now)
       test.equal(meta.timestamp, now.toISOString());
       test.end()
     })

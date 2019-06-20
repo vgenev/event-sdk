@@ -25,9 +25,11 @@
 
 'use strict'
 
+const crypto = require('crypto')
 const Uuid = require('uuid4')
 
-
+const TRACE_ID_REGEX = /^[0-9abcdef]{32}$/;
+const SPAN_ID_REGEX = /^[0-9abcdef]{16}$/
 /**
  * EventType represents the different types of events.
  * This enum should not be used directly; see `EventTypeAction` below.
@@ -148,8 +150,17 @@ class EventTraceMetadata {
 
   constructor (service: string, traceId: string, spanId: string, parentSpanId?:	string, sampled?:	number, flags?:	number, timestamp?: string | Date) {
     this.service = service
+    if (!(TRACE_ID_REGEX.test(traceId))) {
+      throw new Error(`Invalid traceId: ${traceId}`)
+    }
     this.traceId = traceId
+    if (!(SPAN_ID_REGEX.test(spanId))) {
+      throw new Error(`Invalid spanId: ${spanId}`)
+    }
     this.spanId = spanId
+    if (parentSpanId && !(SPAN_ID_REGEX.test(parentSpanId))) {
+      throw new Error(`Invalid parentSpanId: ${parentSpanId}`)
+    }
     this.parentSpanId = parentSpanId
     this.sampled = sampled
     this.flags = flags
@@ -261,6 +272,14 @@ class LogResponse {
   }
 }
 
+function newTraceId() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
+function newSpanId() {
+  return crypto.randomBytes(8).toString('hex');
+}
+
 export {
   EventMessage,
   EventType,
@@ -278,5 +297,7 @@ export {
   EventStateMetadata,
   EventTraceMetadata,
   LogResponseStatus,
-  LogResponse
+  LogResponse,
+  newTraceId,
+  newSpanId
 }
