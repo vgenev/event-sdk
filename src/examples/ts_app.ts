@@ -33,6 +33,7 @@ import { EventMessage,
     LogEventTypeAction,
     LogEventAction,
     EventStatusType,
+    EventTraceMetadata,
    } from "../model/EventMessage"
 
 const now = new Date();
@@ -88,7 +89,7 @@ const event : EventMessage = {
           traceId: "bbd7b2c7-3978-408e-ae2e-a13012c47739",
           parentSpanId: "4e3ce424-d611-417b-a7b3-44ba9bbc5840",
           spanId: "efeb5c22-689b-4d04-ac5a-2aa9cd0a7e87"
-      }
+      } as EventTraceMetadata
   }
 }
 

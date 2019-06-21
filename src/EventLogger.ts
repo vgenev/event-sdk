@@ -34,79 +34,91 @@ import { EventMessage, EventTraceMetadata } from "./model/EventMessage";
 */
 interface EventLogger {
 
-    /**
-     * Log an event
-     */
-    log( event: EventMessage): Promise<any>;
-    /**
-     * Creates a new EventTraceMetadata, with new traceId and spanId
-     * 
-     * @param service Name of service producing trace. Example central-ledger-prepare-handler
-     * @param sampled 
-     * @param flags 
-     * @param timestamp 
-     */
-    createTraceMetadata(service: string, sampled?: number, flags?: number, timestamp?: string | Date | undefined) : EventTraceMetadata;
+  /**
+   * Logs an event, usually sending it to a central logging processor.
+   */
+  log(event: EventMessage): Promise<any>;
 
-    /**
-     * Creates a new EventTraceMetadata, with the same traceId as the parent, and having the parent's spanId as parentSpanId
-     * 
-     * @param parentTraceMetadata EventTraceMetadata from which to take the traceId and spanId
-     * @param service Name of service producing trace. Example central-ledger-prepare-handler
-     * @param sampled 
-     * @param flags 
-     * @param timestamp 
-     */
-    createChildTraceMetadata(parentTraceMetadata: EventTraceMetadata, service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | Date | undefined): EventTraceMetadata;
+  /**
+   * Creates a TraceSpan with an EventMessage that wraps the messageEnvelope. The TraceSpan has new traceId and spanId.
+   * The TraceSpan is not logged. See @logSpan 
+   * 
+   * @param messageEnvelope A Message Envelope as defined in the Central Services Stream protocol
+   * @param service
+   * @param options : SpanOptions 
+   */
+  createSpanForMessageEnvelope(messageEnvelope: any, service: string, spanOptions?: SpanOptions): Promise<TraceSpan>
 
-    /**
-     * Creates a new EventTraceMetadata, with the same traceId as the parent, and having a new spanId and no parentSpanId
-     * 
-     * @param parentTraceMetadata EventTraceMetadata from which to take the traceId
-     * @param service Name of service producing trace. Example central-ledger-prepare-handler
-     * @param sampled 
-     * @param flags 
-     * @param timestamp 
-     */
-    createSpanTraceMetadata(parentTraceMetadata: EventTraceMetadata, service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | Date | undefined): EventTraceMetadata;
+  /**
+   * Creates a child TraceSpan, with the messageEnvelope data, the same traceId as its parent, and its parentId as the parentSpanId
+   * The TraceSpan is not logged. See @logSpan 
+   * 
+   * @param messageEnvelope  A Message Envelope as defined in the Central Services Stream protocol
+   * @param parent 
+   * @param service 
+   * @param options : SpanOptions 
+   */
+  createChildSpanForMessageEnvelope(messageEnvelope: any, parent: EventTraceMetadata | EventMessage | TraceSpan, service: string, spanOptions?: SpanOptions): Promise<TraceSpan>
 
-    /**
-     * Logs a new EventMessage with the messageEnvelope data and new EventTraceMetadata created as in createNewTraceMetadata
-     * 
-     * @param messageEnvelope A Message Envelope as defined in the Central Services Stream protocol
-     * @param service 
-     * @param sampled 
-     * @param flags 
-     * @param timestamp 
-     */
-    logTraceForMessageEnvelope(messageEnvelope: any, service: string, sampled?: number, flags?: number, timestamp?: string | Date | undefined): Promise<EventMessage>
-
-    /**
-     * Logs a new EventMessage with the messageEnvelope data and new EventTraceMetadata created as in createChildTraceMetadata
-     * 
-     * @param messageEnvelope  A Message Envelope as defined in the Central Services Stream protocol
-     * @param parent 
-     * @param service 
-     * @param sampled 
-     * @param flags 
-     * @param timestamp 
-     */
-    logChildTraceForMessageEnvelope(messageEnvelope: any, parent: EventTraceMetadata | EventMessage, service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | Date | undefined ): Promise<EventMessage>
-
-    /**
-     * Logs a new EventMessage with the messageEnvelope data and new EventTraceMetadata created as in createChildTraceMetadata
-     * 
-     * @param messageEnvelope  A Message Envelope as defined in the Central Services Stream protocol
-     * @param parent 
-     * @param service 
-     * @param sampled 
-     * @param flags 
-     * @param timestamp 
-     */
-    logSpanTraceForMessageEnvelope(messageEnvelope: any, parent: EventTraceMetadata | EventMessage, service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | Date | undefined ): Promise<EventMessage>
+  /**
+   * Logs a TraceSpan, sending it to the log destination
+   * 
+   * @param span The span to log. If it's not `finish()`ed, the EventLogger finishes it with the current timestamp before logging it
+   */
+  logSpan(span: TraceSpan): Promise<TraceSpan>
 }
 
+/**
+ * A TraceSpan wraps an EventMessage, where the Trace metadata is stored. It provides a `start()` and `finish()` methods used to record the start and finish timestamp 
+ */
+interface TraceSpan {
+
+  /**
+   * eventMessage has the data, event metadata and Trace metadata
+   */
+  eventMessage: EventMessage
+
+  /**
+   * traceId 
+   */
+  readonly traceId: string
+
+  /**
+   * 
+   */
+  readonly spanId: string
+
+  /**
+   * 
+   */
+  readonly parentSpanId?: string
+
+  /**
+   * 
+   */
+  readonly startTimestamp?: string  // ISO8601
+
+  /**
+   * 
+   */
+  readonly finishTimestamp?: string // ISO8601
+
+  /**
+   * 
+   * @param timestamp if null, the current timestamp will be used
+   */
+  finish(timestamp?: Date | string) : TraceSpan
+
+}
+
+class SpanOptions {
+  sampled?: number
+  flags?: number
+  startTimestamp?: string | Date | undefined
+}
 
 export {
-    EventLogger
+  EventLogger,
+  TraceSpan,
+  SpanOptions
 }

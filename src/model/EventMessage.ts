@@ -61,8 +61,7 @@ enum ErrorEventAction {
 }
 
 enum TraceEventAction {
-  start = "start",
-  end = "end",
+  span = "span"
 }
 
 enum NullEventAction {
@@ -146,9 +145,10 @@ class EventTraceMetadata {
   parentSpanId?:	string
   sampled?:	number
   flags?:	number
-  timestamp?: string = (new Date()).toISOString() // ISO 8601
+  startTimestamp?: string = (new Date()).toISOString() // ISO 8601
+  finishTimestamp?: string
 
-  constructor (service: string, traceId: string, spanId: string, parentSpanId?:	string, sampled?:	number, flags?:	number, timestamp?: string | Date) {
+  constructor (service: string, traceId: string, spanId: string, parentSpanId?:	string, sampled?:	number, flags?:	number, startTimestamp?: string | Date) {
     this.service = service
     if (!(TRACE_ID_REGEX.test(traceId))) {
       throw new Error(`Invalid traceId: ${traceId}`)
@@ -164,12 +164,22 @@ class EventTraceMetadata {
     this.parentSpanId = parentSpanId
     this.sampled = sampled
     this.flags = flags
-    if ( timestamp instanceof Date ) {
-      this.timestamp = timestamp.toISOString() // ISO 8601
-    } else {
-      this.timestamp = timestamp
+    if ( startTimestamp instanceof Date ) {
+      this.startTimestamp = startTimestamp.toISOString() // ISO 8601
+    } else if ( startTimestamp ) {
+      this.startTimestamp = startTimestamp
     }
 
+  }
+
+  finish(finishTimestamp?: string | Date) {
+    if ( finishTimestamp instanceof Date ) {
+      this.finishTimestamp = finishTimestamp.toISOString() // ISO 8601
+    } else if ( !finishTimestamp ) {
+      this.finishTimestamp = (new Date()).toISOString() // ISO 8601
+    } else {
+      this.finishTimestamp = finishTimestamp
+    }
   }
 }
 

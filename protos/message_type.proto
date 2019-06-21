@@ -48,6 +48,7 @@ enum EventTypeAction {
   perf = 6;
   internal = 7;
   external = 8;
+  span = 9;
 }
 
 enum EventStatusType {

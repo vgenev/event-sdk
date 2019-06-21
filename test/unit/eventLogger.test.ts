@@ -26,6 +26,8 @@
 'use strict'
 
 const Test = require('tapes')(require('tape'))
+const Uuid = require('uuid4')
+
 import {
   EventMessage,
   EventMetadata,
@@ -44,6 +46,10 @@ import {
   newTraceId,
   newSpanId
 } from "../../src/model/EventMessage"
+
+import {
+  DefaultEventLogger
+} from "../../src/DefaultEventLogger"
 
 Test('EventLogger Class Test', (eventLoggerTests: any) => {
 
@@ -84,7 +90,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
               traceId: "bbd7b2c7-3978-408e-ae2e-a13012c47739",
               parentSpanId: "4e3ce424-d611-417b-a7b3-44ba9bbc5840",
               spanId: "efeb5c22-689b-4d04-ac5a-2aa9cd0a7e87"
-            }
+            } as EventTraceMetadata
           }
         }
 
@@ -134,7 +140,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
               traceId: "bbd7b2c7-3978-408e-ae2e-a13012c47739",
               parentSpanId: "4e3ce424-d611-417b-a7b3-44ba9bbc5840",
               spanId: "efeb5c22-689b-4d04-ac5a-2aa9cd0a7e87"
-            }
+            } as EventTraceMetadata
           }
         }
 
@@ -210,11 +216,11 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
         test.equal(event.metadata.event.action, AuditEventAction.default)
 
         event.metadata = new MessageMetadata(
-          EventMetadata.trace(ID, TraceEventAction.start, (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
+          EventMetadata.trace(ID, TraceEventAction.span, (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
           new EventTraceMetadata("service_1", newTraceId(), newSpanId())
         )
         test.equal(event.metadata.event.type, EventType.trace)
-        test.equal(event.metadata.event.action, TraceEventAction.start)
+        test.equal(event.metadata.event.action, TraceEventAction.span)
 
         event.metadata = new MessageMetadata(
           EventMetadata.error(ID, ErrorEventAction.internal, (new Date()).toISOString(), new EventStateMetadata(EventStatusType.success)),
@@ -240,7 +246,14 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
     EventMessageTest.test('should create an EventTraceMetadata using Date as the createdAt type', async (test: any) => {
       let now = new Date()
       let meta = new EventTraceMetadata('a', newTraceId(), newSpanId(), undefined, undefined, undefined, now)
-      test.equal(meta.timestamp, now.toISOString());
+      test.equal(meta.startTimestamp, now.toISOString());
+      test.end()
+    })
+
+    EventMessageTest.test('should create an EventTraceMetadata using string as the createdAt type', async (test: any) => {
+      let now = new Date()
+      let meta = new EventTraceMetadata('a', newTraceId(), newSpanId(), undefined, undefined, undefined, now.toISOString())
+      test.equal(meta.startTimestamp, now.toISOString());
       test.end()
     })
 
@@ -252,8 +265,78 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       test.end()
     })
 
+    EventMessageTest.test('should create an EventTraceMetadata and finish it', async (test: any) => {
+      let now = new Date()
+      let meta = new EventTraceMetadata('a', newTraceId(), newSpanId())
+      meta.finish()
+      test.ok(meta.finishTimestamp);
+      meta.finish(now)
+      test.deepEqual(now.toISOString(),meta.finishTimestamp)
+      meta.finish(now.toISOString())
+      test.deepEqual(now.toISOString(),meta.finishTimestamp)
+      test.end()
+    })
+
+    EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid traceId', async (test: any) => {
+      test.throws(() => new EventTraceMetadata('a', 'b', 'c'), Error);
+      test.end()
+    })
+
+    EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid spanId', async (test: any) => {
+      test.throws(() => new EventTraceMetadata('a', newTraceId(), 'c'), Error);
+      test.end()
+    })
+
+    EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid parentSpanId', async (test: any) => {
+      test.throws(() => new EventTraceMetadata('a', newTraceId(), newSpanId(), 'c'), Error);
+      test.end()
+    })
 
     EventMessageTest.end()
   })
+
+  const messageProtocol = {
+    id: "xyz1234",
+    to: "DFSP1",
+    from: "DFSP1",
+    type: 'application/json',
+    content: {
+      headers: {},
+      payload: "http://example.com/v1/go"
+    },
+    metadata: {
+      event: {
+        id: Uuid(),
+        type: 'prepare',
+        action: 'prepare',
+        createdAt: new Date(),
+        state: {
+          status: 'success',
+          code: 0
+        }
+      }
+    }
+  }
+
+  eventLoggerTests.test('EventLoger should create a parent span', async (test: any) => {
+    let eventLogger = new DefaultEventLogger();
+    let rootSpan = await eventLogger.createSpanForMessageEnvelope(messageProtocol, 'ml-api-adapter');
+    
+    test.end()
+  })
+  
+  eventLoggerTests.test('EventLoger should create a child span', async (test: any) => {
+    let eventLogger = new DefaultEventLogger();
+    let rootSpan = await eventLogger.createSpanForMessageEnvelope(messageProtocol, 'ml-api-adapter');
+    // const topicConfig = Utility.createGeneralTopicConf(TRANSFER, PREPARE, message.transferId)
+    // Logger.debug(`domain::transfer::prepare::messageProtocol - ${messageProtocol}`)
+    let childSpan1 = await eventLogger.createChildSpanForMessageEnvelope(messageProtocol, rootSpan, 'ml-api-adapter-stage1')
+    test.equal(childSpan1.traceId, rootSpan.traceId)
+    test.equal(childSpan1.parentSpanId, rootSpan.spanId)
+    test.notEqual(childSpan1.spanId, rootSpan.spanId)
+    test.end()
+  })
+
+
   eventLoggerTests.end()
 })
