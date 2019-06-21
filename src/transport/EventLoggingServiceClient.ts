@@ -31,7 +31,7 @@ const grpc = require('grpc')
 
 class EventLoggingServiceClient {
 
-  private grpcClient : any;
+  grpcClient : any;
 
   constructor(host : string, port: number ) {
 

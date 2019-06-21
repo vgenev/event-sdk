@@ -49,6 +49,7 @@
     "grpc": "1.21.1",
     "moment": "2.24.0",
     "rc": "1.2.8",
+    "sinon": "^7.3.2",
     "uuid4": "1.1.4"
   },
   "devDependencies": {

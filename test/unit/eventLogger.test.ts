@@ -25,6 +25,7 @@
 
 'use strict'
 
+const sinon = require('sinon');
 const Test = require('tapes')(require('tape'))
 const Uuid = require('uuid4')
 
@@ -318,19 +319,24 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
     }
   }
 
+  let eventLogger = new DefaultEventLogger(undefined);
+  sinon.stub(eventLogger.client.grpcClient, "log").callsFake((wireEvent: any, cb: any) => {
+    cb(null, new LogResponse(LogResponseStatus.accepted))
+  });
+
   eventLoggerTests.test('EventLoger should create a parent span', async (test: any) => {
-    let eventLogger = new DefaultEventLogger();
     let rootSpan = await eventLogger.createSpanForMessageEnvelope(messageProtocol, 'ml-api-adapter');
-    
+    await eventLogger.logSpan(rootSpan);
     test.end()
   })
   
   eventLoggerTests.test('EventLoger should create a child span', async (test: any) => {
-    let eventLogger = new DefaultEventLogger();
     let rootSpan = await eventLogger.createSpanForMessageEnvelope(messageProtocol, 'ml-api-adapter');
     // const topicConfig = Utility.createGeneralTopicConf(TRANSFER, PREPARE, message.transferId)
     // Logger.debug(`domain::transfer::prepare::messageProtocol - ${messageProtocol}`)
     let childSpan1 = await eventLogger.createChildSpanForMessageEnvelope(messageProtocol, rootSpan, 'ml-api-adapter-stage1')
+    await eventLogger.logSpan(childSpan1);
+    await eventLogger.logSpan(rootSpan);
     test.equal(childSpan1.traceId, rootSpan.traceId)
     test.equal(childSpan1.parentSpanId, rootSpan.spanId)
     test.notEqual(childSpan1.spanId, rootSpan.spanId)
