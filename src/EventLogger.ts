@@ -41,17 +41,20 @@ interface EventLogger {
 
   /**
    * Creates a TraceSpan with an EventMessage that wraps the messageEnvelope. The TraceSpan has new traceId and spanId.
-   * The TraceSpan is not logged. See @logSpan 
+   * The TraceSpan is not logged. See @logSpan
+   * It also sets the messageEnvelope.metadata.trace to the EventMessage.metadata.trace
    * 
    * @param messageEnvelope A Message Envelope as defined in the Central Services Stream protocol
    * @param service
+   * @param traceId : string
    * @param options : SpanOptions 
    */
-  createSpanForMessageEnvelope(messageEnvelope: any, service: string, spanOptions?: SpanOptions): Promise<TraceSpan>
+  createSpanForMessageEnvelope(messageEnvelope: any, service: string, traceId?: string, spanOptions?: SpanOptions): Promise<TraceSpan>
 
   /**
    * Creates a child TraceSpan, with the messageEnvelope data, the same traceId as its parent, and its parentId as the parentSpanId
    * The TraceSpan is not logged. See @logSpan 
+   * It also sets the messageEnvelope.metadata.trace to the EventMessage.metadata.trace
    * 
    * @param messageEnvelope  A Message Envelope as defined in the Central Services Stream protocol
    * @param parent 

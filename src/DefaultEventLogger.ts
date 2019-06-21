@@ -113,8 +113,8 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
       return result
     }
 
-    createTraceMetadata(service: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | Date | undefined): EventTraceMetadata {
-      let newMeta = new EventTraceMetadata(service, newTraceId(), newSpanId(), undefined, sampled, flags, timestamp);
+    createTraceMetadata(service: string, traceId?: string, sampled?: number | undefined, flags?: number | undefined, timestamp?: string | Date | undefined): EventTraceMetadata {
+      let newMeta = new EventTraceMetadata(service, traceId ? traceId : newTraceId(), newSpanId(), undefined, sampled, flags, timestamp);
       return newMeta;
     }
 
@@ -122,22 +122,26 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
       return new EventTraceMetadata(service, parentTraceMetadata.traceId, newSpanId(), parentTraceMetadata.spanId, sampled, flags, timestamp)
     }
 
-    async createSpanForMessageEnvelope(messageEnvelope: any, service: string, spanOptions: SpanOptions = {}): Promise<TraceSpan> {
-      let traceMetadata = this.createTraceMetadata(service, spanOptions.sampled, spanOptions.flags, spanOptions.startTimestamp);
+    async createSpanForMessageEnvelope(messageEnvelope: any, service: string, traceId?: string, spanOptions: SpanOptions = {}): Promise<TraceSpan> {
+    // add an extra optional traceId parameter so we can create a new span on another service for the same traceId we're creating here
+        // ADD messageProtocol.metadata.trace = rootSpan.eventMessage.metadata.trace. This will be done on the Central Logger
+      // document it in the interface because we're modifying a parameter
+      let traceMetadata = this.createTraceMetadata(service, traceId, spanOptions.sampled, spanOptions.flags, spanOptions.startTimestamp);
 
       let eventMessage = new EventMessage(messageEnvelope.id, messageEnvelope.type, messageEnvelope.content);
       eventMessage.from = messageEnvelope.from;
       eventMessage.to = messageEnvelope.to;
       eventMessage.pp = messageEnvelope.pp;
-      eventMessage.metadata = new MessageMetadata(messageEnvelope.metadata.event, traceMetadata);
+      eventMessage.metadata = new MessageMetadata(messageEnvelope.metadata.event, traceMetadata); // FIXME Copy the messageEnvelope.metadata.event in a new Object
 
+      messageEnvelope.metadata.trace =eventMessage.metadata.trace;
 
       let traceSpan = new DefaultTraceSpan(eventMessage)
       return traceSpan;
     }
 
     async createChildSpanForMessageEnvelope(messageEnvelope: any, parent: EventTraceMetadata | EventMessage | TraceSpan, service: string, spanOptions: SpanOptions = {}): Promise<TraceSpan> {
-      let parentTraceMetadata : EventTraceMetadata;
+    let parentTraceMetadata : EventTraceMetadata;
       if ( parent instanceof EventMessage ) {
         if ( !parent.metadata ) {
           throw new Error('parent EventMessage must have metadata');
@@ -161,6 +165,7 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
       eventMessage.pp = messageEnvelope.pp;
       eventMessage.metadata = new MessageMetadata(messageEnvelope.metadata.event, traceMetadata);
 
+      messageEnvelope.metadata.trace =eventMessage.metadata.trace;
 
       let traceSpan = new DefaultTraceSpan(eventMessage)
       return traceSpan;
