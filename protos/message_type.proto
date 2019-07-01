@@ -1,0 +1,114 @@
+/*****
+ License
+ --------------
+ Copyright © 2017 Bill & Melinda Gates Foundation
+ The Mojaloop files are made available by the Bill & Melinda Gates Foundation under the Apache License, Version 2.0 (the "License") and you may not use these files except in compliance with the License. You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing, the Mojaloop files are distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ Contributors
+ --------------
+ This is the official list of the Mojaloop project contributors for this file.
+ Names of the original copyright holders (individuals or organizations)
+ should be listed with a '*' in the first column. People who have
+ contributed from an organization can be listed under the organization
+ that actually holds the copyright for their contributions (see the
+ Gates Foundation organization for an example). Those individuals should have
+ their names indented and be marked with a '-'. Email address can be added
+ optionally within square brackets <email>.
+ * Gates Foundation
+ - Name Surname <name.surname@gatesfoundation.com>
+
+ - Ramiro González Maciel <ramiro@modusbox.com>
+
+ --------------
+ ******/
+
+syntax = "proto3";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+package mojaloop.events;
+
+enum EventType {
+  UNDEFINED = 0;
+  log = 1;
+  audit = 2;
+  error = 3;
+  trace = 4;
+}
+
+enum EventTypeAction {
+  UNDEFINED = 0;
+  start = 1;
+  end = 2;
+  info = 3;
+  debug = 4;
+  verbose = 5;
+  perf = 6;
+  internal = 7;
+  external = 8;
+  span = 9;
+}
+
+enum EventStatusType {
+  UNDEFINED = 0;
+  success = 1;
+  failed = 2;
+}
+
+message EventTraceMetadata {
+  string service = 1;
+  string traceId = 2;
+  string spanId = 3;
+  string parentSpanId = 4; // Optional
+  int32 sampled = 5; // Optional
+  int32 flags = 6; // Optional
+  string timestamp = 7; // Optional. ISO 8601
+}
+
+message EventStateMetadata {
+  EventStatusType status = 1;
+  int32 code = 2; // Optional
+  string description = 3; // Optional
+}
+
+message EventMetadata {
+  string id = 1;
+  EventType type = 2; 
+  EventTypeAction action = 3;
+  string createdAt = 4; // ISO 8601
+  string responseTo = 5; // Optional
+  EventStateMetadata state = 6;
+}
+
+message MessageMetadata {
+  EventMetadata event = 1;
+  EventTraceMetadata trace = 2;
+}
+
+message EventMessage {
+  string id = 1;
+  string from = 2; // Optional
+  string to = 3; // Optional
+  string pp = 4; // Optional
+  MessageMetadata metadata = 5; // Optional 
+  string type = 6;
+  google.protobuf.Struct content = 7;
+}
+
+enum LogResponseStatus {
+  UNDEFINED = 0;
+  pending = 1;
+  accepted = 2;
+  error = 3;
+
+}
+
+message LogResponse {
+  LogResponseStatus status  = 1;
+}
+
+service EventLoggerService {
+  rpc Log (EventMessage) returns (LogResponse);
+}
