@@ -11,7 +11,7 @@
     "test": "npm run test:unit | faucet",
     "pretest": "npm run build",
     "standard": "standard",
-    "build": "tsc; standard --fix",
+    "build": "tsc",
     "watch": "tsc -w",
     "test:unit": "ts-node node_modules/tape/bin/tape 'test/unit/**/*.test.ts'",
     "test:unit1": "ts-node node_modules/tape/bin/tape ",

@@ -25,96 +25,80 @@
 
 'use strict'
 
-import { EventMessage, EventTraceMetadata } from "./model/EventMessage";
+import { EventMessage, EventTraceMetadata, IEventTrace, IMessageMetadata, EventStateMetadata } from "./model/EventMessage";
+import { AuditEventAction } from "../lib/model/EventMessage";
 
 /**
  * EventLogger defines the methods used to log events in the Event SDK.
  * See DefaultEventLogger
  * 
 */
-interface EventLogger {
 
+type ObjectWithKeys = {[key: string]: any}
+
+// type TraceContextCarrier = ObjectWithKeys | EventTraceMetadata | IMessageMetadata | EventMessage 
+interface EventLogger {
   /**
    * Logs an event, usually sending it to a central logging processor.
    */
-  log(event: EventMessage): Promise<any>;
 
-  /**
-   * Creates a TraceSpan with an EventMessage that wraps the messageEnvelope. The TraceSpan has new traceId and spanId.
-   * The TraceSpan is not logged. See @logSpan
-   * It also sets the messageEnvelope.metadata.trace to the EventMessage.metadata.trace
-   * 
-   * @param messageEnvelope A Message Envelope as defined in the Central Services Stream protocol
-   * @param service
-   * @param traceId : string
-   * @param options : SpanOptions 
-   */
-  createSpanForMessageEnvelope(messageEnvelope: any, service: string, traceId?: string, spanOptions?: SpanOptions): Promise<TraceSpan>
+  extract(carrier: ObjectWithKeys | IEventTrace | EventTraceMetadata | EventMessage | IMessageMetadata, path?: string): Promise<EventTraceMetadata>;
 
-  /**
-   * Creates a child TraceSpan, with the messageEnvelope data, the same traceId as its parent, and its parentId as the parentSpanId
-   * The TraceSpan is not logged. See @logSpan 
-   * It also sets the messageEnvelope.metadata.trace to the EventMessage.metadata.trace
-   * 
-   * @param messageEnvelope  A Message Envelope as defined in the Central Services Stream protocol
-   * @param parent 
-   * @param service 
-   * @param options : SpanOptions 
-   */
-  createChildSpanForMessageEnvelope(messageEnvelope: any, parent: EventTraceMetadata | EventMessage | TraceSpan, service: string, spanOptions?: SpanOptions): Promise<TraceSpan>
+  inject(carrier: ObjectWithKeys, traceContext: EventTraceMetadata, path?: string): Promise<ObjectWithKeys>;
 
-  /**
-   * Logs a TraceSpan, sending it to the log destination
-   * 
-   * @param span The span to log. If it's not `finish()`ed, the EventLogger finishes it with the current timestamp before logging it
-   */
-  logSpan(span: TraceSpan): Promise<TraceSpan>
+  createNewTraceMetadata(traceContext: IEventTrace ): EventTraceMetadata;
+  trace(trace: EventTraceMetadata, state?: EventStateMetadata): Promise<EventTraceMetadata>;
+  record(event: EventMessage): Promise<any>;
+  audit(message: ObjectWithKeys, action: AuditEventAction, state?: EventStateMetadata, traceContext?: IEventTrace): Promise<any>;
+  // error()
 }
+// interface TraceSpan extends IEventTrace {
 
-/**
- * A TraceSpan wraps an EventMessage, where the Trace metadata is stored. It provides a `start()` and `finish()` methods used to record the start and finish timestamp 
- */
-interface TraceSpan {
+//   /**
+//    * eventMessage has the data, event metadata and Trace metadata
+//    */
+//   // eventMessage: EventMessage
 
-  /**
-   * eventMessage has the data, event metadata and Trace metadata
-   */
-  eventMessage: EventMessage
+//   /**
+//    * service name
+//    */
 
-  /**
-   * traceId 
-   */
-  readonly traceId: string
+//   readonly service: string
+  
+//   /**
+//    * traceId 
+//    */
+//   readonly traceId: string
 
-  /**
-   * 
-   */
-  readonly spanId: string
+//   /**
+//    * 
+//    */
+//   readonly spanId: string
 
-  /**
-   * 
-   */
-  readonly parentSpanId?: string
+//   /**
+//    * 
+//    */
+//   readonly parentSpanId?: string
 
-  /**
-   * 
-   */
-  readonly startTimestamp?: string  // ISO8601
+//   /**
+//    * 
+//    */
+//   readonly startTimestamp?: string  // ISO8601
 
-  /**
-   * 
-   */
-  readonly finishTimestamp?: string // ISO8601
+//   /**
+//    * 
+//    */
+//   readonly finishTimestamp?: string // ISO8601
 
-  /**
-   * 
-   * @param timestamp if null, the current timestamp will be used
-   */
-  finish(timestamp?: Date | string) : TraceSpan
+//   /**
+//    * 
+//    * @param timestamp if null, the current timestamp will be used
+//    */
+//   finish(timestamp?: Date | string) : IEventTrace
 
-}
+// }
 
-class SpanOptions {
+interface SpanOptions {
   sampled?: number
   flags?: number
   startTimestamp?: string | Date | undefined
@@ -122,6 +106,7 @@ class SpanOptions {
 
 export {
   EventLogger,
-  TraceSpan,
-  SpanOptions
+  // TraceSpan,
+  SpanOptions,
+  ObjectWithKeys
 }
