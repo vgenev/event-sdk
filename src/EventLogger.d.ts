@@ -87,9 +87,7 @@ interface EventLogger {
     record(event: EventMessage): Promise<any>;
     traceContext: TraceSpan;
 }
-interface TraceSpan extends Readonly<EventTraceType> {
-    service: string;
-}
+declare type TraceSpan = Readonly<EventTraceType>;
 interface SpanOptions {
     sampled?: number;
     flags?: number;

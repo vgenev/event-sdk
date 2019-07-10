@@ -22,7 +22,7 @@ let message = new EventMessage({
 const main = async () => {
   let traceContext = logger.createNewSpan({ service: 'srv' })
   traceContext.setTags({ tag: 'value' })
-  traceContext.traceId = 'a'
+  traceContext.service = 'a'
   // await logger.trace(traceContext)
   // traceContext.service = 'srv2'
   let child = logger.createNewSpan(traceContext)

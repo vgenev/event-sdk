@@ -117,7 +117,7 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
       traceContext = new EventTraceMetadata(inputTraceContext)
     }
     this.traceContext = <TraceSpan>traceContext
-    return Object.freeze(this.traceContext)
+    return (this.traceContext)
   }
 
   async trace(traceContext: TraceSpan = this.traceContext, traceOptions: LoggerOptions = { action: TraceEventAction.span }): Promise<any> {

@@ -32,10 +32,12 @@ const main = async () => {
   // await logger.record(newMessage)
   let extracted = await logger.extractSpan(newMessage)
   console.log(JSON.stringify(extracted, null, 2), '\n= extracted =============\n')
-  extracted.setService('service 3')
-  let final = logger.createNewSpan(extracted)
+  let postExtracted = logger.createNewSpan()
+  console.log(JSON.stringify(postExtracted, null, 2), '\n= post extracted =============\n')
+  postExtracted.setService('service 3')
+  let final = logger.createNewSpan(postExtracted)
   console.log(JSON.stringify(final, null, 2), '\n= final =============\n')
-  await logger.trace(extracted)
+  await logger.trace(final)
 }
 
 main()

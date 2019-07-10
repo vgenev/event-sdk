@@ -245,9 +245,8 @@ class EventTraceMetadata implements EventTraceType {
   }
 
   setService(service: string): EventTraceMetadata {
-    let context = EventTraceMetadata.getContext(this)
-    context.service = service
-    return new EventTraceMetadata(context)
+    this.service = service
+    return this
   }
 }
 
@@ -294,6 +293,10 @@ class EventMetadata implements IEventMetadata {
   createdAt: string // ISO 8601
   state: IEventStateMetadata
   responseTo?: string
+
+  // static create(eventMetadata: IEventMetadata) : IEventMetadata {
+  //     return new EventMetadata(eventMetadata)
+  // }
 
   static log(eventMetadata: IEventMetadata) : IEventMetadata {
     let typeAction = new LogEventTypeAction({action: eventMetadata.action});
