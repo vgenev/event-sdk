@@ -1,63 +1,41 @@
-const { DefaultEventLogger } = require('./lib/DefaultEventLogger')
+// const { DefaultEventLogger } = require('./lib/DefaultEventLogger')
 // const EventSDK = require('./lib/index')
-const { EventMessage } = require('./lib/model/EventMessage')
-let logger = new DefaultEventLogger()
+const { logger } = require('./lib/index')
+// let logger = new DefaultEventLogger()
 
-let message = new EventMessage({
+let message = {
   type: 'test',
   content: {
     header: 'jeader', payload: 'payload'
   },
+  metadata: {
+    event: {
+      a: '1'
+    },
+    trace: {}
+  },
   from: 'd',
   to: 'f',
   pp: ''
-})
+}
 
-logger.audit(message)
+const main = async () => {
+  let traceContext = logger.createNewSpan('service 1')
+  traceContext.setTags({ tag: 'value' })
+  console.log(JSON.stringify(traceContext, null, 2), '\n= no 1 ==============\n')
+  // await logger.trace()
+  traceContext.setService('service 2')
+  let child = logger.createNewSpan()
+  console.log(JSON.stringify(child, null, 2), '\n = child =============\n')
+  let newMessage = await logger.injectSpan(message)
+  console.log(JSON.stringify(newMessage, null, 2), '\n = injected ==============\n')
+  // await logger.record(newMessage)
+  let extracted = await logger.extractSpan(newMessage)
+  console.log(JSON.stringify(extracted, null, 2), '\n= extracted =============\n')
+  extracted.setService('service 3')
+  let final = logger.createNewSpan(extracted)
+  console.log(JSON.stringify(final, null, 2), '\n= final =============\n')
+  await logger.trace(extracted)
+}
 
-// let trace = logger.createTraceMetadata('service-1')
-// let child = logger.createChildTraceMetadata(trace, 'service-2')
-// console.log(JSON.stringify(trace))
-// console.log(JSON.stringify(child))
-// let messageEnvelope = {
-//   id: 'dfada',
-//   type: 'baba',
-//   content: { header: 'jeader', payload: 'payload' },
-//   from: 'd',
-//   to: 'f',
-//   pp: ''
-// }
-
-// const routine = async () => {
-
-//   let { traceId, service } = child
-//   try {
-//     // let newM = await logger.createSpanForMessageEnvelope(messageEnvelope, service, traceId)
-//     // console.log(JSON.stringify(newM, null, 2))
-//     let newEventMessage = EventSDK.EventMetadata.audit('id', EventSDK.AuditEventAction.default)
-//     let newTraceData = new EventSDK.EventTraceMetadata('service', EventMessage.newTraceId(), EventMessage.newSpanId())
-//     let newMessageMetadata = new EventSDK.MessageMetadata(newEventMessage, newTraceData)
-//     let newEnvelope = new EventSDK.EventMessage('id', 'envelopeType')
-//     newEnvelope.metadata = newMessageMetadata
-//     logger.log(newEnvelope)
-//   } catch (e) {
-//     console.error(e)
-//   }
-// }
-
-// /*
-//   recorder.audit(messageEnvelope, action, state?, traceContext?)
-
-//   recorder.trace(traceMetadata, state?)
-//   */
-
-// let newEnvelope = new EventSDK.EventMessage(Object.assign(messageEnvelope, {
-//   metadata: new EventSDK.MessageMetadata({
-//     event: EventSDK.EventMetadata.audit({
-//       action: EventSDK.AuditEventAction.default,
-//       state: EventSDK.EventStateMetadata.success(),
-//       trace: EventSDK.EventTraceMetadata.create('service')
-//     })
-//   }))
-
-// routine().then(v => console.log(v))
+main()

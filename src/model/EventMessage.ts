@@ -27,6 +27,7 @@
 'use strict'
 
 import { finished } from "stream";
+import { TraceSpan, ObjectWithKeys } from "../EventLogger";
 
 const crypto = require('crypto')
 const Uuid = require('uuid4')
@@ -163,7 +164,7 @@ class TraceEventTypeAction extends TypeAction {
   }
 }
 
-interface IEventTrace {
+interface EventTraceType {
   service: string,
   traceId?: string,
   spanId?: string,
@@ -172,22 +173,26 @@ interface IEventTrace {
   flags?:	number,
   startTimestamp?: string | Date,
   finishTimestamp?: string | Date,
-  // finish?(timestamp?: string | Date): IEventTrace,
+  tags?: { [ key: string ]: any },
+  finish?(timestamp?: string | Date): EventTraceType,
+  setTags?(tags:ObjectWithKeys): EventTraceMetadata,
+  setService?(service: string): EventTraceMetadata
   // create?(): IEventTrace
 }
 
-class EventTraceMetadata implements IEventTrace {
+class EventTraceMetadata implements EventTraceType {
   service: string
   traceId:	string
-  spanId: string
+  spanId?: string
   parentSpanId?:	string
   sampled?:	number
   flags?:	number
   startTimestamp?: string = (new Date()).toISOString() // ISO 8601
   finishTimestamp?: string
+  tags: { [ key: string ]: any }
 
-  constructor (traceContext: IEventTrace) {
-    let { service, traceId = newTraceId(), spanId = newSpanId(), parentSpanId, sampled, flags, startTimestamp } = traceContext
+  constructor (traceContext: Partial<EventTraceType>) {
+    let { service = '', traceId = newTraceId(), spanId = newSpanId(), parentSpanId, sampled, flags, startTimestamp, tags = {}} = traceContext
     this.service = service
     if (!(TRACE_ID_REGEX.test(traceId))) {
       throw new Error(`Invalid traceId: ${traceId}`)
@@ -203,12 +208,17 @@ class EventTraceMetadata implements IEventTrace {
     this.parentSpanId = parentSpanId
     this.sampled = sampled
     this.flags = flags
+    this.tags = tags
     if ( startTimestamp instanceof Date ) {
       this.startTimestamp = startTimestamp.toISOString() // ISO 8601
     } else if ( startTimestamp ) {
       this.startTimestamp = startTimestamp
     }
     return this
+  }
+
+  static create(service: string): EventTraceMetadata {
+    return new EventTraceMetadata({ service })    
   }
 
   finish(finishTimestamp?: string | Date): EventTraceMetadata {
@@ -222,13 +232,22 @@ class EventTraceMetadata implements IEventTrace {
     return this
   }
 
-  static getContext (traceContext: EventTraceMetadata): IEventTrace {
-    let { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp } = traceContext
-    return { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp }
+  static getContext (traceContext: EventTraceMetadata | TraceSpan): EventTraceType {
+    let { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp, finish, setTags, tags } = traceContext
+    return { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp, finish, setTags, tags }
   }
 
-  static create(service: string): EventTraceMetadata {
-    return new EventTraceMetadata({ service })    
+  setTags(tag: ObjectWithKeys): EventTraceMetadata {
+    for (let key in tag) {
+      if (tag.hasOwnProperty(key)) this.tags[key] = tag[key]
+    }
+    return this
+  }
+
+  setService(service: string): EventTraceMetadata {
+    let context = EventTraceMetadata.getContext(this)
+    context.service = service
+    return new EventTraceMetadata(context)
   }
 }
 
@@ -276,10 +295,6 @@ class EventMetadata implements IEventMetadata {
   state: IEventStateMetadata
   responseTo?: string
 
-  // static create(eventMetadata: IEventMetadata) : IEventMetadata {
-  //     return new EventMetadata(eventMetadata)
-  // }
-
   static log(eventMetadata: IEventMetadata) : IEventMetadata {
     let typeAction = new LogEventTypeAction({action: eventMetadata.action});
     return new EventMetadata(Object.assign(eventMetadata, typeAction));
@@ -315,7 +330,7 @@ class EventMetadata implements IEventMetadata {
 
 interface IMessageMetadata {
   event: IEventMetadata,
-  trace: IEventTrace
+  trace: EventTraceType
 }
 
 interface IEventMessage {
@@ -368,6 +383,7 @@ function newSpanId() {
 export {
   EventMessage,
   EventType,
+  EventAction,
   LogEventTypeAction,
   AuditEventTypeAction,
   TraceEventTypeAction,
@@ -376,6 +392,7 @@ export {
   AuditEventAction,
   TraceEventAction,
   ErrorEventAction,
+  NullEventAction,
   EventStatusType,
   IMessageMetadata,
   EventMetadata,
@@ -385,6 +402,6 @@ export {
   LogResponse,
   IEventMessage,
   IEventMetadata,
-  IEventTrace,
+  EventTraceType,
   ITypeAction
 }

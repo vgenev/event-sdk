@@ -76,7 +76,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
           metadata: {
             event: new EventMetadata(
               "3920382d-f78c-4023-adf9-0d7a4a2a3a2f",
-              new LogEventTypeAction(LogEventAction.debug),
+              new (LogEventAction.debug),
               "2019-05-29T23:18:32.935Z",
               {
                 status: EventStatusType.success,

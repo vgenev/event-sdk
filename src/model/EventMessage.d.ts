@@ -23,6 +23,7 @@
 
  --------------
  ******/
+import { TraceSpan, ObjectWithKeys } from "../EventLogger";
 /**
  * EventType represents the different types of events.
  * This enum should not be used directly; see `EventTypeAction` below.
@@ -99,7 +100,7 @@ declare class TraceEventTypeAction extends TypeAction {
     static getType(): EventType;
     constructor(actionParam?: TAction | TraceEventAction | NullEventAction);
 }
-interface IEventTrace {
+interface EventTraceType {
     service: string;
     traceId?: string;
     spanId?: string;
@@ -108,20 +109,31 @@ interface IEventTrace {
     flags?: number;
     startTimestamp?: string | Date;
     finishTimestamp?: string | Date;
+    tags?: {
+        [key: string]: any;
+    };
+    finish?(timestamp?: string | Date): EventTraceType;
+    setTags?(tags: ObjectWithKeys): EventTraceMetadata;
+    setService?(service: string): EventTraceMetadata;
 }
-declare class EventTraceMetadata implements IEventTrace {
+declare class EventTraceMetadata implements EventTraceType {
     service: string;
     traceId: string;
-    spanId: string;
+    spanId?: string;
     parentSpanId?: string;
     sampled?: number;
     flags?: number;
     startTimestamp?: string;
     finishTimestamp?: string;
-    constructor(traceContext: IEventTrace);
-    finish(finishTimestamp?: string | Date): EventTraceMetadata;
-    static getContext(traceContext: EventTraceMetadata): IEventTrace;
+    tags: {
+        [key: string]: any;
+    };
+    constructor(traceContext: Partial<EventTraceType>);
     static create(service: string): EventTraceMetadata;
+    finish(finishTimestamp?: string | Date): EventTraceMetadata;
+    static getContext(traceContext: EventTraceMetadata | TraceSpan): EventTraceType;
+    setTags(tag: ObjectWithKeys): EventTraceMetadata;
+    setService(service: string): EventTraceMetadata;
 }
 interface IEventStateMetadata {
     status: EventStatusType;
@@ -159,7 +171,7 @@ declare class EventMetadata implements IEventMetadata {
 }
 interface IMessageMetadata {
     event: IEventMetadata;
-    trace: IEventTrace;
+    trace: EventTraceType;
 }
 interface IEventMessage {
     type: string;
@@ -190,4 +202,4 @@ declare class LogResponse {
     status: LogResponseStatus;
     constructor(status: LogResponseStatus);
 }
-export { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, IEventMessage, IEventMetadata, IEventTrace, ITypeAction };
+export { EventMessage, EventType, EventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, NullEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, IEventMessage, IEventMetadata, EventTraceType, ITypeAction };

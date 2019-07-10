@@ -25,69 +25,17 @@
 
 'use strict'
 
-import { EventMessage, EventTraceMetadata, LogResponseStatus, IEventTrace, AuditEventAction } from "./model/EventMessage";
+import { EventMessage, EventTraceMetadata, LogResponseStatus, EventTraceType, AuditEventAction, EventAction, LogEventAction, ErrorEventAction, NullEventAction } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-import { EventLogger, ObjectWithKeys } from './EventLogger';
+import { EventLogger, ObjectWithKeys, LoggerOptions, TraceSpan } from './EventLogger';
 import { EventPostProcessor } from './EventPostProcessor';
 import { EventPreProcessor } from './EventPreProcessor';
-import * as Config from './lib/config';
+const Config = require('./lib/config');
 // import { DEFAULT_ECDH_CURVE } from "tls";
-import { EventMetadata, TraceEventAction, EventStateMetadata } from "./model/EventMessage";
+import { EventMetadata, TraceEventAction, EventStateMetadata, EventType } from "./model/EventMessage";
+import { getNestedObject } from './lib/util'
 
-const getNestedObject = (parent: any, path: string): any => {
-  let child = { ...parent }
-  let result: object | null = {}
-  let id: string[] = path.split('.')
-  for (let i = 0; i < id.length; i++) {
-    if (i !== id.length - 1) {
-      child = child[id[i]]
-    }
-    else {
-      result = child[id[i]]
-    }
-  }
-  return result || null
-}
-
-const createTraceMetadataFromContext = (traceContext: IEventTrace): EventTraceMetadata => new EventTraceMetadata(traceContext)
-
-// class DefaultTraceSpan implements TraceSpan {
-//   constructor(traceSpan: EventTraceMetadata) {
-//     new EventTraceMetadata(traceSpan)
-//   }
-
-//   get service(): string {
-//     return this.service
-//   }
-//   get startTimestamp(): string | undefined {
-//     return this.startTimestamp
-//   }
-
-//   get finishTimestamp(): string | undefined {
-//     return this.finishTimestamp
-
-//   }
-
-//   get traceId(): string {
-//     return this.traceId
-//   }
-
-//   get spanId(): string {
-//     return this.spanId
-//   }
-
-//   get parentSpanId(): string | undefined {
-//     return this.parentSpanId
-//   }
-
-//   finish(timestamp?: string | Date): IEventTrace {
-//     if (!timestamp) {
-//       timestamp = new Date()
-//     }
-//     this.finish(timestamp)
-//     return this
-//   }
-// }
+const createTraceMetadataFromContext = (traceContext: EventTraceType): EventTraceMetadata => new EventTraceMetadata(traceContext)
 
 /**
  * DefaultEventLogger sends all the EventLogger commands to the default EventLoggingServiceClient.
@@ -97,11 +45,11 @@ const createTraceMetadataFromContext = (traceContext: IEventTrace): EventTraceMe
 */
 class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostProcessor {
   client: EventLoggingServiceClient
-  // traceContext: IEventTrace
+  traceContext: TraceSpan
 
   constructor(client?: EventLoggingServiceClient) {
     this.client = client ? client : new EventLoggingServiceClient(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT);
-    // this.traceContext = EventTraceMetadata.create('MUST_SET_SERVICE')
+    this.traceContext = <TraceSpan>EventTraceMetadata.create('MUST_SET_SERVICE')
   }
 
   preProcess = (event: EventMessage): EventMessage => {
@@ -112,7 +60,7 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
     return result
   }
 
-  extract(carrier: ObjectWithKeys, path?: string): Promise<EventTraceMetadata> {
+  extractSpan(carrier: ObjectWithKeys, path?: string): Promise<TraceSpan> {
     let traceContext: any = { service: '' }
     if (carrier instanceof EventTraceMetadata) {
       traceContext = carrier
@@ -123,45 +71,63 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
     } else if (path) {
       traceContext = createTraceMetadataFromContext(getNestedObject(carrier, path))
     }
-    // this.traceContext = traceContext
-    return Promise.resolve(traceContext)
+    this.traceContext = <TraceSpan>traceContext
+    return Promise.resolve(this.traceContext)
   }
 
-  inject(carrier: ObjectWithKeys, traceContext: IEventTrace, path?: string): Promise<ObjectWithKeys> {
+  injectSpan(carrier: ObjectWithKeys, traceContext: TraceSpan = this.traceContext, path?: string): Promise<ObjectWithKeys> {
     let result: ObjectWithKeys = carrier
+    if (carrier instanceof EventMessage) path = 'metadata.trace'
+    else if (typeof carrier === 'object' && carrier.hasOwnProperty('trace')) path = 'trace'
+    else if (carrier instanceof EventTraceMetadata) path = undefined
     if (path) {
       try {
         let pathArray: string[] = path.split('.')
-        for (let i = 0; i < pathArray.length; i++) {
+        for (let i = 0; i < pathArray.length - 1; i++) {
+          if (!result[pathArray[i]]) {
+            if (i < pathArray.length) {
+              let o: any = {}
+              o[pathArray[i + 1]] = {}
+              result[pathArray[i]] = o
+            }
+          }
           result = result[pathArray[i]]
         }
-        result.trace = traceContext
       } catch (e) {
         throw e
       }
     }
     result.trace = traceContext
-    // this.traceContext = traceContext
+    this.traceContext = <TraceSpan>traceContext
     return Promise.resolve(carrier)
   }
 
-  createNewTraceMetadata(traceContext: IEventTrace): EventTraceMetadata {
-    let { traceId, spanId } = traceContext
-    // if (service) this.traceContext.service = service
-    if (!traceId) return createTraceMetadataFromContext(traceContext)
-    if (spanId) {
-      traceContext.spanId = undefined
-      traceContext.parentSpanId = spanId
+  createNewSpan(input: TraceSpan | string = this.traceContext): TraceSpan {
+    let traceContext: EventTraceMetadata
+    if (typeof input === 'string') {
+      traceContext = EventTraceMetadata.create(input)
+    } else {
+      let inputTraceContext = EventTraceMetadata.getContext(input)
+      if (!(inputTraceContext.traceId && inputTraceContext.spanId) && !(inputTraceContext.service)) {
+        throw new Error('No Service or traceId or SpanId provided')
+      }
+      let { spanId } = inputTraceContext
+      inputTraceContext.spanId = undefined
+      inputTraceContext.parentSpanId = spanId
+      traceContext = new EventTraceMetadata(inputTraceContext)
     }
-    let newTraceContext = new EventTraceMetadata(traceContext)
-    // this.traceContext = EventTraceMetadata.getContext(newTraceContext)    
-    return newTraceContext
+    this.traceContext = <TraceSpan>traceContext
+    return Object.freeze(this.traceContext)
   }
 
-  async trace(trace: EventTraceMetadata, state: EventStateMetadata = EventStateMetadata.success()): Promise<EventTraceMetadata> {
-    if (trace.finishTimestamp == null) {
+  async trace(traceContext: TraceSpan = this.traceContext, traceOptions: LoggerOptions = { action: TraceEventAction.span }): Promise<any> {
+    let { state } = extractLoggerOptions(EventType.trace, traceOptions)
+    let trace = new EventTraceMetadata(traceContext)
+    if (trace.finishTimestamp == null && trace.finish) {
       trace.finish();
     }
+    this.traceContext = <TraceSpan>trace
+    if (!state) throw new Error('no valid state provided')
     let event = EventMetadata.trace({ action: TraceEventAction.span, state })
     let message = new EventMessage({
       type: 'trace',
@@ -173,13 +139,16 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
     })
     let logResult = await this.record(message);
     if (LogResponseStatus.accepted == logResult.status) {
-      return trace
+      return logResult
     } else {
       throw new Error(`Error when logging trace. status: ${logResult.status}`)
     }
   }
 
-  async audit(message: EventMessage, action: AuditEventAction = AuditEventAction.default, state: EventStateMetadata = EventStateMetadata.success(), traceContext?: IEventTrace): Promise<any> {
+  async audit(message: EventMessage, auditOptions: LoggerOptions = { action: AuditEventAction.default }): Promise<any> {
+    let { action, state, traceContext } = extractLoggerOptions(EventType.audit, auditOptions)
+    if (!action) throw new Error('no valid action provied')
+    if (!state) throw new Error('no valid state provided')
     let newEnvelope = new EventMessage(Object.assign(message, {
       metadata: {
         event: EventMetadata.audit({
@@ -206,6 +175,38 @@ class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostPro
     let updatedEvent = this.preProcess(event);
     let result = await this.client.log(updatedEvent)
     return this.postProcess(result)
+  }
+}
+
+const buildLoggerOptions = (actionDefault: EventAction, action?: EventAction, state?: EventStateMetadata, traceContext?: TraceSpan): LoggerOptions => {
+  let result: LoggerOptions = {
+    action, state, traceContext
+  }
+  result.action = action ? action
+    : actionDefault ? actionDefault
+      : NullEventAction.undefined
+  result.state = state ? state : EventStateMetadata.success()
+  return result
+}
+
+const extractLoggerOptions = (type: EventType, loggerOptions: LoggerOptions): LoggerOptions => {
+  let { action, state, traceContext } = loggerOptions
+  switch (type) {
+    case EventType.audit: {
+      return buildLoggerOptions(AuditEventAction.default, action, state, traceContext)
+    }
+    case EventType.trace: {
+      return buildLoggerOptions(TraceEventAction.span, action, state, traceContext)
+    }
+    case EventType.log: {
+      return buildLoggerOptions(LogEventAction.debug, action, state, traceContext)
+    }
+    case EventType.error: {
+      return buildLoggerOptions(ErrorEventAction.internal, action, state, traceContext)
+    }
+    default: {
+      return buildLoggerOptions(NullEventAction.undefined)
+    }
   }
 }
 

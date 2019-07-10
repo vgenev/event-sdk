@@ -75,6 +75,4 @@ export {
   EventTraceMetadata,
   LogResponseStatus,
   LogResponse
-
 }
-

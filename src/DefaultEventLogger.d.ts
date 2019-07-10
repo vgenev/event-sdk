@@ -22,12 +22,11 @@
 
  --------------
  ******/
-import { EventMessage, EventTraceMetadata, IEventTrace, AuditEventAction } from "./model/EventMessage";
+import { EventMessage } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-import { EventLogger, ObjectWithKeys } from './EventLogger';
+import { EventLogger, ObjectWithKeys, LoggerOptions, TraceSpan } from './EventLogger';
 import { EventPostProcessor } from './EventPostProcessor';
 import { EventPreProcessor } from './EventPreProcessor';
-import { EventStateMetadata } from "./model/EventMessage";
 /**
  * DefaultEventLogger sends all the EventLogger commands to the default EventLoggingServiceClient.
  * It provides null implementation of EventPreProcessor and EventPostProcessor.
@@ -36,14 +35,15 @@ import { EventStateMetadata } from "./model/EventMessage";
 */
 declare class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostProcessor {
     client: EventLoggingServiceClient;
+    traceContext: TraceSpan;
     constructor(client?: EventLoggingServiceClient);
     preProcess: (event: EventMessage) => EventMessage;
     postProcess: (result: any) => any;
-    extract(carrier: ObjectWithKeys, path?: string): Promise<EventTraceMetadata>;
-    inject(carrier: ObjectWithKeys, traceContext: IEventTrace, path?: string): Promise<ObjectWithKeys>;
-    createNewTraceMetadata(traceContext: IEventTrace): EventTraceMetadata;
-    trace(trace: EventTraceMetadata, state?: EventStateMetadata): Promise<EventTraceMetadata>;
-    audit(message: EventMessage, action?: AuditEventAction, state?: EventStateMetadata, traceContext?: IEventTrace): Promise<any>;
+    extractSpan(carrier: ObjectWithKeys, path?: string): Promise<TraceSpan>;
+    injectSpan(carrier: ObjectWithKeys, traceContext?: TraceSpan, path?: string): Promise<ObjectWithKeys>;
+    createNewSpan(input?: TraceSpan | string): TraceSpan;
+    trace(traceContext?: TraceSpan, traceOptions?: LoggerOptions): Promise<any>;
+    audit(message: EventMessage, auditOptions?: LoggerOptions): Promise<any>;
     /**
      * Log an event
      */

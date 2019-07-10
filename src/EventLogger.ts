@@ -25,8 +25,7 @@
 
 'use strict'
 
-import { EventMessage, EventTraceMetadata, IEventTrace, IMessageMetadata, EventStateMetadata } from "./model/EventMessage";
-import { AuditEventAction } from "../lib/model/EventMessage";
+import { EventMessage, EventTraceMetadata, EventTraceType, IMessageMetadata, EventStateMetadata, EventAction } from "./model/EventMessage";
 
 /**
  * EventLogger defines the methods used to log events in the Event SDK.
@@ -34,69 +33,73 @@ import { AuditEventAction } from "../lib/model/EventMessage";
  * 
 */
 
-type ObjectWithKeys = {[key: string]: any}
+type ObjectWithKeys = { [ key: string ]: any }
 
+/**
+ * Logger Options sets the interface for the different logger options, which might be passed to the logger for different actions
+ * 
+ */
+interface LoggerOptions {
+  action?: EventAction,
+  state?: EventStateMetadata,
+  traceContext?: EventTraceType
+}
 // type TraceContextCarrier = ObjectWithKeys | EventTraceMetadata | IMessageMetadata | EventMessage 
+
+/**
+ * EventLogger defines the methods used to log events in the Event SDK.
+ * See DefaultEventLogger
+ * 
+*/
 interface EventLogger {
   /**
-   * Logs an event, usually sending it to a central logging processor.
+   * Extracts trace context from a carrier (ex: kafka message, event message, metadata, trace) with optional path for the trace context to be extracted.
+   * 
+   * @param carrier any kind of message or other object with keys of type String.
+   * @param path where in the carrier hierarchy the trace context can be found
    */
+  extractSpan(carrier: ObjectWithKeys | EventTraceType | EventTraceMetadata | EventMessage | IMessageMetadata, path?: string): Promise<TraceSpan>;
 
-  extract(carrier: ObjectWithKeys | IEventTrace | EventTraceMetadata | EventMessage | IMessageMetadata, path?: string): Promise<EventTraceMetadata>;
+/**
+ * Injects trace context into a carrier with optional path.
+ * @param carrier any kind of message or other object with keys of type String.
+ * @param traceContext trace context
+ * @param path where in the carrier hierarchy the trace context should be injected
+ */
+  injectSpan(carrier: ObjectWithKeys, traceContext?: TraceSpan, path?: string): Promise<ObjectWithKeys>;
+/**
+ * Creates new Trace or Child Span, based on the input.
+ * Depending on the traceContext a new trace or a new child span is created. It case of a new trace, the traceContext might be only a service name as a string.
+ * Also the service of the new child span can be changed by changing the service of the traceContext.
+ *   
+ * @param traceContext a service as String or the trace context with obligatory service and optional values for traceId, spanId, etc. If no trace context was provided, the latest trace is used to create a child. 
+ */
+  createNewSpan(traceContext?: TraceSpan | string ): TraceSpan;
+  /**
+   * Sends trace message to the event logging framework. If the provided trace is not finished, its finished automatically prior its logging.
+   * @param trace Object of type EventTraceMetadata. 
+   * @param traceOptions Logger options where only status and action are taken into consideration
+   */
+  trace(trace: TraceSpan, traceOptions?: LoggerOptions): Promise<TraceSpan>;
 
-  inject(carrier: ObjectWithKeys, traceContext: EventTraceMetadata, path?: string): Promise<ObjectWithKeys>;
-
-  createNewTraceMetadata(traceContext: IEventTrace ): EventTraceMetadata;
-  trace(trace: EventTraceMetadata, state?: EventStateMetadata): Promise<EventTraceMetadata>;
-  record(event: EventMessage): Promise<any>;
-  audit(message: ObjectWithKeys, action: AuditEventAction, state?: EventStateMetadata, traceContext?: IEventTrace): Promise<any>;
+  /**
+   * Sends audit type message to the event logging framework. 
+   * @param message message to be recorded as audit event
+   * @param auditOptions Logger options object. If traceContext is provided, it is also added to the audit message metadata.
+   */
+  audit(message: ObjectWithKeys, auditOptions?: LoggerOptions): Promise<any>;
   // error()
+  // log()
+  /**
+   * Logs an event, usually sending it to a central logging processor.
+   * @param event EventMessage 
+   */
+  record(event: EventMessage): Promise<any>;
+  traceContext: TraceSpan;
 }
-// interface TraceSpan extends IEventTrace {
-
-//   /**
-//    * eventMessage has the data, event metadata and Trace metadata
-//    */
-//   // eventMessage: EventMessage
-
-//   /**
-//    * service name
-//    */
-
-//   readonly service: string
-  
-//   /**
-//    * traceId 
-//    */
-//   readonly traceId: string
-
-//   /**
-//    * 
-//    */
-//   readonly spanId: string
-
-//   /**
-//    * 
-//    */
-//   readonly parentSpanId?: string
-
-//   /**
-//    * 
-//    */
-//   readonly startTimestamp?: string  // ISO8601
-
-//   /**
-//    * 
-//    */
-//   readonly finishTimestamp?: string // ISO8601
-
-//   /**
-//    * 
-//    * @param timestamp if null, the current timestamp will be used
-//    */
-//   finish(timestamp?: Date | string) : IEventTrace
-
-// }
+interface TraceSpan extends Readonly<EventTraceType> {
+  service: string
+}
 
 interface SpanOptions {
   sampled?: number
@@ -106,7 +109,8 @@ interface SpanOptions {
 
 export {
   EventLogger,
-  // TraceSpan,
+  TraceSpan,
+  LoggerOptions,
   SpanOptions,
   ObjectWithKeys
 }
