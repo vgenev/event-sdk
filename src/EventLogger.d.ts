@@ -22,7 +22,7 @@
 
  --------------
  ******/
-import { EventMessage, EventTraceMetadata, EventTraceType, IMessageMetadata, EventStateMetadata, EventAction } from "./model/EventMessage";
+import { EventMessage, EventTraceMetadata, IEventTrace, IMessageMetadata, EventStateMetadata, EventAction } from "./model/EventMessage";
 /**
  * EventLogger defines the methods used to log events in the Event SDK.
  * See DefaultEventLogger
@@ -38,7 +38,7 @@ declare type ObjectWithKeys = {
 interface LoggerOptions {
     action?: EventAction;
     state?: EventStateMetadata;
-    traceContext?: EventTraceType;
+    traceContext?: IEventTrace;
 }
 /**
  * EventLogger defines the methods used to log events in the Event SDK.
@@ -52,7 +52,7 @@ interface EventLogger {
      * @param carrier any kind of message or other object with keys of type String.
      * @param path where in the carrier hierarchy the trace context can be found
      */
-    extractSpan(carrier: ObjectWithKeys | EventTraceType | EventTraceMetadata | EventMessage | IMessageMetadata, path?: string): Promise<TraceSpan>;
+    extractSpan(carrier: ObjectWithKeys | IEventTrace | EventTraceMetadata | EventMessage | IMessageMetadata, path?: string): Promise<TraceSpan>;
     /**
      * Injects trace context into a carrier with optional path.
      * @param carrier any kind of message or other object with keys of type String.
@@ -87,7 +87,7 @@ interface EventLogger {
     record(event: EventMessage): Promise<any>;
     traceContext: TraceSpan;
 }
-declare type TraceSpan = Readonly<EventTraceType>;
+declare type TraceSpan = Readonly<IEventTrace>;
 interface SpanOptions {
     sampled?: number;
     flags?: number;

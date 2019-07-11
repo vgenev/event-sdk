@@ -24,10 +24,10 @@ const main = async () => {
   traceContext.setTags({ tag: 'value' })
   console.log(JSON.stringify(traceContext, null, 2), '\n= no 1 ==============\n')
   // await logger.trace()
-  traceContext.setService('service 2')
-  let child = logger.createNewSpan()
+  traceContext.setService('service 2') // no if new service should be new child span
+  let child = logger.createNewSpan({}) // !no!
   console.log(JSON.stringify(child, null, 2), '\n = child =============\n')
-  let newMessage = await logger.injectSpan(message)
+  let newMessage = await logger.injectSpan(message, traceContext)
   console.log(JSON.stringify(newMessage, null, 2), '\n = injected ==============\n')
   // await logger.record(newMessage)
   let extracted = await logger.extractSpan(newMessage)

@@ -26,7 +26,7 @@
 'use strict'
 
 
-import { DefaultEventLogger } from './DefaultEventLogger'
+// import { DefaultEventLogger } from './DefaultEventLogger'
 import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
 import { EventPostProcessor } from './EventPostProcessor';
 import { EventPreProcessor } from './EventPreProcessor';
@@ -49,12 +49,12 @@ import {   EventMessage,
  } from "./model/EventMessage"
 
 
-let logger = new DefaultEventLogger()
+// let logger = new DefaultEventLogger()
 
 // Re-export definitions and components on the public API
 export {
-  logger,
-  DefaultEventLogger,
+  // logger,
+  // DefaultEventLogger,
   EventLoggingServiceServer,
   EVENT_RECEIVED,
   EventPostProcessor,

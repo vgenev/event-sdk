@@ -1,4 +1,5 @@
-const getNestedObject = (parent: any, path: string): any => {
+const getNestedObject = (parent: any, path?: string): any => {
+  if (!path) return parent
   let child = { ...parent }
   let result: object | null = {}
   let id: string[] = path.split('.')

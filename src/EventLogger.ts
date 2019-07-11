@@ -25,7 +25,7 @@
 
 'use strict'
 
-import { EventMessage, EventTraceMetadata, EventTraceType, IMessageMetadata, EventStateMetadata, EventAction } from "./model/EventMessage";
+import { EventMessage, EventTraceMetadata, IEventTrace, IMessageMetadata, EventStateMetadata, EventAction } from "./model/EventMessage";
 
 /**
  * EventLogger defines the methods used to log events in the Event SDK.
@@ -42,7 +42,7 @@ type ObjectWithKeys = { [ key: string ]: any }
 interface LoggerOptions {
   action?: EventAction,
   state?: EventStateMetadata,
-  traceContext?: EventTraceType
+  traceContext?: IEventTrace
 }
 // type TraceContextCarrier = ObjectWithKeys | EventTraceMetadata | IMessageMetadata | EventMessage 
 
@@ -58,7 +58,7 @@ interface EventLogger {
    * @param carrier any kind of message or other object with keys of type String.
    * @param path where in the carrier hierarchy the trace context can be found
    */
-  extractSpan(carrier: ObjectWithKeys | EventTraceType | EventTraceMetadata | EventMessage | IMessageMetadata, path?: string): Promise<TraceSpan>;
+  extractSpan(carrier: ObjectWithKeys | IEventTrace | EventTraceMetadata | EventMessage | IMessageMetadata, path?: string): Promise<TraceSpan>;
 
 /**
  * Injects trace context into a carrier with optional path.
@@ -74,7 +74,7 @@ interface EventLogger {
  *   
  * @param traceContext a service as String or the trace context with obligatory service and optional values for traceId, spanId, etc. If no trace context was provided, the latest trace is used to create a child. 
  */
-  createNewSpan(traceContext?: TraceSpan | string ): TraceSpan;
+  createNewSpan(traceContext: TraceSpan | string ): TraceSpan;
   /**
    * Sends trace message to the event logging framework. If the provided trace is not finished, its finished automatically prior its logging.
    * @param trace Object of type EventTraceMetadata. 
@@ -98,7 +98,7 @@ interface EventLogger {
   traceContext: TraceSpan;
 }
 
-type TraceSpan = Readonly<EventTraceType>
+type TraceSpan = Readonly<IEventTrace>
 
 interface SpanOptions {
   sampled?: number

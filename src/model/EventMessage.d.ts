@@ -100,7 +100,7 @@ declare class TraceEventTypeAction extends TypeAction {
     static getType(): EventType;
     constructor(actionParam?: TAction | TraceEventAction | NullEventAction);
 }
-interface EventTraceType {
+interface IEventTrace {
     service: string;
     traceId?: string;
     spanId?: string;
@@ -112,11 +112,11 @@ interface EventTraceType {
     tags?: {
         [key: string]: any;
     };
-    finish?(timestamp?: string | Date): EventTraceType;
+    finish?(timestamp?: string | Date): IEventTrace;
     setTags?(tags: ObjectWithKeys): EventTraceMetadata;
     setService?(service: string): EventTraceMetadata;
 }
-declare class EventTraceMetadata implements EventTraceType {
+declare class EventTraceMetadata implements IEventTrace {
     service: string;
     traceId: string;
     spanId?: string;
@@ -128,10 +128,10 @@ declare class EventTraceMetadata implements EventTraceType {
     tags: {
         [key: string]: any;
     };
-    constructor(traceContext: Partial<EventTraceType>);
+    constructor(traceContext: Partial<IEventTrace>);
     static create(service: string): EventTraceMetadata;
     finish(finishTimestamp?: string | Date): EventTraceMetadata;
-    static getContext(traceContext: EventTraceMetadata | TraceSpan): EventTraceType;
+    static getContext(traceContext: EventTraceMetadata | TraceSpan): IEventTrace;
     setTags(tag: ObjectWithKeys): EventTraceMetadata;
     setService(service: string): EventTraceMetadata;
 }
@@ -171,7 +171,7 @@ declare class EventMetadata implements IEventMetadata {
 }
 interface IMessageMetadata {
     event: IEventMetadata;
-    trace: EventTraceType;
+    trace: IEventTrace;
 }
 interface IEventMessage {
     type: string;
@@ -202,4 +202,4 @@ declare class LogResponse {
     status: LogResponseStatus;
     constructor(status: LogResponseStatus);
 }
-export { EventMessage, EventType, EventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, NullEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, IEventMessage, IEventMetadata, EventTraceType, ITypeAction };
+export { EventMessage, EventType, EventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, NullEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, IEventMessage, IEventMetadata, IEventTrace, ITypeAction };

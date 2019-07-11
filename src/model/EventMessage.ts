@@ -164,23 +164,19 @@ class TraceEventTypeAction extends TypeAction {
   }
 }
 
-interface EventTraceType {
+interface IEventTrace {
   service: string,
-  traceId?: string,
+  traceId: string,
   spanId?: string,
   parentSpanId?:	string,
   sampled?:	number,
   flags?:	number,
   startTimestamp?: string | Date,
-  finishTimestamp?: string | Date,
+  finishTimestamp?: string,
   tags?: { [ key: string ]: any },
-  finish?(timestamp?: string | Date): EventTraceType,
-  setTags?(tags:ObjectWithKeys): EventTraceMetadata,
-  setService?(service: string): EventTraceMetadata
-  // create?(): IEventTrace
 }
 
-class EventTraceMetadata implements EventTraceType {
+class EventTraceMetadata implements IEventTrace {
   service: string
   traceId:	string
   spanId?: string
@@ -189,10 +185,10 @@ class EventTraceMetadata implements EventTraceType {
   flags?:	number
   startTimestamp?: string = (new Date()).toISOString() // ISO 8601
   finishTimestamp?: string
-  tags: { [ key: string ]: any }
+  tags?: { [ key: string ]: any }
 
-  constructor (traceContext: Partial<EventTraceType>) {
-    let { service = '', traceId = newTraceId(), spanId = newSpanId(), parentSpanId, sampled, flags, startTimestamp, tags = {}} = traceContext
+  constructor (traceContext: Partial<IEventTrace>) {
+    let { service = '', traceId = newTraceId(), spanId = newSpanId(), parentSpanId, sampled, flags, startTimestamp, tags = {}, finishTimestamp} = traceContext
     this.service = service
     if (!(TRACE_ID_REGEX.test(traceId))) {
       throw new Error(`Invalid traceId: ${traceId}`)
@@ -214,6 +210,7 @@ class EventTraceMetadata implements EventTraceType {
     } else if ( startTimestamp ) {
       this.startTimestamp = startTimestamp
     }
+    this.finishTimestamp = finishTimestamp
     return this
   }
 
@@ -221,32 +218,9 @@ class EventTraceMetadata implements EventTraceType {
     return new EventTraceMetadata({ service })    
   }
 
-  finish(finishTimestamp?: string | Date): EventTraceMetadata {
-    if ( finishTimestamp instanceof Date ) {
-      this.finishTimestamp = finishTimestamp.toISOString() // ISO 8601
-    } else if ( !finishTimestamp ) {
-      this.finishTimestamp = (new Date()).toISOString() // ISO 8601
-    } else {
-      this.finishTimestamp = finishTimestamp
-    }
-    return this
-  }
-
-  static getContext (traceContext: EventTraceMetadata | TraceSpan): EventTraceType {
-    let { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp, finish, setTags, tags } = traceContext
-    return { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp, finish, setTags, tags }
-  }
-
-  setTags(tag: ObjectWithKeys): EventTraceMetadata {
-    for (let key in tag) {
-      if (tag.hasOwnProperty(key)) this.tags[key] = tag[key]
-    }
-    return this
-  }
-
-  setService(service: string): EventTraceMetadata {
-    this.service = service
-    return this
+  static getContext (traceContext: IEventTrace): IEventTrace {
+    let { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp, tags } = traceContext
+    return { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp, tags }
   }
 }
 
@@ -333,7 +307,7 @@ class EventMetadata implements IEventMetadata {
 
 interface IMessageMetadata {
   event: IEventMetadata,
-  trace: EventTraceType
+  trace: IEventTrace
 }
 
 interface IEventMessage {
@@ -405,6 +379,6 @@ export {
   LogResponse,
   IEventMessage,
   IEventMetadata,
-  EventTraceType,
+  IEventTrace,
   ITypeAction
 }
