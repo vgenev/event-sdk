@@ -67,7 +67,7 @@ interface EventLogger {
      *
      * @param traceContext a service as String or the trace context with obligatory service and optional values for traceId, spanId, etc. If no trace context was provided, the latest trace is used to create a child.
      */
-    createNewSpan(traceContext?: TraceSpan | string): TraceSpan;
+    createNewSpan(traceContext: TraceSpan | string): TraceSpan;
     /**
      * Sends trace message to the event logging framework. If the provided trace is not finished, its finished automatically prior its logging.
      * @param trace Object of type EventTraceMetadata.

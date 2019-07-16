@@ -23,7 +23,6 @@
 
  --------------
  ******/
-import { TraceSpan, ObjectWithKeys } from "../EventLogger";
 /**
  * EventType represents the different types of events.
  * This enum should not be used directly; see `EventTypeAction` below.
@@ -32,22 +31,19 @@ declare enum EventType {
     undefined = "undefined",
     log = "log",
     audit = "audit",
-    error = "error",
     trace = "trace"
 }
-declare type EventAction = AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction;
+declare type EventAction = AuditEventAction | LogEventAction | TraceEventAction | NullEventAction;
 declare enum LogEventAction {
     info = "info",
     debug = "debug",
     verbose = "verbose",
-    perf = "perf"
+    performance = "performance",
+    warning = "warning",
+    error = "error"
 }
 declare enum AuditEventAction {
     default = "default"
-}
-declare enum ErrorEventAction {
-    internal = "internal",
-    external = "external"
 }
 declare enum TraceEventAction {
     span = "span"
@@ -90,11 +86,6 @@ declare class AuditEventTypeAction extends TypeAction {
     static getType(): EventType;
     constructor(actionParam?: TAction | AuditEventAction | NullEventAction);
 }
-declare class ErrorEventTypeAction extends TypeAction {
-    static readonly type: EventType;
-    static getType(): EventType;
-    constructor(actionParam?: TAction | ErrorEventAction | NullEventAction);
-}
 declare class TraceEventTypeAction extends TypeAction {
     static readonly type: EventType;
     static getType(): EventType;
@@ -102,19 +93,16 @@ declare class TraceEventTypeAction extends TypeAction {
 }
 interface IEventTrace {
     service: string;
-    traceId?: string;
+    traceId: string;
     spanId?: string;
     parentSpanId?: string;
     sampled?: number;
     flags?: number;
     startTimestamp?: string | Date;
-    finishTimestamp?: string | Date;
+    finishTimestamp?: string;
     tags?: {
         [key: string]: any;
     };
-    finish?(timestamp?: string | Date): IEventTrace;
-    setTags?(tags: ObjectWithKeys): EventTraceMetadata;
-    setService?(service: string): EventTraceMetadata;
 }
 declare class EventTraceMetadata implements IEventTrace {
     service: string;
@@ -125,15 +113,12 @@ declare class EventTraceMetadata implements IEventTrace {
     flags?: number;
     startTimestamp?: string;
     finishTimestamp?: string;
-    tags: {
+    tags?: {
         [key: string]: any;
     };
     constructor(traceContext: Partial<IEventTrace>);
     static create(service: string): EventTraceMetadata;
-    finish(finishTimestamp?: string | Date): EventTraceMetadata;
-    static getContext(traceContext: EventTraceMetadata | TraceSpan): IEventTrace;
-    setTags(tag: ObjectWithKeys): EventTraceMetadata;
-    setService(service: string): EventTraceMetadata;
+    static getContext(traceContext: IEventTrace): IEventTrace;
 }
 interface IEventStateMetadata {
     status: EventStatusType;
@@ -166,12 +151,11 @@ declare class EventMetadata implements IEventMetadata {
     static log(eventMetadata: IEventMetadata): IEventMetadata;
     static trace(eventMetadata: IEventMetadata): IEventMetadata;
     static audit(eventMetadata: IEventMetadata): IEventMetadata;
-    static error(eventMetadata: IEventMetadata): IEventMetadata;
     constructor(eventMetadata: IEventMetadata);
 }
 interface IMessageMetadata {
     event: IEventMetadata;
-    trace: IEventTrace;
+    trace?: IEventTrace;
 }
 interface IEventMessage {
     type: string;
@@ -202,4 +186,4 @@ declare class LogResponse {
     status: LogResponseStatus;
     constructor(status: LogResponseStatus);
 }
-export { EventMessage, EventType, EventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, NullEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, IEventMessage, IEventMetadata, IEventTrace, ITypeAction };
+export { EventMessage, EventType, EventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, NullEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, IEventMessage, IEventMetadata, IEventTrace, ITypeAction };

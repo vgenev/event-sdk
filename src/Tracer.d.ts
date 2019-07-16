@@ -18,35 +18,53 @@
  * Gates Foundation
  - Name Surname <name.surname@gatesfoundation.com>
 
- - Ramiro González Maciel <ramiro@modusbox.com>
+ - Valentin Genev <valentin.genev@modusbox.com>
 
  --------------
  ******/
-import { EventMessage } from "./model/EventMessage";
+import { Trace, TraceContext } from "./Trace";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-import { EventLogger, ObjectWithKeys, LoggerOptions, TraceSpan } from './EventLogger';
-import { EventPostProcessor } from './EventPostProcessor';
-import { EventPreProcessor } from './EventPreProcessor';
+import { EventMessage, EventAction, EventStateMetadata } from "./model/EventMessage";
 /**
- * DefaultEventLogger sends all the EventLogger commands to the default EventLoggingServiceClient.
- * It provides null implementation of EventPreProcessor and EventPostProcessor.
- * It can be extended to implement some of these methods.
+ * Logger Options sets the interface for the different logger options, which might be passed to the logger for different actions
  *
-*/
-declare class DefaultEventLogger implements EventLogger, EventPreProcessor, EventPostProcessor {
+ */
+interface LoggerOptions {
+    action?: EventAction;
+    state?: EventStateMetadata;
+}
+declare class Tracer extends Trace {
     client: EventLoggingServiceClient;
-    traceContext: TraceSpan;
-    constructor(client?: EventLoggingServiceClient);
+    static createSpan(service: string): Trace;
+    constructor(traceContext: TraceContext, client?: EventLoggingServiceClient);
     preProcess: (event: EventMessage) => EventMessage;
     postProcess: (result: any) => any;
-    extractSpan(carrier: ObjectWithKeys, path?: string): Promise<TraceSpan>;
-    injectSpan(carrier: ObjectWithKeys, traceContext?: TraceSpan, path?: string): Promise<ObjectWithKeys>;
-    createNewSpan(input?: TraceSpan | string): TraceSpan;
-    trace(traceContext?: TraceSpan, traceOptions?: LoggerOptions): Promise<any>;
+    finish(finishTimestamp?: string | Date): Promise<this>;
+    getChild(service: string): Tracer;
+    trace(traceContext?: TraceContext, traceOptions?: LoggerOptions): Promise<any>;
     audit(message: EventMessage, auditOptions?: LoggerOptions): Promise<any>;
+    info(message: string | {
+        [key: string]: NonNullable<any>;
+    }): Promise<any>;
+    debug(message: string | {
+        [key: string]: any;
+    }): Promise<any>;
+    verbose(message: string | {
+        [key: string]: any;
+    }): Promise<any>;
+    performance(message: string | {
+        [key: string]: any;
+    }): Promise<any>;
+    warning(message: string | {
+        [key: string]: any;
+    }): Promise<any>;
+    error(message: string | {
+        [key: string]: any;
+    }): Promise<any>;
     /**
-     * Log an event
-     */
+   * Log an event
+   */
     record(event: EventMessage): Promise<any>;
+    private logWithAction;
 }
-export { DefaultEventLogger };
+export { Tracer };

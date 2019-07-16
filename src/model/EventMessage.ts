@@ -42,26 +42,22 @@ enum EventType {
   undefined = "undefined",
   log = "log",
   audit = "audit",
-  error = "error",
   trace = "trace",
 }
 
-type EventAction = AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction
+type EventAction = AuditEventAction | LogEventAction | TraceEventAction | NullEventAction
 
 enum LogEventAction {
   info = "info",
   debug = "debug",
   verbose = "verbose",
-  perf = "perf",
+  performance = "performance",
+  warning = "warning",
+  error = "error"
 }
 
 enum AuditEventAction {
   default = "default"
-}
-
-enum ErrorEventAction {
-  internal = "internal",
-  external = "external"
 }
 
 enum TraceEventAction {
@@ -135,19 +131,6 @@ class AuditEventTypeAction extends TypeAction {
       super({ type: AuditEventTypeAction.type, action: actionParam.action })
     else
       super({ type: AuditEventTypeAction.type, action: actionParam })
-  }
-}
-
-class ErrorEventTypeAction extends TypeAction {
-  static readonly type: EventType = EventType.error
-  static getType() {
-    return ErrorEventTypeAction.type
-  }
-  constructor(actionParam: TAction | ErrorEventAction | NullEventAction = NullEventAction.undefined) {
-    if (typeof actionParam === 'object' && 'action' in actionParam)
-      super({ type: ErrorEventTypeAction.type, action: actionParam.action })
-    else
-      super({ type: ErrorEventTypeAction.type, action: actionParam })
   }
 }
 
@@ -268,10 +251,6 @@ class EventMetadata implements IEventMetadata {
   state: IEventStateMetadata
   responseTo?: string
 
-  // static create(eventMetadata: IEventMetadata) : IEventMetadata {
-  //     return new EventMetadata(eventMetadata)
-  // }
-
   static log(eventMetadata: IEventMetadata) : IEventMetadata {
     let typeAction = new LogEventTypeAction({action: eventMetadata.action});
     return new EventMetadata(Object.assign(eventMetadata, typeAction));
@@ -288,11 +267,6 @@ class EventMetadata implements IEventMetadata {
     return new EventMetadata(a);
   }
 
-  static error(eventMetadata: IEventMetadata ) : IEventMetadata {
-    let typeAction = new ErrorEventTypeAction({action: eventMetadata.action});
-    return new EventMetadata(Object.assign(eventMetadata, typeAction));
-  }
-
   constructor (eventMetadata: IEventMetadata) {
     let { createdAt = new Date().toISOString(), state, ...restParams } = eventMetadata
     if ( createdAt instanceof Date ) {
@@ -307,7 +281,7 @@ class EventMetadata implements IEventMetadata {
 
 interface IMessageMetadata {
   event: IEventMetadata,
-  trace: IEventTrace
+  trace?: IEventTrace
 }
 
 interface IEventMessage {
@@ -364,11 +338,9 @@ export {
   LogEventTypeAction,
   AuditEventTypeAction,
   TraceEventTypeAction,
-  ErrorEventTypeAction,
   LogEventAction,
   AuditEventAction,
   TraceEventAction,
-  ErrorEventAction,
   NullEventAction,
   EventStatusType,
   IMessageMetadata,

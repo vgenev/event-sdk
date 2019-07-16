@@ -22,10 +22,8 @@
 
  --------------
  ******/
-import { DefaultEventLogger } from './DefaultEventLogger';
 import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
 import { EventPostProcessor } from './EventPostProcessor';
 import { EventPreProcessor } from './EventPreProcessor';
-import { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventTraceMetadata, LogResponseStatus, LogResponse } from "./model/EventMessage";
-declare let logger: DefaultEventLogger;
-export { logger, DefaultEventLogger, EventLoggingServiceServer, EVENT_RECEIVED, EventPostProcessor, EventPreProcessor, EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, ErrorEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, ErrorEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventTraceMetadata, LogResponseStatus, LogResponse };
+import { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventTraceMetadata, LogResponseStatus, LogResponse } from "./model/EventMessage";
+export { EventLoggingServiceServer, EVENT_RECEIVED, EventPostProcessor, EventPreProcessor, EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventTraceMetadata, LogResponseStatus, LogResponse };
