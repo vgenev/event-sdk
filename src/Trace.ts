@@ -127,9 +127,9 @@ class Trace implements ITrace {
   injectContextToMessage(carrier: { [key: string]: any }, injectOptions: IContextOptions = {}): Promise<{ [key: string]: any }> {
     let result = carrier
     let { path } = injectOptions // type not implemented yet
-    if (carrier instanceof EventMessage || (('metadata' in carrier) && 'trace' in carrier.metadata)) path = 'metadata.trace'
+    if (carrier instanceof EventMessage || (('metadata' in carrier))) path = 'metadata.trace'
     else if (('trace' in carrier)) path = 'trace'
-    else if (carrier instanceof EventTraceMetadata) path = undefined
+    else if (carrier instanceof EventTraceMetadata) result.metadata.trace = this._traceContext
     if (path) {
       try {
         let pathArray: string[] = path.split('.')

@@ -93,7 +93,7 @@ interface ITypeAction {
   action: EventAction
 }
 
-class TypeAction implements ITypeAction {
+abstract class TypeAction implements ITypeAction {
   readonly type: EventType
   readonly action: EventAction
   getType() {
@@ -199,11 +199,6 @@ class EventTraceMetadata implements IEventTrace {
 
   static create(service: string): EventTraceMetadata {
     return new EventTraceMetadata({ service })    
-  }
-
-  static getContext (traceContext: IEventTrace): IEventTrace {
-    let { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp, tags } = traceContext
-    return { service, traceId, spanId, parentSpanId, sampled, flags, startTimestamp, finishTimestamp, tags }
   }
 }
 

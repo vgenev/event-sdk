@@ -62,7 +62,10 @@ class EventLoggingServiceClient {
 }
 
 class SimpleLoggingServiceClient {
-  constructor() {}
+  grpcClient: any
+  constructor() {
+    this.grpcClient = () => {}
+  }
   log = async(message: any): Promise<any> => {
     return new Promise((resolve, reject) => {
       try {

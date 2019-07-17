@@ -52,14 +52,14 @@ class Tracer extends Trace {
    * Creates new Trace and its first span with given service name
    * @param service the name of the service of the new span
    */
-  static createSpan(service: string): Tracer {
-    return new Tracer({ service })
+  static createSpan(service: string, config?: any, client?: EventLoggingServiceClient): Tracer {
+    return new Tracer({ service }, config, client)
   }
 
-  constructor(traceContext: TraceContext, client?: EventLoggingServiceClient) {
+  constructor(traceContext: TraceContext, config: any = Config, client?: EventLoggingServiceClient) {
     super(new EventTraceMetadata(traceContext))
-    if (!Config.SIDECAR_DISABLED)
-      this.client = client ? client : new EventLoggingServiceClient(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT)
+    if (!config.SIDECAR_DISABLED)
+      this.client = client ? client : new EventLoggingServiceClient(config.EVENT_LOGGER_SERVER_HOST, config.EVENT_LOGGER_SERVER_PORT)
     else this.client = new SimpleLoggingServiceClient()
   }
 
@@ -224,6 +224,7 @@ class Tracer extends Trace {
 
   private async logWithAction(message: string | { [key: string]: NonNullable<any> }, loggerOptions: LoggerOptions) {
     if (!message) throw new Error('no message to provided')
+    if (this.finishTimestamp) throw new Error('span finished. no further actions allowed')
     let { state, action = LogEventAction.info } = extractLoggerOptions(EventType.log, loggerOptions)
     let messageToLog
     if (!state) throw new Error('no valid state provided')
