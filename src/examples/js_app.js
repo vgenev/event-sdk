@@ -63,6 +63,7 @@ const main = async () => {
   IIChildSpan.setTags({ one: 'two' })
   let messageWithContext = await IIChildSpan.injectContextToMessage(event)
   await parentSpan.finish()
+  await parentSpan.info('dada')
   let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
   let ChildTheIII = Tracer.createChildSpanFromContext('service 4', contextFromMessage)
   ChildTheIII.trace()

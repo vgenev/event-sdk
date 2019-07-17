@@ -29,7 +29,6 @@ import { Trace, TraceContext } from "./Trace";
 import { EventLoggingServiceClient, SimpleLoggingServiceClient } from "./transport/EventLoggingServiceClient";
 import { EventType, NullEventAction, AuditEventAction, LogEventAction, TraceEventAction, EventMessage, EventTraceMetadata, IEventTrace, IEventMessage, EventAction, EventStateMetadata, EventMetadata, LogResponseStatus } from "./model/EventMessage";
 
-const { Logger } = require('@mojaloop/central-services-shared')
 const Config = require('./lib/config');
 
 /**
@@ -76,6 +75,7 @@ class Tracer extends Trace {
    * @param finishTimestamp optional parameter for the finish time. If omitted, current time is used.
    */
   async finish(finishTimestamp?: string | Date): Promise<this> {
+    if (this._traceContext.finishTimestamp) return Promise.reject(new Error('span already finished'))
     let traceContext = super.finishSpan(finishTimestamp).getContext()
     await this.trace(traceContext)
     return Promise.resolve(this)
@@ -154,7 +154,7 @@ class Tracer extends Trace {
    */
   async info(message: string | { [key: string]: NonNullable<any> }): Promise<any> {
     let loggerOptions: LoggerOptions = { action: LogEventAction.info }
-    return this.logWithAction(message, loggerOptions)
+    await this.logWithAction(message, loggerOptions)
   }
 
   /**
@@ -165,7 +165,7 @@ class Tracer extends Trace {
    */
   async debug(message: string | { [key: string]: any }): Promise<any> {
     let loggerOptions: LoggerOptions = { action: LogEventAction.debug }
-    return this.logWithAction(message, loggerOptions)
+    await this.logWithAction(message, loggerOptions)
   }
 
   /**
@@ -224,7 +224,7 @@ class Tracer extends Trace {
 
   private async logWithAction(message: string | { [key: string]: NonNullable<any> }, loggerOptions: LoggerOptions) {
     if (!message) throw new Error('no message to provided')
-    if (this.finishTimestamp) throw new Error('span finished. no further actions allowed')
+    if (this._traceContext.finishTimestamp) throw new Error('span finished. no further actions allowed')
     let { state, action = LogEventAction.info } = extractLoggerOptions(EventType.log, loggerOptions)
     let messageToLog
     if (!state) throw new Error('no valid state provided')

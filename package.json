@@ -77,11 +77,16 @@
   },
   "nyc": {
     "include": [
-      "src/**/*.ts",
-      "test/**/*.test.ts"
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "typings"
     ],
     "extension": [
       ".ts"
+    ],
+    "require": [
+      "ts-node/register"
     ]
   },
   "standard": {

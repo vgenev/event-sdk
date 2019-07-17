@@ -458,20 +458,60 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
 
     config.SIDECAR_DISABLED = true
 
-    let newTracer = Tracer.createSpan('default', config)
+    let newTracer = Tracer.createSpan('service1', config)
     newTracer.setTags({tag: 'value'})
     eventLoggerTests.test('Tracer should get child span', async (test: any) => {
-      let child = newTracer.getChild('new-service')
+      let child = newTracer.getChild('service2')
       test.equal(newTracer.spanId, child.parentSpanId, 'parentSpanId taken from parent spanId')
       test.equal(newTracer.traceId, child.traceId, 'traceId same as parent trace')
+      test.equal(child.service, 'service2')
       test.deepEqual(child.tags, {tag: 'value'}, 'tags match')
       let traceContext = child.getContext()
       let IIChild = Tracer.createChildSpanFromContext('service3', traceContext)
       test.equal(child.spanId, IIChild.parentSpanId, 'parentSpanId taken from parent spanId')
       test.equal(newTracer.traceId, IIChild.traceId, 'traceId same as parent trace')
+      test.equal(IIChild.service, 'service3')
       let newMessage = await IIChild.injectContextToMessage(messageProtocol)
       let expected = Object.assign({}, messageProtocol, { metadata: { event: messageProtocol.metadata.event, trace: IIChild.getContext() } })
       test.equal(JSON.stringify(newMessage), JSON.stringify(expected))
+      let extractedContext = Tracer.extractContextFromMessage(newMessage)
+      let IIIChild = Tracer.createChildSpanFromContext('service4', extractedContext)
+      test.equal(IIChild.spanId, IIIChild.parentSpanId, 'parentSpanId taken from parent spanId')
+      test.equal(newTracer.traceId, IIIChild.traceId, 'traceId same as parent trace')
+      test.equal(IIIChild.service, 'service4')
+      let finishtime = new Date()
+      await newTracer.finish(finishtime)
+      test.deepEqual(finishtime.toISOString(), newTracer.finishTimestamp)
+      try {
+        await newTracer.finish()
+        test.fail('should throw')
+      } catch (e) {
+        test.ok(e)
+      }
+      try {
+        await newTracer.trace()
+        test.fail('should throw')
+      } catch (e) {
+        test.ok(e)
+      }
+      try {
+        await newTracer.audit(<EventMessage>newMessage)
+        test.fail('should throw')
+      } catch (e) {
+        test.ok(e)
+      }
+
+      let result = await child.trace()
+      test.ok(result)
+      
+      // try {
+      //   await child.trace(null, { state: { status: 'fake' } })
+      //   test.fail('should throw')
+      // } catch (e) {
+      //   test.ok(e)
+      // }
+
+      child.audit(<EventMessage>newMessage)
       test.end()
     })
   
