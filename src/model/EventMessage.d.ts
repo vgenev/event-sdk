@@ -69,7 +69,7 @@ interface ITypeAction {
     type: EventType;
     action: EventAction;
 }
-declare class TypeAction implements ITypeAction {
+declare abstract class TypeAction implements ITypeAction {
     readonly type: EventType;
     readonly action: EventAction;
     getType(): EventType;
@@ -118,7 +118,6 @@ declare class EventTraceMetadata implements IEventTrace {
     };
     constructor(traceContext: Partial<IEventTrace>);
     static create(service: string): EventTraceMetadata;
-    static getContext(traceContext: IEventTrace): IEventTrace;
 }
 interface IEventStateMetadata {
     status: EventStatusType;

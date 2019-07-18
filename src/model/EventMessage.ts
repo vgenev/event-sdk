@@ -27,7 +27,6 @@
 'use strict'
 
 import { finished } from "stream";
-import { TraceSpan, ObjectWithKeys } from "../EventLogger";
 
 const crypto = require('crypto')
 const Uuid = require('uuid4')
@@ -75,7 +74,6 @@ enum NullEventAction {
  * and the `action` property is restricted to the specific enum type.
  * `EventTypeAction` is not exported, clients need to use the concrete subclasses.
  */
-
 
 enum EventStatusType {
   success = "success",

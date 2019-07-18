@@ -31,4 +31,9 @@ declare class EventLoggingServiceClient {
      */
     log: (event: EventMessage) => Promise<LogResponse>;
 }
-export { EventLoggingServiceClient };
+declare class SimpleLoggingServiceClient {
+    grpcClient: any;
+    constructor();
+    log: (message: any) => Promise<any>;
+}
+export { EventLoggingServiceClient, SimpleLoggingServiceClient };
