@@ -85,7 +85,7 @@ enum EventStatusType {
 type TAction = {
   action: EventAction
 }
-
+    
 interface ITypeAction {
   type: EventType,
   action: EventAction
