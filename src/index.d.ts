@@ -19,12 +19,13 @@
  - Name Surname <name.surname@gatesfoundation.com>
 
  - Ramiro González Maciel <ramiro@modusbox.com>
+ - Valentin Genev <valentin.genev@modusbox.com>
 
  --------------
  ******/
-'use strict';
-Object.defineProperty(exports, "__esModule", { value: true });
-class SpanOptions {
-}
-exports.SpanOptions = SpanOptions;
-//# sourceMappingURL=EventLogger.js.map
+import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
+import { EventPostProcessor } from './EventPostProcessor';
+import { EventPreProcessor } from './EventPreProcessor';
+import { Tracer } from './Tracer';
+import { EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventTraceMetadata, LogResponseStatus, LogResponse } from "./model/EventMessage";
+export { EventLoggingServiceServer, EVENT_RECEIVED, EventPostProcessor, EventPreProcessor, EventMessage, EventType, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, Tracer };

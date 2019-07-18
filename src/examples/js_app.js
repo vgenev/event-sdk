@@ -19,6 +19,7 @@
  - Name Surname <name.surname@gatesfoundation.com>
 
  - Ramiro González Maciel <ramiro@modusbox.com>
+ - Valentin Genev <valentin.genev@modusbox.com>
 
  --------------
  ******/
@@ -27,12 +28,7 @@
  *
  */
 
-const { DefaultEventLogger } = require('../../lib/DefaultEventLogger')
-const {
-  LogEventTypeAction,
-  LogEventAction,
-  EventStatusType
-} = require('../../lib/model/EventMessage')
+const { Tracer } = require('../../lib/Tracer')
 
 const event = {
   from: 'noresponsepayeefsp',
@@ -49,32 +45,28 @@ const event = {
     },
     payload: 'data:application/vnd.interoperability.transfers+json;version=1.0;base64,ewogICJmdWxmaWxtZW50IjogIlVObEo5OGhaVFlfZHN3MGNBcXc0aV9VTjN2NHV0dDdDWkZCNHlmTGJWRkEiLAogICJjb21wbGV0ZWRUaW1lc3RhbXAiOiAiMjAxOS0wNS0yOVQyMzoxODozMi44NTZaIiwKICAidHJhbnNmZXJTdGF0ZSI6ICJDT01NSVRURUQiCn0'
   },
-  type: 'application/json',
-  metadata: {
-    event: {
-      id: '3920382d-f78c-4023-adf9-0d7a4a2a3a2f',
-      type: LogEventTypeAction.type,
-      action: LogEventAction.debug,
-      createdAt: '2019-05-29T23:18:32.935Z',
-      state: {
-        status: EventStatusType.success,
-        code: 0,
-        description: 'action successful'
-      },
-      responseTo: '1a396c07-47ab-4d68-a7a0-7a1ea36f0012'
-    },
-    trace: {
-      service: 'central-ledger-prepare-handler',
-      traceId: 'bbd7b2c7-3978-408e-ae2e-a13012c47739',
-      parentSpanId: '4e3ce424-d611-417b-a7b3-44ba9bbc5840',
-      spanId: 'efeb5c22-689b-4d04-ac5a-2aa9cd0a7e87'
-    }
-  }
+  type: 'application/json'
 }
 
-const eventLogger = new DefaultEventLogger()
-console.log('app: sending event', JSON.stringify(event, null, 2))
-eventLogger.log(event)
+const traceSpan = Tracer.createSpan('new-service')
+console.log('app: sending message', JSON.stringify(event, null, 2))
+traceSpan.info(event)
   .then(result => {
     console.log('app: received back:', JSON.stringify(result, null, 2))
   })
+
+const main = async () => {
+  let parentSpan = Tracer.createSpan('service 1')
+  await parentSpan.info('parentSpan')
+  let IIChildSpan = parentSpan.getChild('service 2')
+  await IIChildSpan.audit({ content: event })
+  IIChildSpan.setTags({ one: 'two' })
+  let messageWithContext = await IIChildSpan.injectContextToMessage(event)
+  await parentSpan.finish()
+  await parentSpan.audit(event)
+  let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
+  let ChildTheIII = Tracer.createChildSpanFromContext('service 4', contextFromMessage)
+  ChildTheIII.trace()
+}
+
+main()

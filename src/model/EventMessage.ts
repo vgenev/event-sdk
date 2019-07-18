@@ -19,11 +19,14 @@
  - Name Surname <name.surname@gatesfoundation.com>
 
  - Ramiro González Maciel <ramiro@modusbox.com>
+ - Valentin Genev <valentin.genev@modusbox.com>
 
  --------------
  ******/
 
 'use strict'
+
+import { finished } from "stream";
 
 const crypto = require('crypto')
 const Uuid = require('uuid4')
@@ -38,26 +41,22 @@ enum EventType {
   undefined = "undefined",
   log = "log",
   audit = "audit",
-  error = "error",
   trace = "trace",
 }
 
-type EventAction = AuditEventAction | ErrorEventAction | LogEventAction | TraceEventAction | NullEventAction
+type EventAction = AuditEventAction | LogEventAction | TraceEventAction | NullEventAction
 
 enum LogEventAction {
   info = "info",
   debug = "debug",
   verbose = "verbose",
-  perf = "perf",
+  performance = "performance",
+  warning = "warning",
+  error = "error"
 }
 
 enum AuditEventAction {
   default = "default"
-}
-
-enum ErrorEventAction {
-  internal = "internal",
-  external = "external"
 }
 
 enum TraceEventAction {
@@ -75,80 +74,102 @@ enum NullEventAction {
  * and the `action` property is restricted to the specific enum type.
  * `EventTypeAction` is not exported, clients need to use the concrete subclasses.
  */
-abstract class EventTypeAction {
-  static readonly type: EventType = EventType.undefined
-  action: EventAction = NullEventAction.undefined
-
-  /**
-   * Returns the `EventType` specific to each subclass.
-   */
-  abstract getType() : EventType
-}
-
-class LogEventTypeAction extends EventTypeAction {
-  static readonly type: EventType = EventType.log
-  action: LogEventAction | NullEventAction = NullEventAction.undefined
-  getType() : EventType {
-    return LogEventTypeAction.type
-  }
-  constructor (action: LogEventAction | NullEventAction ) {
-    super();
-    this.action = action
-  }
-}
-
-class AuditEventTypeAction extends EventTypeAction {
-  static readonly type: EventType = EventType.audit
-  action: AuditEventAction | NullEventAction = NullEventAction.undefined
-  getType() : EventType {
-    return AuditEventTypeAction.type
-  }
-  constructor (action: AuditEventAction | NullEventAction ) {
-    super();
-    this.action = action
-  }
-}
-
-class ErrorEventTypeAction extends EventTypeAction {
-  static readonly type: EventType = EventType.error
-  action: ErrorEventAction | NullEventAction = NullEventAction.undefined
-  getType() : EventType {
-    return ErrorEventTypeAction.type
-  }
-  constructor (action: ErrorEventAction | NullEventAction ) {
-    super();
-    this.action = action
-  }
-}
-
-class TraceEventTypeAction extends EventTypeAction {
-  static readonly type: EventType = EventType.trace
-  action: TraceEventAction | NullEventAction = NullEventAction.undefined
-  getType() : EventType {
-    return TraceEventTypeAction.type
-  }
-  constructor (action: TraceEventAction | NullEventAction ) {
-    super();
-    this.action = action
-  }
-}
 
 enum EventStatusType {
   success = "success",
   failed = "failed"
 }
 
-class EventTraceMetadata {
+// my code
+
+type TAction = {
+  action: EventAction
+}
+    
+interface ITypeAction {
+  type: EventType,
+  action: EventAction
+}
+
+abstract class TypeAction implements ITypeAction {
+  readonly type: EventType
+  readonly action: EventAction
+  getType() {
+    return this.type
+  }
+  getAction() {
+    return this.action
+  }
+  constructor(typeAction: ITypeAction) {
+    this.type = typeAction.type
+    this.action = typeAction.action
+  }
+}
+
+class LogEventTypeAction extends TypeAction {
+  static readonly type: EventType = EventType.log
+  static getType() {
+    return LogEventTypeAction.type
+  }
+  constructor(actionParam: TAction | LogEventAction | NullEventAction = NullEventAction.undefined) {
+    if (typeof actionParam === 'object' && 'action' in actionParam)
+      super({ type: LogEventTypeAction.type, action: actionParam.action })
+    else
+      super({ type: LogEventTypeAction.type, action: actionParam })
+  }
+}
+
+class AuditEventTypeAction extends TypeAction {
+  static readonly type: EventType = EventType.audit
+  static getType() {
+    return AuditEventTypeAction.type
+  }
+  constructor(actionParam: TAction | AuditEventAction | NullEventAction = NullEventAction.undefined) {
+    if (typeof actionParam === 'object' && 'action' in actionParam)
+      super({ type: AuditEventTypeAction.type, action: actionParam.action })
+    else
+      super({ type: AuditEventTypeAction.type, action: actionParam })
+  }
+}
+
+class TraceEventTypeAction extends TypeAction {
+  static readonly type: EventType = EventType.trace
+  static getType() {
+    return TraceEventTypeAction.type
+  }
+  constructor(actionParam: TAction | TraceEventAction | NullEventAction = NullEventAction.undefined) {
+    if (typeof actionParam === 'object' && 'action' in actionParam)
+      super({ type: TraceEventTypeAction.type, action: actionParam.action })
+    else
+      super({ type: TraceEventTypeAction.type, action: actionParam })
+  }
+}
+
+interface IEventTrace {
+  service: string,
+  traceId: string,
+  spanId?: string,
+  parentSpanId?:	string,
+  sampled?:	number,
+  flags?:	number,
+  startTimestamp?: string | Date,
+  finishTimestamp?: string,
+  tags?: { [ key: string ]: any },
+}
+
+class EventTraceMetadata implements IEventTrace {
   service: string
   traceId:	string
-  spanId: string
+  spanId?: string
   parentSpanId?:	string
   sampled?:	number
   flags?:	number
   startTimestamp?: string = (new Date()).toISOString() // ISO 8601
   finishTimestamp?: string
+  tags?: { [ key: string ]: any }
 
-  constructor (service: string, traceId: string, spanId: string, parentSpanId?:	string, sampled?:	number, flags?:	number, startTimestamp?: string | Date) {
+  constructor (traceContext: Partial<IEventTrace>) {
+    let { service = '', traceId = newTraceId(), spanId = newSpanId(), parentSpanId, sampled, flags, startTimestamp, tags = {}, finishTimestamp} = traceContext
     this.service = service
     if (!(TRACE_ID_REGEX.test(traceId))) {
       throw new Error(`Invalid traceId: ${traceId}`)
@@ -164,107 +185,120 @@ class EventTraceMetadata {
     this.parentSpanId = parentSpanId
     this.sampled = sampled
     this.flags = flags
+    this.tags = tags
     if ( startTimestamp instanceof Date ) {
       this.startTimestamp = startTimestamp.toISOString() // ISO 8601
     } else if ( startTimestamp ) {
       this.startTimestamp = startTimestamp
     }
-
+    this.finishTimestamp = finishTimestamp
+    return this
   }
 
-  finish(finishTimestamp?: string | Date) {
-    if ( finishTimestamp instanceof Date ) {
-      this.finishTimestamp = finishTimestamp.toISOString() // ISO 8601
-    } else if ( !finishTimestamp ) {
-      this.finishTimestamp = (new Date()).toISOString() // ISO 8601
-    } else {
-      this.finishTimestamp = finishTimestamp
-    }
+  static create(service: string): EventTraceMetadata {
+    return new EventTraceMetadata({ service })    
   }
 }
 
-class EventStateMetadata {
+interface IEventStateMetadata {
   status: EventStatusType
   code?: number
   description?: string
+}
 
-  constructor ( status: EventStatusType, code?: number, description?: string ) {
+class EventStateMetadata implements IEventStateMetadata {
+  status: EventStatusType = EventStatusType.success
+  code?: number
+  description?: string 
+
+  constructor(status: EventStatusType, code?: number, description?: string) {
     this.status = status
     this.code = code
     this.description = description
+    return this
+  }
+
+  static success( code?: number, description?: string): IEventStateMetadata {
+    return new EventStateMetadata(EventStatusType.success, code, description)
+  }
+
+  static failed( code?: number, description?: string): IEventStateMetadata {
+    return new EventStateMetadata(EventStatusType.failed, code, description)
   }
 }
 
-class EventMetadata {
+interface IEventMetadata {
+  id?: string,
+  type?: EventType,
+  action: EventAction,
+  createdAt?: string | Date,
+  state: IEventStateMetadata,
+  responseTo?: string
+}
+
+class EventMetadata implements IEventMetadata {
   id: string = Uuid()
   readonly type: EventType = EventType.undefined
   readonly action: EventAction = NullEventAction.undefined
   createdAt: string // ISO 8601
-  state: EventStateMetadata
+  state: IEventStateMetadata
   responseTo?: string
 
-  static create(id: string, typeAction: EventTypeAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
-    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
+  static log(eventMetadata: IEventMetadata) : IEventMetadata {
+    let typeAction = new LogEventTypeAction({action: eventMetadata.action});
+    return new EventMetadata(Object.assign(eventMetadata, typeAction));
   }
 
-  static log(id: string, action: LogEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
-    let typeAction = new LogEventTypeAction(action);
-    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
+  static trace(eventMetadata: IEventMetadata) : IEventMetadata {
+    let typeAction = new TraceEventTypeAction({action: eventMetadata.action});
+    return new EventMetadata(Object.assign(eventMetadata, typeAction));
   }
 
-  static trace(id: string, action: TraceEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
-    let typeAction = new TraceEventTypeAction(action);
-    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
+  static audit(eventMetadata: IEventMetadata) : IEventMetadata {
+    let typeAction = new AuditEventTypeAction({action: eventMetadata.action});
+    let a = (Object.assign(eventMetadata, typeAction))
+    return new EventMetadata(a);
   }
 
-  static audit(id: string, action: AuditEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
-    let typeAction = new AuditEventTypeAction(action);
-    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
-  }
-
-  static error(id: string, action: ErrorEventAction, createdAt: string, state: EventStateMetadata, responseTo?: string ) : EventMetadata {
-    let typeAction = new ErrorEventTypeAction(action);
-    return new EventMetadata(id, typeAction, createdAt, state, responseTo);
-  }
-
-  constructor ( id: string, typeAction: EventTypeAction, createdAt: string | Date, state: EventStateMetadata, responseTo?: string ) {
-    this.id = id
-    this.type = typeAction.getType()
-    this.action = typeAction.action
+  constructor (eventMetadata: IEventMetadata) {
+    let { createdAt = new Date().toISOString(), state, ...restParams } = eventMetadata
     if ( createdAt instanceof Date ) {
       this.createdAt = createdAt.toISOString() // ISO 8601
     } else {
       this.createdAt = createdAt
     }
-    this.responseTo = responseTo
     this.state = state
+    Object.assign(this, restParams)
   }
 }
 
-class MessageMetadata {
-  event: EventMetadata
-  trace: EventTraceMetadata
-
-  constructor(event: EventMetadata, trace: EventTraceMetadata) {
-    this.event = event
-    this.trace = trace
-  }
+interface IMessageMetadata {
+  event: IEventMetadata,
+  trace?: IEventTrace
 }
 
-class EventMessage {
-  id: string = Uuid()
+interface IEventMessage {
   type: string
   content: any
+  id?: string
   from?: string
   to?: string
   pp?: string
-  metadata?: MessageMetadata
+  metadata?: IMessageMetadata
+}
 
-  constructor ( id: string, type: string, content: any) {
-    this.id = id
-    this.type = type
-    this.content = content
-  }
+class EventMessage implements IEventMessage {
+  type: string = ''
+  content: any
+  id: string = Uuid()
+  from?: string
+  to?: string
+  pp?: string
+  metadata?: IMessageMetadata
+
+  constructor (eventMessageContent: IEventMessage) {
+      return Object.assign(this, eventMessageContent)
+    }
 }
 
 enum LogResponseStatus {
@@ -293,21 +327,23 @@ function newSpanId() {
 export {
   EventMessage,
   EventType,
+  EventAction,
   LogEventTypeAction,
   AuditEventTypeAction,
   TraceEventTypeAction,
-  ErrorEventTypeAction,
   LogEventAction,
   AuditEventAction,
   TraceEventAction,
-  ErrorEventAction,
+  NullEventAction,
   EventStatusType,
-  MessageMetadata,
+  IMessageMetadata,
   EventMetadata,
   EventStateMetadata,
   EventTraceMetadata,
   LogResponseStatus,
   LogResponse,
-  newTraceId,
-  newSpanId
+  IEventMessage,
+  IEventMetadata,
+  IEventTrace,
+  ITypeAction
 }

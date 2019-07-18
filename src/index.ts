@@ -19,6 +19,7 @@
  - Name Surname <name.surname@gatesfoundation.com>
 
  - Ramiro González Maciel <ramiro@modusbox.com>
+ - Valentin Genev <valentin.genev@modusbox.com>
 
  --------------
  ******/
@@ -26,36 +27,35 @@
 'use strict'
 
 
-import { DefaultEventLogger } from './DefaultEventLogger'
+// import { DefaultEventLogger } from './DefaultEventLogger'
 import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
 import { EventPostProcessor } from './EventPostProcessor';
 import { EventPreProcessor } from './EventPreProcessor';
+import { Tracer } from './Tracer'
+
 import {   EventMessage,
   EventType,
   LogEventTypeAction,
   AuditEventTypeAction,
   TraceEventTypeAction,
-  ErrorEventTypeAction,
   LogEventAction,
   AuditEventAction,
   TraceEventAction,
-  ErrorEventAction,
   EventStatusType,
-  MessageMetadata,
+  IMessageMetadata,
   EventMetadata,
-  EventStateMetadata,
   EventTraceMetadata,
   LogResponseStatus,
   LogResponse
  } from "./model/EventMessage"
 
 
-let logger = new DefaultEventLogger()
+// let logger = new DefaultEventLogger()
 
 // Re-export definitions and components on the public API
 export {
-  logger,
-  DefaultEventLogger,
+  // logger,
+  // DefaultEventLogger,
   EventLoggingServiceServer,
   EVENT_RECEIVED,
   EventPostProcessor,
@@ -65,18 +65,14 @@ export {
   LogEventTypeAction,
   AuditEventTypeAction,
   TraceEventTypeAction,
-  ErrorEventTypeAction,
   LogEventAction,
   AuditEventAction,
   TraceEventAction,
-  ErrorEventAction,
   EventStatusType,
-  MessageMetadata,
+  IMessageMetadata,
   EventMetadata,
-  EventStateMetadata,
   EventTraceMetadata,
   LogResponseStatus,
-  LogResponse
-
+  LogResponse,
+  Tracer
 }
-

@@ -22,18 +22,18 @@
 
  --------------
  ******/
-import { EventMessage } from "./model/EventMessage";
-import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-/**
- *
- *
-*/
-declare class EventLogger {
-    client: EventLoggingServiceClient;
-    constructor();
+import { EventMessage, LogResponse } from "../model/EventMessage";
+declare class EventLoggingServiceClient {
+    grpcClient: any;
+    constructor(host: string, port: number);
     /**
      * Log an event
      */
-    log: (event: EventMessage) => Promise<any>;
+    log: (event: EventMessage) => Promise<LogResponse>;
 }
-export { EventLogger };
+declare class SimpleLoggingServiceClient {
+    grpcClient: any;
+    constructor();
+    log: (message: any) => Promise<any>;
+}
+export { EventLoggingServiceClient, SimpleLoggingServiceClient };

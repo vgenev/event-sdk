@@ -1,6 +1,6 @@
 {
   "name": "@mojaloop/event-sdk",
-  "version": "6.4.8-snapshot",
+  "version": "7.1.0-snapshot",
   "description": "Shared code for Event Logging",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -11,7 +11,7 @@
     "test": "npm run test:unit | faucet",
     "pretest": "npm run build",
     "standard": "standard",
-    "build": "tsc; standard --fix",
+    "build": "rm -rf ./lib; tsc; standard --fix",
     "watch": "tsc -w",
     "test:unit": "ts-node node_modules/tape/bin/tape 'test/unit/**/*.test.ts'",
     "test:unit1": "ts-node node_modules/tape/bin/tape ",
@@ -46,8 +46,12 @@
   "homepage": "https://github.com/mojaloop/event-sdk#readme",
   "dependencies": {
     "@grpc/proto-loader": "0.5.1",
+    "@mojaloop/central-services-shared": "6.4.1",
+    "@types/protobufjs": "6.0.0",
+    "brototype": "0.0.6",
     "grpc": "1.21.1",
     "moment": "2.24.0",
+    "protobufjs": "6.8.8",
     "rc": "1.2.8",
     "sinon": "7.3.2",
     "uuid4": "1.1.4"
@@ -55,6 +59,8 @@
   "devDependencies": {
     "@types/node": "11.9.4",
     "@types/tape": "4.2.33",
+    "@typescript-eslint/eslint-plugin": "1.11.0",
+    "@typescript-eslint/parser": "1.11.0",
     "debug": "4.1.1",
     "faucet": "0.0.1",
     "nyc": "13.3.0",
@@ -71,11 +77,16 @@
   },
   "nyc": {
     "include": [
-      "src/**/*.ts",
-      "test/**/*.test.ts"
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "typings"
     ],
     "extension": [
       ".ts"
+    ],
+    "require": [
+      "ts-node/register"
     ]
   },
   "standard": {
