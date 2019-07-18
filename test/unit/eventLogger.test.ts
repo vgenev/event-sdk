@@ -451,7 +451,14 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
     sinon.stub(tracer.client.grpcClient, "log").callsFake((wireEvent: any, cb: any) => {
       cb(null, new LogResponse(LogResponseStatus.accepted))
     });
+
     eventLoggerTests.test('Tracer should create a parent span', async (test: any) => {
+      await tracer.info({content: {messageProtocol}})
+      await tracer.debug({content: {messageProtocol}})
+      await tracer.verbose({content: {messageProtocol}})
+      await tracer.error({content: {messageProtocol}})
+      await tracer.warning({content: {messageProtocol}})
+      await tracer.performance({content: {messageProtocol}})
       test.equal(tracer.service, 'span')
       test.end()
     })
@@ -485,18 +492,21 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       try {
         await newTracer.finish()
         test.fail('should throw')
+        test.end()
       } catch (e) {
         test.ok(e)
       }
       try {
         await newTracer.trace()
         test.fail('should throw')
+        test.end()
       } catch (e) {
         test.ok(e)
       }
       try {
         await newTracer.audit(<EventMessage>newMessage)
         test.fail('should throw')
+        test.end()
       } catch (e) {
         test.ok(e)
       }
@@ -510,8 +520,16 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       // } catch (e) {
       //   test.ok(e)
       // }
+      let logresult = await child.audit(<EventMessage>newMessage)
+      test.ok(logresult)
 
-      child.audit(<EventMessage>newMessage)
+      await child.info('message')
+      await child.debug('message')
+      await child.verbose('message')
+      await child.error('message')
+      await child.warning('message')
+      await child.performance('message')
+
       test.end()
     })
   

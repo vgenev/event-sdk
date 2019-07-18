@@ -46,6 +46,7 @@ interface LoggerOptions {
  */
 class Tracer extends Trace {
   client: EventLoggingServiceClient | SimpleLoggingServiceClient
+  finished: boolean
 
   /**
    * Creates new Trace and its first span with given service name
@@ -60,6 +61,7 @@ class Tracer extends Trace {
     if (!config.SIDECAR_DISABLED)
       this.client = client ? client : new EventLoggingServiceClient(config.EVENT_LOGGER_SERVER_HOST, config.EVENT_LOGGER_SERVER_PORT)
     else this.client = new SimpleLoggingServiceClient()
+    this.finished = false
   }
 
   preProcess = (event: EventMessage): EventMessage => {
@@ -102,6 +104,7 @@ class Tracer extends Trace {
    */
   async trace(traceContext: TraceContext = this._traceContext, traceOptions: LoggerOptions = { action: TraceEventAction.span }): Promise<any> {
     let { state } = extractLoggerOptions(EventType.trace, traceOptions)
+    if (this._traceContext.finishTimestamp && this.finished) throw new Error('span already finished')
     if (!state) throw new Error('no valid state provided')
     let event = EventMetadata.trace({ action: TraceEventAction.span, state })
     let message = new EventMessage({
@@ -114,6 +117,7 @@ class Tracer extends Trace {
     })
     let logResult = await this.record(message);
     if (LogResponseStatus.accepted == logResult.status) {
+      this.finished = this._traceContext.finishTimestamp ? true : false
       return logResult
     } else {
       throw new Error(`Error when logging trace. status: ${logResult.status}`)
@@ -129,6 +133,7 @@ class Tracer extends Trace {
     let { action, state } = extractLoggerOptions(EventType.audit, auditOptions)
     if (!action) throw new Error('no valid action provied')
     if (!state) throw new Error('no valid state provided')
+    if (this.finished) throw new Error('span already finished')
     let newEnvelope = new EventMessage(Object.assign(message, {
       metadata: {
         event: EventMetadata.audit({
@@ -176,7 +181,7 @@ class Tracer extends Trace {
    */
   async verbose(message: string | { [key: string]: any }): Promise<any> {
     let loggerOptions: LoggerOptions = { action: LogEventAction.verbose }
-    return this.logWithAction(message, loggerOptions)
+    await this.logWithAction(message, loggerOptions)
   }
 
   /**
@@ -187,7 +192,7 @@ class Tracer extends Trace {
    */
   async performance(message: string | { [key: string]: any }): Promise<any> {
     let loggerOptions: LoggerOptions = { action: LogEventAction.performance }
-    return this.logWithAction(message, loggerOptions)
+    await this.logWithAction(message, loggerOptions)
   }
 
   /**
@@ -198,7 +203,7 @@ class Tracer extends Trace {
    */
   async warning(message: string | { [key: string]: any }): Promise<any> {
     let loggerOptions: LoggerOptions = { action: LogEventAction.warning }
-    return this.logWithAction(message, loggerOptions)
+    await this.logWithAction(message, loggerOptions)
   }
 
   /**
@@ -209,7 +214,7 @@ class Tracer extends Trace {
    */
   async error(message: string | { [key: string]: any }): Promise<any> {
     let loggerOptions: LoggerOptions = { action: LogEventAction.error }
-    return this.logWithAction(message, loggerOptions)
+    await this.logWithAction(message, loggerOptions)
   }
 
   /**
@@ -253,7 +258,6 @@ class Tracer extends Trace {
       }
     })
 
-    // Logger.info(JSON.stringify(messageToLog))
     let logResult = await this.record(newEnvelope);
     if (LogResponseStatus.accepted == logResult.status) {
       return logResult
