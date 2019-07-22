@@ -48,25 +48,31 @@ const event = {
   type: 'application/json'
 }
 
-const traceSpan = Tracer.createSpan('new-service')
-console.log('app: sending message', JSON.stringify(event, null, 2))
-traceSpan.info(event)
-  .then(result => {
-    console.log('app: received back:', JSON.stringify(result, null, 2))
-  })
+// const traceSpan = Tracer.createSpan('new-service')
+// console.log('app: sending message', JSON.stringify(event, null, 2))
+// traceSpan.info(event)
+//   .then(result => {
+//     console.log('app: received back:', JSON.stringify(result, null, 2))
+//   })
 
 const main = async () => {
-  let parentSpan = Tracer.createSpan('service 1')
-  await parentSpan.info('parentSpan')
-  let IIChildSpan = parentSpan.getChild('service 2')
+  let parentSpan = Tracer.createSpan('new service')
+  await parentSpan.info(event)
+  await parentSpan.debug('this is debug log')
+
+  let IIChildSpan = parentSpan.getChild('new service')
   await IIChildSpan.audit({ content: event })
   IIChildSpan.setTags({ one: 'two' })
-  let messageWithContext = await IIChildSpan.injectContextToMessage(event)
-  await parentSpan.finish()
-  await parentSpan.audit(event)
-  let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
-  let ChildTheIII = Tracer.createChildSpanFromContext('service 4', contextFromMessage)
-  ChildTheIII.trace()
-}
+  await IIChildSpan.error({ content: { message: 'error appeared' } })
 
+  await parentSpan.audit(event)
+  await parentSpan.finish()
+
+  let messageWithContext = await IIChildSpan.injectContextToMessage(event)
+  IIChildSpan.finish()
+
+  let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
+  let IIIChild = Tracer.createChildSpanFromContext('new service', contextFromMessage)
+  IIIChild.finish()
+}
 main()
