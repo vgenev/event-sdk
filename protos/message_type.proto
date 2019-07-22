@@ -34,8 +34,7 @@ enum EventType {
   UNDEFINED = 0;
   log = 1;
   audit = 2;
-  error = 3;
-  trace = 4;
+  trace = 3;
 }
 
 enum EventTypeAction {
@@ -46,9 +45,8 @@ enum EventTypeAction {
   debug = 4;
   verbose = 5;
   perf = 6;
-  internal = 7;
-  external = 8;
-  span = 9;
+  error = 7;
+  span = 8;
 }
 
 enum EventStatusType {
@@ -64,7 +62,9 @@ message EventTraceMetadata {
   string parentSpanId = 4; // Optional
   int32 sampled = 5; // Optional
   int32 flags = 6; // Optional
-  string timestamp = 7; // Optional. ISO 8601
+  string startTimestamp = 7; // Optional. ISO 8601
+  string finishTimestamp = 8; // Optional. ISO 8601
+  map<string, string> tags = 9; // Optional
 }
 
 message EventStateMetadata {
@@ -75,7 +75,7 @@ message EventStateMetadata {
 
 message EventMetadata {
   string id = 1;
-  EventType type = 2; 
+  EventType type = 2;
   EventTypeAction action = 3;
   string createdAt = 4; // ISO 8601
   string responseTo = 5; // Optional
@@ -92,7 +92,7 @@ message EventMessage {
   string from = 2; // Optional
   string to = 3; // Optional
   string pp = 4; // Optional
-  MessageMetadata metadata = 5; // Optional 
+  MessageMetadata metadata = 5; // Optional
   string type = 6;
   google.protobuf.Struct content = 7;
 }
