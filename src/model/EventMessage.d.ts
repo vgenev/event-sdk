@@ -38,8 +38,8 @@ declare enum LogEventAction {
     info = "info",
     debug = "debug",
     verbose = "verbose",
-    performance = "performance",
-    warning = "warning",
+    perf = "perf",
+    warn = "warn",
     error = "error"
 }
 declare enum AuditEventAction {

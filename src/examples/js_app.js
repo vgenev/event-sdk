@@ -30,6 +30,12 @@
 
 const { Tracer } = require('../../lib/Tracer')
 
+function sleep (ms) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms)
+  })
+}
+
 const event = {
   from: 'noresponsepayeefsp',
   to: 'payerfsp',
@@ -56,23 +62,24 @@ const event = {
 //   })
 
 const main = async () => {
-  let parentSpan = Tracer.createSpan('new service')
+  // let newSpan = new Tracer({ service: 'newSpanService' })
+  let parentSpan = Tracer.createSpan('parent service')
   await parentSpan.info(event)
   await parentSpan.debug('this is debug log')
-
-  let IIChildSpan = parentSpan.getChild('new service')
+  let IIChildSpan = parentSpan.getChild('child II service')
   await IIChildSpan.audit({ content: event })
   IIChildSpan.setTags({ one: 'two' })
   await IIChildSpan.error({ content: { message: 'error appeared' } })
-
   await parentSpan.audit(event)
-  await parentSpan.finish()
-
+  await parentSpan.finish(event)
   let messageWithContext = await IIChildSpan.injectContextToMessage(event)
-  IIChildSpan.finish()
-
+  await sleep(2000)
   let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
-  let IIIChild = Tracer.createChildSpanFromContext('new service', contextFromMessage)
+  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage)
+  await sleep(500)
+  IIChildSpan.finish()
+  await sleep(1000)
   IIIChild.finish()
 }
+
 main()

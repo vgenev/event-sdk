@@ -54,32 +54,13 @@ class EventLoggingServiceClient {
       Logger.info(`EventLoggingServiceClient.log sending wireEvent: ${JSON.stringify(wireEvent, null, 2)}`);
       this.grpcClient.log(wireEvent, (error: any, response: LogResponse) => {
         Logger.info(`EventLoggingServiceClient.log  received response: ${JSON.stringify(response, null, 2)}`);
-        if ( error ) {reject(error); }
+        if ( error ) { reject(error); }
         resolve(response);
       })
     })
   }
 }
 
-class SimpleLoggingServiceClient {
-  grpcClient: any
-  constructor() {
-    this.grpcClient = () => {}
-  }
-  log = async(message: any): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      try {
-        let result = Logger.info(JSON.stringify(message, null, 2))
-        let status = !result.exitOnError ? LogResponseStatus.accepted : LogResponseStatus.error
-        resolve({ status })
-      } catch(e) {
-        reject(e)
-      }
-    })
-  }
-}
-
 export {
-  EventLoggingServiceClient,
-  SimpleLoggingServiceClient
+  EventLoggingServiceClient
 }
