@@ -33,22 +33,19 @@ class DefaultLoggerRecorder implements IEventRecorder {
         let type: TypeEventTypeAction['type']
         let action: TypeEventTypeAction['action']
         if (message.metadata && message.metadata.event) {
-          type = message.metadata.event.type || EventType.undefined
-          action = message.metadata.event.action || NullEventAction.undefined
+          type = message.metadata.event.type!
+          action = message.metadata.event.action!
         } else {
           type = EventType.log
           action = LogEventAction.info
         }
-        let result
         if (type === EventType.log && Object.values(LogEventAction).includes(action)) 
-          result = Logger.log(action, JSON.stringify(message, null, 2))
-        else if (type === EventType.audit || type === EventType.trace) 
-          result = Logger.log(type, JSON.stringify(message, null, 2))
-        else result = Logger.error('The event message is not following the format')  
-          let status = !result.exitOnError ? LogResponseStatus.accepted : LogResponseStatus.error
-        resolve({ status })
+          Logger.log(action, JSON.stringify(message, null, 2))
+        else 
+          Logger.log(type, JSON.stringify(message, null, 2))
+        resolve({ status: LogResponseStatus.accepted })
       } catch(e) {
-        reject(e)
+        reject({status: LogResponseStatus.error, error: e})
       }
     })
   }

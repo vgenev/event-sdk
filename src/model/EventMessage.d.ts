@@ -25,7 +25,6 @@
  ******/
 /**
  * EventType represents the different types of events.
- * This enum should not be used directly; see `EventTypeAction` below.
  */
 declare enum EventType {
     undefined = "undefined",
@@ -33,13 +32,12 @@ declare enum EventType {
     audit = "audit",
     trace = "trace"
 }
-declare type EventAction = AuditEventAction | LogEventAction | TraceEventAction | NullEventAction;
 declare enum LogEventAction {
     info = "info",
     debug = "debug",
     verbose = "verbose",
-    perf = "perf",
-    warn = "warn",
+    performance = "perf",
+    warning = "warn",
     error = "error"
 }
 declare enum AuditEventAction {
@@ -51,129 +49,130 @@ declare enum TraceEventAction {
 declare enum NullEventAction {
     undefined = "undefined"
 }
-/**
- * This `EventTypeAction` hierarchy models the restrictions between types and actions.
- * Each `EventType` can only have a specific set of `EventAction`s
- * Each concrete subclass defines the EventType as the static readonly prop `type`,
- * and the `action` property is restricted to the specific enum type.
- * `EventTypeAction` is not exported, clients need to use the concrete subclasses.
- */
 declare enum EventStatusType {
     success = "success",
     failed = "failed"
 }
-declare type TAction = {
-    action: EventAction;
+/**
+ * This `TypeEventAction` hierarchy models the restrictions between types and actions.
+ * Each `EventType` can only have a specific set of `EventAction`s
+ * Each concrete subclass defines the EventType as the static readonly prop `type`,
+ * and the `action` property is restricted to the specific enum type.
+ * `TypeEventAction` is not exported, clients need to use the concrete subclasses.
+ */
+declare type TypeEventAction = {
+    action: AuditEventAction | LogEventAction | TraceEventAction | NullEventAction;
 };
-interface ITypeAction {
+declare type TypeEventTypeAction = {
     type: EventType;
-    action: EventAction;
-}
-declare abstract class TypeAction implements ITypeAction {
-    readonly type: EventType;
-    readonly action: EventAction;
+    action: TypeEventAction["action"];
+};
+declare abstract class TypeAction implements TypeEventTypeAction {
+    readonly type: TypeEventTypeAction["type"];
+    readonly action: TypeEventTypeAction["action"];
     getType(): EventType;
-    getAction(): EventAction;
-    constructor(typeAction: ITypeAction);
+    getAction(): AuditEventAction | LogEventAction | TraceEventAction | NullEventAction;
+    constructor(typeAction: TypeEventTypeAction);
 }
 declare class LogEventTypeAction extends TypeAction {
-    static readonly type: EventType;
+    static readonly type: TypeEventTypeAction["type"];
     static getType(): EventType;
-    constructor(actionParam?: TAction | LogEventAction | NullEventAction);
+    constructor(actionParam?: TypeEventAction | LogEventAction | NullEventAction);
 }
 declare class AuditEventTypeAction extends TypeAction {
     static readonly type: EventType;
     static getType(): EventType;
-    constructor(actionParam?: TAction | AuditEventAction | NullEventAction);
+    constructor(actionParam?: TypeEventAction | AuditEventAction | NullEventAction);
 }
 declare class TraceEventTypeAction extends TypeAction {
     static readonly type: EventType;
     static getType(): EventType;
-    constructor(actionParam?: TAction | TraceEventAction | NullEventAction);
+    constructor(actionParam?: TypeEventAction | TraceEventAction | NullEventAction);
 }
-interface IEventTrace {
-    service: string;
-    traceId: string;
-    spanId?: string;
-    parentSpanId?: string;
-    sampled?: number;
-    flags?: number;
-    startTimestamp?: string | Date;
+declare type TraceTags = {
+    [key: string]: string;
+};
+declare type TypeSpanContext = {
+    readonly service: string;
+    readonly traceId: string;
+    readonly spanId: string;
+    readonly parentSpanId?: string;
+    readonly sampled?: number;
+    readonly flags?: number;
+    readonly startTimestamp?: string | Date;
     finishTimestamp?: string;
-    tags?: {
-        [key: string]: any;
-    };
-}
-declare class EventTraceMetadata implements IEventTrace {
+    tags?: TraceTags;
+};
+declare class EventTraceMetadata implements TypeSpanContext {
     service: string;
     traceId: string;
-    spanId?: string;
+    spanId: string;
     parentSpanId?: string;
     sampled?: number;
     flags?: number;
     startTimestamp?: string;
     finishTimestamp?: string;
     tags?: {
-        [key: string]: any;
+        [key: string]: string;
     };
-    constructor(traceContext: Partial<IEventTrace>);
+    constructor(spanContext: Partial<TypeSpanContext>);
     static create(service: string): EventTraceMetadata;
 }
-interface IEventStateMetadata {
+declare type TypeEventStateMetadata = {
     status: EventStatusType;
     code?: number;
     description?: string;
-}
-declare class EventStateMetadata implements IEventStateMetadata {
+};
+declare class EventStateMetadata implements TypeEventStateMetadata {
     status: EventStatusType;
     code?: number;
     description?: string;
     constructor(status: EventStatusType, code?: number, description?: string);
-    static success(code?: number, description?: string): IEventStateMetadata;
-    static failed(code?: number, description?: string): IEventStateMetadata;
+    static success(code?: number, description?: string): TypeEventStateMetadata;
+    static failed(code?: number, description?: string): TypeEventStateMetadata;
 }
-interface IEventMetadata {
+declare type TypeEventMetadata = {
     id?: string;
-    type?: EventType;
-    action: EventAction;
+    type?: TypeEventTypeAction["type"];
+    action: TypeEventTypeAction["action"];
     createdAt?: string | Date;
-    state: IEventStateMetadata;
+    state: TypeEventStateMetadata;
     responseTo?: string;
-}
-declare class EventMetadata implements IEventMetadata {
+};
+declare class EventMetadata implements TypeEventMetadata {
     id: string;
-    readonly type: EventType;
-    readonly action: EventAction;
+    readonly type: TypeEventTypeAction["type"];
+    readonly action: TypeEventAction["action"];
     createdAt: string;
-    state: IEventStateMetadata;
+    state: TypeEventStateMetadata;
     responseTo?: string;
-    static log(eventMetadata: IEventMetadata): IEventMetadata;
-    static trace(eventMetadata: IEventMetadata): IEventMetadata;
-    static audit(eventMetadata: IEventMetadata): IEventMetadata;
-    constructor(eventMetadata: IEventMetadata);
+    static log(eventMetadata: TypeEventMetadata): TypeEventMetadata;
+    static trace(eventMetadata: TypeEventMetadata): TypeEventMetadata;
+    static audit(eventMetadata: TypeEventMetadata): TypeEventMetadata;
+    constructor(eventMetadata: TypeEventMetadata);
 }
-interface IMessageMetadata {
-    event: IEventMetadata;
-    trace?: IEventTrace;
-}
-interface IEventMessage {
+declare type TypeMessageMetadata = {
+    event: TypeEventMetadata;
+    trace?: TypeSpanContext;
+};
+declare type TypeEventMessage = {
     type: string;
     content: any;
     id?: string;
     from?: string;
     to?: string;
     pp?: string;
-    metadata?: IMessageMetadata;
-}
-declare class EventMessage implements IEventMessage {
+    metadata?: TypeMessageMetadata;
+};
+declare class EventMessage implements TypeEventMessage {
     type: string;
     content: any;
     id: string;
     from?: string;
     to?: string;
     pp?: string;
-    metadata?: IMessageMetadata;
-    constructor(eventMessageContent: IEventMessage);
+    metadata?: TypeMessageMetadata;
+    constructor(eventMessageContent: TypeEventMessage);
 }
 declare enum LogResponseStatus {
     UNDEFINED = "undefined",
@@ -185,4 +184,4 @@ declare class LogResponse {
     status: LogResponseStatus;
     constructor(status: LogResponseStatus);
 }
-export { EventMessage, EventType, EventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, NullEventAction, EventStatusType, IMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, IEventMessage, IEventMetadata, IEventTrace, ITypeAction };
+export { EventMessage, EventType, TypeEventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, NullEventAction, EventStatusType, TypeMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, TypeEventMessage, TypeEventMetadata, TypeSpanContext, TypeEventTypeAction, TraceTags };

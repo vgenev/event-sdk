@@ -23,23 +23,7 @@
 
  --------------
  ******/
-'use strict';
-Object.defineProperty(exports, "__esModule", { value: true });
-const Tracer_1 = require("./Tracer");
-exports.Tracer = Tracer_1.Tracer;
-const Recorder_1 = require("./Recorder");
-exports.DefaultLoggerRecorder = Recorder_1.DefaultLoggerRecorder;
-exports.DefaultSidecarRecorder = Recorder_1.DefaultSidecarRecorder;
-const EventMessage_1 = require("./model/EventMessage");
-exports.EventMessage = EventMessage_1.EventMessage;
-exports.LogEventTypeAction = EventMessage_1.LogEventTypeAction;
-exports.AuditEventTypeAction = EventMessage_1.AuditEventTypeAction;
-exports.TraceEventTypeAction = EventMessage_1.TraceEventTypeAction;
-exports.LogEventAction = EventMessage_1.LogEventAction;
-exports.AuditEventAction = EventMessage_1.AuditEventAction;
-exports.TraceEventAction = EventMessage_1.TraceEventAction;
-exports.EventStatusType = EventMessage_1.EventStatusType;
-exports.EventMetadata = EventMessage_1.EventMetadata;
-exports.LogResponseStatus = EventMessage_1.LogResponseStatus;
-exports.LogResponse = EventMessage_1.LogResponse;
-//# sourceMappingURL=index.js.map
+import { Tracer } from './Tracer';
+import { DefaultLoggerRecorder, DefaultSidecarRecorder } from './Recorder';
+import { EventMessage, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, LogResponseStatus, LogResponse, TypeMessageMetadata } from "./model/EventMessage";
+export { LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, EventMessage, LogResponseStatus, LogResponse, TypeMessageMetadata, Tracer, DefaultLoggerRecorder, DefaultSidecarRecorder };

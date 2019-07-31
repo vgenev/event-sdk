@@ -28,7 +28,7 @@
  *
  */
 
-const { Tracer } = require('../../lib/Tracer')
+const { Tracer, DefaultLoggerRecorder } = require('../../lib/index')
 
 function sleep (ms) {
   return new Promise(resolve => {
@@ -75,7 +75,7 @@ const main = async () => {
   let messageWithContext = await IIChildSpan.injectContextToMessage(event)
   await sleep(2000)
   let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
-  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage)
+  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage, { defaultRecorder: new DefaultLoggerRecorder() })
   await sleep(500)
   IIChildSpan.finish()
   await sleep(1000)

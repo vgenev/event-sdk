@@ -24,7 +24,7 @@ class Tracer implements ATracer {
    */
   static createChildSpanFromContext(service: string, spanContext: TypeSpanContext, recorders?: Recorders): Span {
     let outputContext = <TypeSpanContext>Object.assign({}, spanContext, { service, spanId: undefined, parentSpanId: spanContext.spanId, startTimestamp: undefined })
-    return new Span(new EventTraceMetadata(outputContext), recorders)
+    return new Span(new EventTraceMetadata(outputContext), recorders) as Span
   }
 
   /**
@@ -37,22 +37,18 @@ class Tracer implements ATracer {
     let { path } = injectOptions // type not implemented yet
     if (carrier instanceof EventMessage || (('metadata' in carrier))) path = 'metadata.trace'
     else if (('trace' in carrier)) path = 'trace'
-    else if (carrier instanceof EventTraceMetadata) result.metadata.trace = context
+    else if (carrier instanceof EventTraceMetadata) return Promise.resolve(context)
     if (path) {
-      try {
-        let pathArray: string[] = path.split('.')
-        for (let i = 0; i < pathArray.length - 1; i++) {
-          if (!result[pathArray[i]]) {
-            if (i < pathArray.length) {
-              let o: any = {}
-              o[pathArray[i + 1]] = {}
-              result[pathArray[i]] = o
-            }
+      let pathArray: string[] = path.split('.')
+      for (let i = 0; i < pathArray.length - 1; i++) {
+        if (!result[pathArray[i]]) {
+          if (i < pathArray.length) {
+            let o: any = {}
+            o[pathArray[i + 1]] = {}
+            result[pathArray[i]] = o
           }
-          result = result[pathArray[i]]
         }
-      } catch (e) {
-        throw e
+        result = result[pathArray[i]]
       }
     }
     result.trace = context

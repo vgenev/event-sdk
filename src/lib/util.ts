@@ -1,17 +1,19 @@
 const getNestedObject = (parent: any, path?: string): any => {
-  if (!path) return parent
-  let child = { ...parent }
-  let result: object | null = {}
-  let id: string[] = path.split('.')
-  for (let i = 0; i < id.length; i++) {
-    if (i !== id.length - 1) {
-      child = child[id[i]]
-    }
-    else {
-      result = child[id[i]]
+  let result = {}
+  if (!path) result = parent
+  else {
+    let child = { ...parent }
+    let id: string[] = path.split('.')
+    for (let i = 0; i < id.length; i++) {
+      if (i !== id.length - 1) {
+        child = child[id[i]]
+      }
+      else {
+        result = child[id[i]]
+      }
     }
   }
-  return result || null
+  return result
 }
 
 export { getNestedObject } 

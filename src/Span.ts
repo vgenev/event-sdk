@@ -28,11 +28,6 @@ import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient
 
 const Config = require('./lib/config')
 
-type RecorderOptions = {
-  action?: TypeEventTypeAction['action'],
-  state?: EventStateMetadata
-}
-
 type RecorderKeys = 'defaultRecorder' | 'logRecorder' | 'auditRecorder' | 'traceRecorder'
 
 const defaultRecorder = Config.SIDECAR_DISABLED
@@ -87,7 +82,7 @@ interface ISpan { // TODO abstract class
   injectContextToMessage: (message: { [key: string]: any }, injectOptions: ContextOptions) => { [key: string]: any }
 }
 
-class Span implements ISpan {
+class Span implements Partial<ISpan> {
   spanContext: TypeSpanContext
   recorders: Recorders
   private _finished: boolean = false
@@ -120,9 +115,6 @@ class Span implements ISpan {
   getChild(service: string, recorders: Recorders = this.recorders): Span {
     if (this._finished) throw new Error('Finished trace cannot have a child span')
     let inputTraceContext: TypeSpanContext = this.getContext()
-    if (!(inputTraceContext.traceId && inputTraceContext.spanId) && !(inputTraceContext.service)) {
-      throw new Error('No Service or traceId or SpanId provided')
-    }
     return new Span(new EventTraceMetadata(Object.assign({},
       inputTraceContext, {
         service,
@@ -142,22 +134,18 @@ class Span implements ISpan {
     let { path } = injectOptions // type not implemented yet
     if (carrier instanceof EventMessage || (('metadata' in carrier))) path = 'metadata.trace'
     else if (('trace' in carrier)) path = 'trace'
-    else if (carrier instanceof EventTraceMetadata) result.metadata.trace = this.spanContext
+    else if (carrier instanceof EventTraceMetadata) return Promise.resolve(this.spanContext)
     if (path) {
-      try {
-        let pathArray: string[] = path.split('.')
-        for (let i = 0; i < pathArray.length - 1; i++) {
-          if (!result[pathArray[i]]) {
-            if (i < pathArray.length) {
-              let o: any = {}
-              o[pathArray[i + 1]] = {}
-              result[pathArray[i]] = o
-            }
+      let pathArray: string[] = path.split('.')
+      for (let i = 0; i < pathArray.length - 1; i++) {
+        if (!result[pathArray[i]]) {
+          if (i <= pathArray.length) {
+            let o: any = {}
+            o[pathArray[i + 1]] = {}
+            result[pathArray[i]] = o
           }
-          result = result[pathArray[i]]
         }
-      } catch (e) {
-        throw e
+        result = result[pathArray[i]]
       }
     }
     result.trace = this.spanContext
@@ -170,12 +158,8 @@ class Span implements ISpan {
    */
   setTags(tags: TraceTags): this {
     let newContext: TypeSpanContext = new EventTraceMetadata(this.getContext())
-    if (!newContext.tags) {
-      newContext.tags = tags
-    } else {
-      for (let key in tags) {
-        newContext.tags[key] = tags[key]
-      }
+    for (let key in tags) {
+      newContext.tags![key] = tags[key]
     }
     this.spanContext = Object.freeze(new EventTraceMetadata(newContext))
     return this
@@ -235,15 +219,9 @@ class Span implements ISpan {
    * @param auditOptions Logger options object.
    */
   async audit(message: TypeOfMessage, action?: AuditEventAction, state?: EventStateMetadata): Promise<any> {
-    await this.recordMessage(message, AuditEventTypeAction.getType(), action, state)
+    let result = await this.recordMessage(message, AuditEventTypeAction.getType(), action, state)
+    return result
   }
-
-  private async log(message: TypeOfMessage, state?: EventStateMetadata): Promise<any> {
-    let { action, type } = new LogEventTypeAction(LogEventAction.info)
-    await this.recordMessage(message, type, action, state)
-  }
-
-  
 
   /**
    * Logs INFO type message.
@@ -312,7 +290,6 @@ class Span implements ISpan {
   }
 
   private async recordMessage(message: TypeOfMessage, type: TypeEventTypeAction['type'], action?: TypeEventTypeAction['action'], state?: EventStateMetadata) {
-    if (!message) throw new Error('no message provided')
     if (this._finished) throw new Error('span finished. no further actions allowed')
     let newEnvelope = this.createEventMessage(message, type, action, state)
     let logResult
@@ -334,7 +311,6 @@ class Span implements ISpan {
     let defaults = getDefaults(type)
     let action = _action ? _action : defaults.action
     let messageToLog
-    if (!state) throw new Error('no valid state provided')
     if (typeof message === 'string') {
       messageToLog = new EventMessage({
         content: { payload: { message } },
