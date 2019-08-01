@@ -50,7 +50,7 @@
     "@types/protobufjs": "6.0.0",
     "brototype": "0.0.6",
     "grpc": "1.21.1",
-    "lodash": "^4.17.15",
+    "lodash": "4.17.15",
     "moment": "2.24.0",
     "protobufjs": "6.8.8",
     "rc": "1.2.8",
