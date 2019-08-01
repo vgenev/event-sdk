@@ -30,6 +30,8 @@ import { Tracer } from './Tracer'
 
 import { DefaultLoggerRecorder, DefaultSidecarRecorder } from './Recorder'
 
+import { Span, } from './Span'
+
 import {
   EventMessage,
   LogEventTypeAction,

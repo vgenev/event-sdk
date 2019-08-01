@@ -41,6 +41,10 @@ enum EventType {
   trace = "trace",
 }
 
+/**
+ * Actions for event type Log
+ */
+
 enum LogEventAction {
   info = "info",
   debug = "debug",
@@ -50,9 +54,19 @@ enum LogEventAction {
   error = "error"
 }
 
+
+/**
+ * Actions for event type Audit
+ */
+
 enum AuditEventAction {
   default = "default"
 }
+
+
+/**
+ * Actions for event type trace
+ */
 
 enum TraceEventAction {
   span = "span"
@@ -61,6 +75,11 @@ enum TraceEventAction {
 enum NullEventAction {
   undefined = "undefined",
 }
+
+
+/**
+ * Enum that represents the event status types
+ */
 
 enum EventStatusType {
   success = "success",
@@ -79,10 +98,18 @@ type TypeEventAction = {
   action: AuditEventAction | LogEventAction | TraceEventAction | NullEventAction
 }
 
+/**
+ * Describes object of type and action pairs
+ */
+
 type TypeEventTypeAction = {
   type: EventType,
   action: TypeEventAction["action"]
 }
+
+/**
+ * Describes class for extracting types and their actions based on type input
+ */
 
 abstract class TypeAction implements TypeEventTypeAction {
   readonly type: TypeEventTypeAction["type"]
@@ -99,6 +126,9 @@ abstract class TypeAction implements TypeEventTypeAction {
   }
 }
 
+/**
+ * Returns new `TypeEventTypeAction` object with type = 'log'
+ */
 class LogEventTypeAction extends TypeAction {
   static readonly type: TypeEventTypeAction["type"] = EventType.log
   static getType() {
@@ -112,6 +142,10 @@ class LogEventTypeAction extends TypeAction {
   }
 }
 
+
+/**
+ * Returns new `TypeEventTypeAction` object with type = 'audit'
+ */
 class AuditEventTypeAction extends TypeAction {
   static readonly type: EventType = EventType.audit
   static getType() {
@@ -125,6 +159,10 @@ class AuditEventTypeAction extends TypeAction {
   }
 }
 
+
+/**
+ * Returns new `TypeEventTypeAction` object with type = 'trace'
+ */
 class TraceEventTypeAction extends TypeAction {
   static readonly type: EventType = EventType.trace
   static getType() {
@@ -138,7 +176,23 @@ class TraceEventTypeAction extends TypeAction {
   }
 }
 
+/**
+ * Describes tags type
+ */
 type TraceTags = { [key: string]: string }
+
+/**
+ * Describbes Span Context type
+ * @param service name of the span service
+ * @param traceId id of the trace. End-to-end transaction identifier. Many spans can have same traceId to represent single trace of operation with multiple steps (spans)
+ * @param spanId id of the span. Each span represents individual unit of work
+ * @param parentSpanId id of the parent span from which the current one was derived
+ * @param sampled Indicator if event message should be included in the trace 1. If excluded it will be left the consumer to decide on sampling.
+ * @param flags Indicator if event message should be included in the trace flow. ( Debug 1 - this will override the sampled value )
+ * @param startTimestamp ISO 8601 with the following format yyyy-MM-dd'T'HH:mm:ss.SSSSSSz. If not included the current timestamp will be taken. Represents the start timestamp of a span.
+ * @param finishTimestamp ISO 8601 with the following format yyyy-MM-dd'T'HH:mm:ss.SSSSSSz. If not included the current timestamp will be taken. Represents the finish timestamp of a span
+ * @param tags optional tags of the span
+ */
 
 type TypeSpanContext = {
   readonly service: string,
@@ -205,6 +259,12 @@ class EventTraceMetadata implements TypeSpanContext {
   }
 }
 
+/**
+ * Defines the state metadata
+ * @param status The id references the related message.
+ * @param code optional error code
+ * @param description Optional status description
+ */
 type TypeEventStateMetadata = {
   status: EventStatusType
   code?: number
@@ -216,6 +276,12 @@ class EventStateMetadata implements TypeEventStateMetadata {
   code?: number
   description?: string
 
+  /**
+   * Creates new state object
+   * @param status 
+   * @param code 
+   * @param description 
+   */
   constructor(status: EventStatusType, code?: number, description?: string) {
     this.status = status
     this.code = code
@@ -223,15 +289,32 @@ class EventStateMetadata implements TypeEventStateMetadata {
     return this
   }
 
+  /**
+   * Creates success state object
+   * @param code
+   * @param description
+   */
   static success(code?: number, description?: string): TypeEventStateMetadata {
     return new EventStateMetadata(EventStatusType.success, code, description)
   }
-
+  /**
+   * Creates failed state object
+   * @param code
+   * @param description
+   */
   static failed(code?: number, description?: string): TypeEventStateMetadata {
     return new EventStateMetadata(EventStatusType.failed, code, description)
   }
 }
 
+/**
+ * Defines event object of the metadata
+ * @param id Generated UUIDv4 representing the event.
+ * @param type Event type
+ * @param action type of action
+ * @param createdAt ISO timestamp
+ * @param state Object, describing the state - created by `EventStateMetadata`
+ */
 type TypeEventMetadata = {
   id?: string,
   type?: TypeEventTypeAction["type"],
@@ -249,22 +332,37 @@ class EventMetadata implements TypeEventMetadata {
   state: TypeEventStateMetadata
   responseTo?: string
 
+  /**
+   * Creates log type event metadata 
+   * @param eventMetadata 
+   */
   static log(eventMetadata: TypeEventMetadata): TypeEventMetadata {
     let typeAction = new LogEventTypeAction({ action: eventMetadata.action });
     return new EventMetadata(Object.assign(eventMetadata, typeAction));
   }
-
+  /**
+   * Creates trace type event metadata 
+   * @param eventMetadata 
+   */
   static trace(eventMetadata: TypeEventMetadata): TypeEventMetadata {
     let typeAction = new TraceEventTypeAction({ action: eventMetadata.action });
     return new EventMetadata(Object.assign(eventMetadata, typeAction));
   }
 
+  /**
+   * Creates audit type event metadata 
+   * @param eventMetadata 
+   */  
   static audit(eventMetadata: TypeEventMetadata): TypeEventMetadata {
     let typeAction = new AuditEventTypeAction({ action: eventMetadata.action });
     let a = (Object.assign(eventMetadata, typeAction))
     return new EventMetadata(a);
   }
 
+  /**
+   * Creates metadata object based on the passed message
+   * @param eventMetadata 
+   */
   constructor(eventMetadata: TypeEventMetadata) {
     let { createdAt = new Date().toISOString(), state, ...restParams } = eventMetadata
     if (createdAt instanceof Date) {
@@ -277,10 +375,26 @@ class EventMetadata implements TypeEventMetadata {
   }
 }
 
+/**
+ * Defines metadata object
+ * @param event `EventMetadata` object
+ * @param trace `TraceEventMetadata` object
+ */
 type TypeMessageMetadata = {
   event: TypeEventMetadata,
   trace?: TypeSpanContext
 }
+
+/**
+ * Defines Event Message
+ * @param type MIME declaration of the content type of the message.
+ * @param content The representation of the content.
+ * @param id The id references the related message.
+ * @param from If the value is not present in the destination, it means that the notification was generated by the connected node (server).
+ * @param to Mandatory for the sender and optional in the destination. The sender can ommit the value of the domain.
+ * @param pp Optional for the sender, when is considered the identity of the session. Is mandatory in the destination if the identity of the originator is different of the identity of the from property.
+ * @param metadata The sender should avoid to use this property to transport any kind of content-related information, but merely data relevant to the context of the communication. Consider to define a new content type if there's a need to include more content information into the message.
+ */
 
 type TypeEventMessage = {
   type: string
@@ -301,11 +415,18 @@ class EventMessage implements TypeEventMessage {
   pp?: string
   metadata?: TypeMessageMetadata
 
+  /**
+   * Creates event message
+   * @param eventMessageContent message content based on the `TypeEventMessage`
+   */
   constructor(eventMessageContent: TypeEventMessage) {
     return Object.assign(this, eventMessageContent)
   }
 }
 
+/**
+ * Defines the log responses
+ */
 enum LogResponseStatus {
   UNDEFINED = 'undefined',
   pending = 'pending',

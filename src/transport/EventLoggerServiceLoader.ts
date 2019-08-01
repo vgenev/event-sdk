@@ -29,7 +29,7 @@ const protoLoader = require('@grpc/proto-loader')
 
 const PROTO_PATH = path.join(__dirname,'../../protos/message_type.proto');
 
-function loadEventLoggerService() : any {
+function  loadEventLoggerService() : any {
   let packageDefinition = protoLoader.loadSync(
     PROTO_PATH,
     { keepCase: true,

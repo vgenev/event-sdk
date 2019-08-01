@@ -25,6 +25,7 @@ import {
 } from './Recorder'
 
 import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient';
+import _ from 'lodash';
 
 const Config = require('./lib/config')
 
@@ -41,6 +42,14 @@ type PartialWithDefaultRecorder<T> = {
   defaultRecorder: IEventRecorder
 }
 
+/**
+ * Defines Recorders type. 
+ * @param defaultRecorder a recorder that will be used by default by the span if the others are not present.
+ * @param logRecorder a recorder that will be used to log any logging level events
+ * @param auditRecorder a recorder that will be used to log audit events
+ * @param traceRecorder a recorder that will be used to log trace events
+ */
+
 type Recorders = PartialWithDefaultRecorder<{
   defaultRecorder: IEventRecorder
   logRecorder?: IEventRecorder,
@@ -48,9 +57,9 @@ type Recorders = PartialWithDefaultRecorder<{
   traceRecorder?: IEventRecorder
 }>
 
-
-// -===- SPAN -===-
-
+/**
+ * Defines messages allowed to be sent to the Event framework
+ */
 type TypeOfMessage = { [key: string]: NonNullable<any> } | string
 
 /**
@@ -63,7 +72,27 @@ type ContextOptions = {
   path?: string
 }
 
-interface ISpan { // TODO abstract class
+
+/**
+ * Defines Span interface operations
+ * @param {TypeSpanContext} spanContext the context of the span
+ * @param {Recorders} recorders object that holds span recorders which are going to be used for different operations. defaultRecorder is obligatory
+ * @param info Defines a method to log at info level a message from the span perspective
+ * @param debug Defines a method to log at debug level a message from the span perspective  
+ * @param verbose Defines a method to log at verbose level a message from the span perspective  
+ * @param performance Defines a method to log at performance level a message from the span perspective  
+ * @param warning Defines a method to log at warning level a message from the span perspective
+ * @param error Defines a method to log at error level a message from the span perspective
+ * @param audit Defines a method to send audit event to the auditing environment
+ * @param defaultTagsSetter Defines a method to set default tags. Currently has null implementation
+ * @param getContext Defines method to get the span context as JS object
+ * @param finish Defines a method to finish the current span and send tracing information to the tracing environment
+ * @param getChild Defines a method to get child span
+ * @param setTags Defines a method to set tags to the span
+ * @param injectContextToMessage Defnies a method to inject current span context into message carrier
+ */
+
+interface ISpan {
   spanContext: TypeSpanContext
   recorders: Recorders
   info: (message: TypeOfMessage) => Promise<any>
@@ -74,7 +103,7 @@ interface ISpan { // TODO abstract class
   error: (message: TypeOfMessage) => Promise<any>
   audit: (message: TypeOfMessage) => Promise<any>
   // trace: (message: { [key: string]: any}) => Promise<any> // TODO need to findout is there an usecase for that 
-  defaultTagsSetter: (message: TypeOfMessage) => Span
+  defaultTagsSetter: (message?: TypeOfMessage) => Span
   getContext: () => TypeSpanContext
   finish: (message?: TypeOfMessage, finishTimestamp?: TypeSpanContext["finishTimestamp"]) => Promise<any>
   getChild: (service: string, recorders?: Recorders) => ISpan
@@ -87,6 +116,12 @@ class Span implements Partial<ISpan> {
   recorders: Recorders
   private _finished: boolean = false
 
+  /**
+   * Creates new span. Normally this is not used directly, but by a Tracer.createSpan method
+   * @param spanContext context of the new span. Service is obligatory. Depending on the rest provided values, the new span will be created as a parent or child span
+   * @param {Recorders} recorders different recorders to be used for different logging methods 
+   * @param defaultTagsSetter the tags setter method can be passed here
+   */
   constructor(
     spanContext: EventTraceMetadata,
     recorders?: Recorders,
@@ -94,10 +129,16 @@ class Span implements Partial<ISpan> {
     this.spanContext = Object.freeze(spanContext)
     this.defaultTagsSetter = defaultTagsSetter ? defaultTagsSetter : this.defaultTagsSetter
     this.recorders = recorders ? recorders : { defaultRecorder }
+    this.defaultTagsSetter()
     return this
   }
 
-  defaultTagsSetter(message: TypeOfMessage): Span {
+  /**
+   * A method to set tags by default. Not implemented yet
+   * @param message the message which tags will be extracted from
+   */
+
+  defaultTagsSetter(message?: TypeOfMessage): Span {
     return this
   }
 
@@ -111,17 +152,22 @@ class Span implements Partial<ISpan> {
   /**
      * Creates and returns new child span of the current span and changes the span service name
      * @param service the name of the service of the new child span
+     * @param recorders the recorders which are be set to the child span. If omitted, the recorders of the parent span are used
      */
   getChild(service: string, recorders: Recorders = this.recorders): Span {
-    if (this._finished) throw new Error('Finished trace cannot have a child span')
-    let inputTraceContext: TypeSpanContext = this.getContext()
-    return new Span(new EventTraceMetadata(Object.assign({},
-      inputTraceContext, {
-        service,
-        spanId: undefined,
-        startTimestamp: undefined,
-        parentSpanId: inputTraceContext.spanId
-      })), recorders, this.defaultTagsSetter)
+    try {
+      if (this._finished) throw new Error('Finished trace cannot have a child span')
+      let inputTraceContext: TypeSpanContext = this.getContext()
+      return new Span(new EventTraceMetadata(Object.assign({},
+        inputTraceContext, {
+          service,
+          spanId: undefined,
+          startTimestamp: undefined,
+          parentSpanId: inputTraceContext.spanId
+        })), recorders, this.defaultTagsSetter)
+    } catch (e) {
+      throw (e)
+    }
   }
 
   /**
@@ -130,26 +176,13 @@ class Span implements Partial<ISpan> {
    * @param injectOptions type and path of the carrier. Type is not implemented yet. Path is the path to the trace context.
    */
   injectContextToMessage(carrier: { [key: string]: any }, injectOptions: ContextOptions = {}): Promise<{ [key: string]: any }> {
-    let result = carrier
+    let result = _.cloneDeep(carrier)
     let { path } = injectOptions // type not implemented yet
-    if (carrier instanceof EventMessage || (('metadata' in carrier))) path = 'metadata.trace'
-    else if (('trace' in carrier)) path = 'trace'
+    if (carrier instanceof EventMessage || (('metadata' in carrier))) path = 'metadata'
     else if (carrier instanceof EventTraceMetadata) return Promise.resolve(this.spanContext)
-    if (path) {
-      let pathArray: string[] = path.split('.')
-      for (let i = 0; i < pathArray.length - 1; i++) {
-        if (!result[pathArray[i]]) {
-          if (i <= pathArray.length) {
-            let o: any = {}
-            o[pathArray[i + 1]] = {}
-            result[pathArray[i]] = o
-          }
-        }
-        result = result[pathArray[i]]
-      }
-    }
-    result.trace = this.spanContext
-    return Promise.resolve(carrier)
+    if (!path) Object.assign(result, { trace: this.spanContext })
+    else _.merge(_.get(result, path), { trace: this.spanContext })
+    return Promise.resolve(result)
   }
 
   /**
@@ -166,9 +199,10 @@ class Span implements Partial<ISpan> {
   }
 
   /**
-* Finishes the current span and its trace and sends the data to the tracing framework.
-* @param finishTimestamp optional parameter for the finish time. If omitted, current time is used.
-*/
+  * Finishes the current span and its trace and sends the data to the tracing framework.
+  * @param message optional parameter for a message to be passed to the tracing framework.
+  * @param finishTimestamp optional parameter for the finish time. If omitted, current time is used.
+  */
   async finish(message?: TypeOfMessage, finishTimestamp?: string | Date): Promise<this> {
     if (this.spanContext.finishTimestamp) return Promise.reject(new Error('span already finished'))
     let spanContext = this._finishSpan(finishTimestamp).getContext()
@@ -196,8 +230,10 @@ class Span implements Partial<ISpan> {
 
   /**
    * Sends trace message to the tracing framework
+   * @param message 
    * @param spanContext optional parameter. Can be used to trace previous span. If not set, the current span context is used.
-   * @param traceOptions options for status and event action. Default action is 'span' and status is success
+   * @param action optional parameter for action. Defaults to 'span'
+   * @param state optional parameter for state. Defaults to 'success'
    */
   private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, action?: TraceEventAction, state?: EventStateMetadata): Promise<any> {
     if (!message) message = new EventMessage({
@@ -209,14 +245,15 @@ class Span implements Partial<ISpan> {
       this._finished = this.spanContext.finishTimestamp ? true : false
       return this
     } catch (e) {
-      throw new Error(`Error when logging trace. ${e}`)
+      throw new Error(`Error when logging trace. ${JSON.stringify(e, null, 2)}`)
     }
   }
 
   /**
    * Sends audit type message to the event logging framework. 
    * @param message message to be recorded as audit event
-   * @param auditOptions Logger options object.
+   * @param action optional parameter for action. Defaults to 'default'
+   * @param state optional parameter for state. Defaults to 'success'
    */
   async audit(message: TypeOfMessage, action?: AuditEventAction, state?: EventStateMetadata): Promise<any> {
     let result = await this.recordMessage(message, AuditEventTypeAction.getType(), action, state)
@@ -228,6 +265,7 @@ class Span implements Partial<ISpan> {
    * @param message if message is a string, the message is added to a message property of context of an event message.
    * If message is not following the event framework message format, the message is added as it is to the context of an event message.
    * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created. 
+   * @param state optional parameter for state. Defaults to 'success'
    */
   async info(message: TypeOfMessage, state?: EventStateMetadata): Promise<any> {
     let { action, type } = new LogEventTypeAction(LogEventAction.info)
@@ -239,6 +277,7 @@ class Span implements Partial<ISpan> {
    * @param message if message is a string, the message is added to a message property of context of an event message.
    * If message is not following the event framework message format, the message is added as it is to the context of an event message.
    * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created. 
+   * @param state optional parameter for state. Defaults to 'success'
    */
   async debug(message: TypeOfMessage, state?: EventStateMetadata): Promise<any> {
     let { action, type } = new LogEventTypeAction(LogEventAction.debug)
@@ -250,6 +289,7 @@ class Span implements Partial<ISpan> {
    * @param message if message is a string, the message is added to a message property of context of an event message.
    * If message is not following the event framework message format, the message is added as it is to the context of an event message.
    * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created. 
+   * @param state optional parameter for state. Defaults to 'success'
    */
   async verbose(message: TypeOfMessage, state?: EventStateMetadata): Promise<any> {
     let { action, type } = new LogEventTypeAction(LogEventAction.verbose)
@@ -261,6 +301,7 @@ class Span implements Partial<ISpan> {
    * @param message if message is a string, the message is added to a message property of context of an event message.
    * If message is not following the event framework message format, the message is added as it is to the context of an event message.
    * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created. 
+   * @param state optional parameter for state. Defaults to 'success'
    */
   async performance(message: TypeOfMessage, state?: EventStateMetadata): Promise<any> {
     let { action, type } = new LogEventTypeAction(LogEventAction.performance)
@@ -272,6 +313,7 @@ class Span implements Partial<ISpan> {
    * @param message if message is a string, the message is added to a message property of context of an event message.
    * If message is not following the event framework message format, the message is added as it is to the context of an event message.
    * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created. 
+   * @param state optional parameter for state. Defaults to 'success'
    */
   async warning(message: TypeOfMessage, state?: EventStateMetadata): Promise<any> {
     let { action, type } = new LogEventTypeAction(LogEventAction.warning)
@@ -283,11 +325,20 @@ class Span implements Partial<ISpan> {
    * @param message if message is a string, the message is added to a message property of context of an event message.
    * If message is not following the event framework message format, the message is added as it is to the context of an event message.
    * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created. 
+   * @param state optional parameter for state. Defaults to 'success'
    */
   async error(message: TypeOfMessage, state?: EventStateMetadata): Promise<any> {
     let { action, type } = new LogEventTypeAction(LogEventAction.error)
     await this.recordMessage(message, type, action, state)
   }
+
+  /**
+   * Sends Event message to recorders
+   * @param message the Event message that needs to be recorded
+   * @param type type of Event
+   * @param action optional parameter for action. The default is based on type defaults
+   * @param state optional parameter for state. Defaults to 'success'
+   */
 
   private async recordMessage(message: TypeOfMessage, type: TypeEventTypeAction['type'], action?: TypeEventTypeAction['action'], state?: EventStateMetadata) {
     if (this._finished) throw new Error('span finished. no further actions allowed')
@@ -303,6 +354,9 @@ class Span implements Partial<ISpan> {
     }
   }
 
+  /**
+   * Helper function to create event message, based on message and event types, action and state.
+   */
   private createEventMessage = (
     message: TypeOfMessage,
     type: TypeEventTypeAction['type'],

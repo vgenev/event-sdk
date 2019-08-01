@@ -1,7 +1,15 @@
-import { NullEventAction, EventType, LogEventAction, LogResponseStatus, TypeEventTypeAction, EventMessage } from "./model/EventMessage";
+import { EventType, LogEventAction, LogResponseStatus, TypeEventTypeAction, EventMessage } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
 
 const Logger = require('@mojaloop/central-services-shared').Logger
+
+/**
+ * Describes Event Recorder interface
+ * @param recorder instance of EventLogingServiceClient or another recorder
+ * @param preProcess preprocessing method with null implementation in the current release
+ * @param postProcess postprocessing method with null implementation in the current release
+ * @param record the method that records the event depending on the recorder implementation
+ */
 
 interface IEventRecorder {
   recorder: EventLoggingServiceClient | Function
