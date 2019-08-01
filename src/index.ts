@@ -36,6 +36,10 @@ import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient
 
 import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
 
+import { EventPostProcessor } from './EventPostProcessor';
+
+import { EventPreProcessor } from './EventPreProcessor';
+
 import {
   EventMessage,
   LogEventTypeAction,
@@ -93,5 +97,7 @@ export {
   TypeEventAction,
   EventLoggingServiceClient,
   EventLoggingServiceServer,
-  EVENT_RECEIVED
+  EVENT_RECEIVED,
+  EventPostProcessor,
+  EventPreProcessor
 }
