@@ -30,7 +30,11 @@ import { Tracer } from './Tracer'
 
 import { DefaultLoggerRecorder, DefaultSidecarRecorder } from './Recorder'
 
-import { Span, } from './Span'
+import { Span, ContextOptions, Recorders } from './Span'
+
+import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
+
+import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
 
 import {
   EventMessage,
@@ -44,7 +48,17 @@ import {
   EventMetadata,
   LogResponseStatus,
   LogResponse,
-  TypeMessageMetadata
+  TypeMessageMetadata,
+  NullEventAction,
+  EventType,
+  TraceTags,
+  TypeEventMessage,
+  TypeEventMetadata,
+  TypeSpanContext,
+  EventTraceMetadata,
+  TypeEventTypeAction,
+  EventStateMetadata,
+  TypeEventAction
  } from "./model/EventMessage"
 
 // Re-export definitions and components on the public API
@@ -63,5 +77,21 @@ export {
   TypeMessageMetadata,
   Tracer,
   DefaultLoggerRecorder,
-  DefaultSidecarRecorder
+  DefaultSidecarRecorder,
+  Span,
+  ContextOptions,
+  Recorders,
+  NullEventAction,
+  EventType,
+  TraceTags,
+  TypeEventMessage,
+  TypeEventMetadata,
+  TypeSpanContext,
+  EventTraceMetadata,
+  TypeEventTypeAction,
+  EventStateMetadata,
+  TypeEventAction,
+  EventLoggingServiceClient,
+  EventLoggingServiceServer,
+  EVENT_RECEIVED
 }

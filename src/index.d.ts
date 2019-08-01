@@ -25,5 +25,8 @@
  ******/
 import { Tracer } from './Tracer';
 import { DefaultLoggerRecorder, DefaultSidecarRecorder } from './Recorder';
-import { EventMessage, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, LogResponseStatus, LogResponse, TypeMessageMetadata } from "./model/EventMessage";
-export { LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, EventMessage, LogResponseStatus, LogResponse, TypeMessageMetadata, Tracer, DefaultLoggerRecorder, DefaultSidecarRecorder };
+import { Span, ContextOptions, Recorders } from './Span';
+import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
+import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
+import { EventMessage, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, LogResponseStatus, LogResponse, TypeMessageMetadata, NullEventAction, EventType, TraceTags, TypeEventMessage, TypeEventMetadata, TypeSpanContext, EventTraceMetadata, TypeEventTypeAction, EventStateMetadata, TypeEventAction } from "./model/EventMessage";
+export { LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, EventMessage, LogResponseStatus, LogResponse, TypeMessageMetadata, Tracer, DefaultLoggerRecorder, DefaultSidecarRecorder, Span, ContextOptions, Recorders, NullEventAction, EventType, TraceTags, TypeEventMessage, TypeEventMetadata, TypeSpanContext, EventTraceMetadata, TypeEventTypeAction, EventStateMetadata, TypeEventAction, EventLoggingServiceClient, EventLoggingServiceServer, EVENT_RECEIVED };

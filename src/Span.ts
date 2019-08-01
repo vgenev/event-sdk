@@ -25,7 +25,8 @@ import {
 } from './Recorder'
 
 import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient';
-import _ from 'lodash';
+
+const _ = require('lodash');
 
 const Config = require('./lib/config')
 

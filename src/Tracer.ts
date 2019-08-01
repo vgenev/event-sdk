@@ -1,8 +1,8 @@
 import { TraceTags, EventTraceMetadata, EventMessage, TypeSpanContext } from "./model/EventMessage";
 
-import _ from 'lodash';
-
 import { Span, ContextOptions, Recorders } from "./Span"
+
+const _ = require('lodash');
 
 /**
  * Describes Event SDK methods from Tracer perspective
