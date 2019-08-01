@@ -1,134 +1,55 @@
-/*****
- License
- --------------
- Copyright © 2017 Bill & Melinda Gates Foundation
- The Mojaloop files are made available by the Bill & Melinda Gates Foundation under the Apache License, Version 2.0 (the "License") and you may not use these files except in compliance with the License. You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, the Mojaloop files are distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
- Contributors
- --------------
- This is the official list of the Mojaloop project contributors for this file.
- Names of the original copyright holders (individuals or organizations)
- should be listed with a '*' in the first column. People who have
- contributed from an organization can be listed under the organization
- that actually holds the copyright for their contributions (see the
- Gates Foundation organization for an example). Those individuals should have
- their names indented and be marked with a '-'. Email address can be added
- optionally within square brackets <email>.
- * Gates Foundation
- - Name Surname <name.surname@gatesfoundation.com>
-
- - Valentin Genev <valentin.genev@modusbox.com>
-
- --------------
- ******/
-import { Trace, TraceContext } from "./Trace";
-import { EventLoggingServiceClient, SimpleLoggingServiceClient } from "./transport/EventLoggingServiceClient";
-import { EventMessage, EventAction, EventStateMetadata } from "./model/EventMessage";
+import { TraceTags, TypeSpanContext } from "./model/EventMessage";
+import { Span, ContextOptions, Recorders } from "./Span";
 /**
- * Logger Options sets the interface for the different logger options, which might be passed to the logger for different actions
+ * Describes Event SDK methods from Tracer perspective
  */
-interface LoggerOptions {
-    action?: EventAction;
-    state?: EventStateMetadata;
+declare abstract class ATracer {
+    static createSpan: (service: string, tags?: TraceTags, recorders?: Recorders, defaultTagsSetter?: Span['defaultTagsSetter']) => Span;
+    static createChildSpanFromContext: (service: string, context: TypeSpanContext, recorders?: Recorders) => {};
+    static injectContextToMessage: (context: TypeSpanContext, message: {
+        [key: string]: any;
+    }, path?: string) => {
+        [key: string]: any;
+    };
+    static extractContextFromMessage: (message: {
+        [key: string]: any;
+    }, path?: string) => TypeSpanContext;
 }
-/**
- * Implements the methods for user to work with tracing and logging. Sends all messages to the EventLoggingServiceClient.
- * It provides null implementation of EventPreProcessor and EventPostProcessor.
- * It can be extended to implement some of these methods.
- */
-declare class Tracer extends Trace {
-    client: EventLoggingServiceClient | SimpleLoggingServiceClient;
-    finished: boolean;
+declare class Tracer implements ATracer {
     /**
-     * Creates new Trace and its first span with given service name
-     * @param service the name of the service of the new span
+     * Creates new span from new trace
+     * @param service name of the service which will be asociated with the newly created span
+     * @param tags optional tags for the span
+     * @param recorders optional recorders. Defaults to defaultRecorder, which is either logger or sidecar client, based on default.json DISABLE_SIDECAR value
+     * @param defaultTagsSetter optional default tags setter method.
      */
-    static createSpan(service: string, config?: any, client?: EventLoggingServiceClient): Tracer;
-    constructor(traceContext: TraceContext, config?: any, client?: EventLoggingServiceClient);
-    preProcess: (event: EventMessage) => EventMessage;
-    postProcess: (result: any) => any;
+    static createSpan(service: string, tags?: TraceTags, recorders?: Recorders, defaultTagsSetter?: Span['defaultTagsSetter']): Span;
     /**
-     * Finishes the current span and its trace and sends the data to the tracing framework.
-     * @param finishTimestamp optional parameter for the finish time. If omitted, current time is used.
-     */
-    finish(finishTimestamp?: string | Date): Promise<this>;
-    /**
-     * Creates and returns new child span of the current span and changes the span service name
+     * Creates new child span from context with new service name
      * @param service the name of the service of the new child span
+     * @param spanContext context of the previous span
+     * @param recorders optional recorders. Defaults to defaultRecorder, which is either logger or sidecar client, based on default.json DISABLE_SIDECAR value
      */
-    getChild(service: string): Tracer;
-    static createChildSpanFromContext(service: string, traceContext: TraceContext): Tracer;
+    static createChildSpanFromContext(service: string, spanContext: TypeSpanContext, recorders?: Recorders): Span;
     /**
-     * Sends trace message to the tracing framework
-     * @param traceContext optional parameter. Can be used to trace previous span. If not set, the current span context is used.
-     * @param traceOptions options for status and event action. Default action is 'span' and status is success
+     * Injects trace context into a carrier with optional path.
+     * @param context span context to be injected
+     * @param carrier any kind of message or other object with keys of type String.
+     * @param injectOptions type and path of the carrier. Type is not implemented yet. Path is the path to the trace context.
      */
-    trace(traceContext?: TraceContext, traceOptions?: LoggerOptions): Promise<any>;
-    /**
-     * Sends audit type message to the event logging framework.
-     * @param message message to be recorded as audit event
-     * @param auditOptions Logger options object.
-     */
-    audit(message: EventMessage, auditOptions?: LoggerOptions): Promise<any>;
-    /**
-     * Logs INFO type message.
-     * @param message if message is a string, the message is added to a message property of context of an event message.
-     * If message is not following the event framework message format, the message is added as it is to the context of an event message.
-     * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created.
-     */
-    info(message: string | {
-        [key: string]: NonNullable<any>;
-    }): Promise<any>;
-    /**
-     * Logs DEBUG type message.
-     * @param message if message is a string, the message is added to a message property of context of an event message.
-     * If message is not following the event framework message format, the message is added as it is to the context of an event message.
-     * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created.
-     */
-    debug(message: string | {
+    static injectContextToMessage(context: TypeSpanContext, carrier: {
         [key: string]: any;
-    }): Promise<any>;
-    /**
-     * Logs VERBOSE type message.
-     * @param message if message is a string, the message is added to a message property of context of an event message.
-     * If message is not following the event framework message format, the message is added as it is to the context of an event message.
-     * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created.
-     */
-    verbose(message: string | {
+    }, injectOptions?: ContextOptions): Promise<{
         [key: string]: any;
-    }): Promise<any>;
+    }>;
     /**
-     * Logs PERFORMANCE type message.
-     * @param message if message is a string, the message is added to a message property of context of an event message.
-     * If message is not following the event framework message format, the message is added as it is to the context of an event message.
-     * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created.
+     * Extracts trace context from a carrier (ex: kafka message, event message, metadata, trace)
+     * with optional path for the trace context to be extracted.
+     * @param carrier any kind of message or other object with keys of type String.
+     * @param extractOptions type and path of the carrier. Type is not implemented yet. Path is the path to the trace context.
      */
-    performance(message: string | {
+    static extractContextFromMessage(carrier: {
         [key: string]: any;
-    }): Promise<any>;
-    /**
-     * Logs WARNING type message.
-     * @param message if message is a string, the message is added to a message property of context of an event message.
-     * If message is not following the event framework message format, the message is added as it is to the context of an event message.
-     * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created.
-     */
-    warning(message: string | {
-        [key: string]: any;
-    }): Promise<any>;
-    /**
-     * Logs ERROR type message.
-     * @param message if message is a string, the message is added to a message property of context of an event message.
-     * If message is not following the event framework message format, the message is added as it is to the context of an event message.
-     * If message follows the event framework message format, only the metadata is updated and if message lacks an UUID it is created.
-     */
-    error(message: string | {
-        [key: string]: any;
-    }): Promise<any>;
-    /**
-   * Sends an event message to the event logging framework
-   */
-    record(event: EventMessage): Promise<any>;
-    private logWithAction;
+    }, extractOptions?: ContextOptions): TypeSpanContext;
 }
 export { Tracer };

@@ -26,15 +26,22 @@
 
 'use strict'
 
-
-// import { DefaultEventLogger } from './DefaultEventLogger'
-import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
-import { EventPostProcessor } from './EventPostProcessor';
-import { EventPreProcessor } from './EventPreProcessor';
 import { Tracer } from './Tracer'
 
-import {   EventMessage,
-  EventType,
+import { DefaultLoggerRecorder, DefaultSidecarRecorder } from './Recorder'
+
+import { Span, ContextOptions, Recorders } from './Span'
+
+import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
+
+import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
+
+import { EventPostProcessor } from './EventPostProcessor';
+
+import { EventPreProcessor } from './EventPreProcessor';
+
+import {
+  EventMessage,
   LogEventTypeAction,
   AuditEventTypeAction,
   TraceEventTypeAction,
@@ -42,26 +49,24 @@ import {   EventMessage,
   AuditEventAction,
   TraceEventAction,
   EventStatusType,
-  IMessageMetadata,
   EventMetadata,
-  EventTraceMetadata,
   LogResponseStatus,
-  LogResponse
+  LogResponse,
+  TypeMessageMetadata,
+  NullEventAction,
+  EventType,
+  TraceTags,
+  TypeEventMessage,
+  TypeEventMetadata,
+  TypeSpanContext,
+  EventTraceMetadata,
+  TypeEventTypeAction,
+  EventStateMetadata,
+  TypeEventAction
  } from "./model/EventMessage"
-
-
-// let logger = new DefaultEventLogger()
 
 // Re-export definitions and components on the public API
 export {
-  // logger,
-  // DefaultEventLogger,
-  EventLoggingServiceServer,
-  EVENT_RECEIVED,
-  EventPostProcessor,
-  EventPreProcessor,
-  EventMessage,
-  EventType,
   LogEventTypeAction,
   AuditEventTypeAction,
   TraceEventTypeAction,
@@ -69,10 +74,30 @@ export {
   AuditEventAction,
   TraceEventAction,
   EventStatusType,
-  IMessageMetadata,
   EventMetadata,
-  EventTraceMetadata,
+  EventMessage,
   LogResponseStatus,
   LogResponse,
-  Tracer
+  TypeMessageMetadata,
+  Tracer,
+  DefaultLoggerRecorder,
+  DefaultSidecarRecorder,
+  Span,
+  ContextOptions,
+  Recorders,
+  NullEventAction,
+  EventType,
+  TraceTags,
+  TypeEventMessage,
+  TypeEventMetadata,
+  TypeSpanContext,
+  EventTraceMetadata,
+  TypeEventTypeAction,
+  EventStateMetadata,
+  TypeEventAction,
+  EventLoggingServiceClient,
+  EventLoggingServiceServer,
+  EVENT_RECEIVED,
+  EventPostProcessor,
+  EventPreProcessor
 }

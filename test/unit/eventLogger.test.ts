@@ -25,7 +25,8 @@
 
 'use strict'
 
-const sinon = require('sinon');
+const proxyquire = require('proxyquire')
+const sinon = require('sinon')
 const Test = require('tapes')(require('tape'))
 const Uuid = require('uuid4')
 
@@ -44,17 +45,28 @@ import {
   EventType,
   LogResponse,
   LogResponseStatus,
-  IMessageMetadata,
+  TypeMessageMetadata,
   NullEventAction
 } from "../../src/model/EventMessage"
 
-import { Trace } from "../../src/Trace"
+// import { Span } from "../../src/Span"
 import { Tracer } from "../../src/Tracer"
+import { DefaultSidecarRecorder, DefaultLoggerRecorder, IEventRecorder } from "../../src/Recorder";
+import { EventLoggingServiceClient } from "../../src/transport/EventLoggingServiceClient";
 
-Test('EventLogger Class Test', (eventLoggerTests: any) => {
+Test('EventLogger Class Test', async (eventLoggerTests: any) => {
 
-  eventLoggerTests.test('EventMessage', (EventMessageTest: any) => {
-    EventMessageTest.test('LogEventTypeAction should get undefined action', async (test: any) => {
+  await eventLoggerTests.test('EventMessage', async (EventMessageTest: any) => {
+
+    let config_without_sidecar = {
+      SIDECAR_DISABLED: true,
+      EVENT_LOGGER_SERVER_HOST: 'localhost',
+      EVENT_LOGGER_SERVER_PORT: 50051
+    }
+
+    let Span = proxyquire('../../src/Span.ts', { '../config/default.json': config_without_sidecar })
+
+    await EventMessageTest.test('LogEventTypeAction should get undefined action', async (test: any) => {
       try {
         let { type, action } = new LogEventTypeAction()
         test.equal(EventType.log, type)
@@ -67,7 +79,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('LogEventTypeAction should get type and action', async (test: any) => {
+    await EventMessageTest.test('LogEventTypeAction should get type and action', async (test: any) => {
       try {
         let { type, action } = new LogEventTypeAction({ action: LogEventAction.info })
         test.equal(EventType.log, type)
@@ -80,7 +92,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('AuditEventTypeAction should get undefined action', async (test: any) => {
+    await EventMessageTest.test('AuditEventTypeAction should get undefined action', async (test: any) => {
       try {
         let { type, action } = new AuditEventTypeAction()
         test.equal(EventType.audit, type)
@@ -93,7 +105,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('AuditEventTypeAction should get type and action', async (test: any) => {
+    await EventMessageTest.test('AuditEventTypeAction should get type and action', async (test: any) => {
       try {
         let { type, action } = new AuditEventTypeAction({ action: AuditEventAction.default })
         test.equal(EventType.audit, type)
@@ -106,7 +118,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('TraceEventTypeAction should get undefined action', async (test: any) => {
+    await EventMessageTest.test('TraceEventTypeAction should get undefined action', async (test: any) => {
       try {
         let { type, action } = new TraceEventTypeAction()
         test.equal(EventType.trace, type)
@@ -119,7 +131,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('TraceEventTypeAction should get type and action', async (test: any) => {
+    await EventMessageTest.test('TraceEventTypeAction should get type and action', async (test: any) => {
       try {
         let { type, action } = new TraceEventTypeAction({ action: TraceEventAction.span })
         test.equal(EventType.trace, type)
@@ -132,7 +144,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('should create a log/debug EventMessage', async (test: any) => {
+    await EventMessageTest.test('should create a log/debug EventMessage', async (test: any) => {
       try {
         const event: EventMessage = {
           from: "noresponsepayeefsp",
@@ -182,7 +194,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
     })
 
 
-    EventMessageTest.test('should create a log/debug EventMessage using a factory method', async (test: any) => {
+    await EventMessageTest.test('should create a log/debug EventMessage using a factory method', async (test: any) => {
       try {
         const event: EventMessage = {
           from: "noresponsepayeefsp",
@@ -231,7 +243,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('should create the minimum required EventMessage', async (test: any) => {
+    await EventMessageTest.test('should create the minimum required EventMessage', async (test: any) => {
       const ID = "aa398930-f210-4dcd-8af0-7c769cea1660";
       try {
         const event: EventMessage = {
@@ -249,7 +261,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('should create an EventMessage building it', async (test: any) => {
+    await EventMessageTest.test('should create an EventMessage building it', async (test: any) => {
       const id = "aa398930-f210-4dcd-8af0-7c769cea1660";
       try {
         const message: EventMessage = new EventMessage({ id, type: 'application/json', content: {} })
@@ -262,7 +274,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
             state: new EventStateMetadata(EventStatusType.success)
           },
           trace: new EventTraceMetadata({ service: "service_1" })
-        } as IMessageMetadata
+        } as TypeMessageMetadata
 
         test.equal(message.id, id)
 
@@ -273,7 +285,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('should create an EventMessage using the EventMetadata factory methods', async (test: any) => {
+    await EventMessageTest.test('should create an EventMessage using the EventMetadata factory methods', async (test: any) => {
       const id = "aa398930-f210-4dcd-8af0-7c769cea1660";
       try {
         const message: EventMessage = new EventMessage({ id, type: 'application/json', content: {} })
@@ -286,7 +298,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
             state: new EventStateMetadata(EventStatusType.success)
           },
           trace: new EventTraceMetadata({ service: "service_1" })
-        } as IMessageMetadata
+        } as TypeMessageMetadata
         test.equal(message.metadata.event.type, EventType.log)
         test.equal(message.metadata.event.action, LogEventAction.verbose)
 
@@ -299,7 +311,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
             state: new EventStateMetadata(EventStatusType.success)
           },
           trace: new EventTraceMetadata({ service: "service_1" })
-        } as IMessageMetadata
+        } as TypeMessageMetadata
         test.equal(message.metadata.event.type, EventType.log)
         test.equal(message.metadata.event.action, LogEventAction.debug)
 
@@ -312,7 +324,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
             state: new EventStateMetadata(EventStatusType.success)
           },
           trace: new EventTraceMetadata({ service: "service_1" })
-        } as IMessageMetadata
+        } as TypeMessageMetadata
 
         test.equal(message.metadata.event.type, EventType.audit)
         test.equal(message.metadata.event.action, AuditEventAction.default)
@@ -326,7 +338,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
             state: new EventStateMetadata(EventStatusType.success)
           },
           trace: new EventTraceMetadata({ service: "service_1" })
-        } as IMessageMetadata
+        } as TypeMessageMetadata
         test.equal(message.metadata.event.type, EventType.trace)
         test.equal(message.metadata.event.action, TraceEventAction.span)
 
@@ -339,7 +351,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
             state: new EventStateMetadata(EventStatusType.success)
           },
           trace: new EventTraceMetadata({ service: "service_1" })
-        } as IMessageMetadata
+        } as TypeMessageMetadata
         test.equal(message.metadata.event.type, EventType.log)
         test.equal(message.metadata.event.action, LogEventAction.error)
 
@@ -350,7 +362,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       }
     })
 
-    EventMessageTest.test('should create an EventMetadata using Date as the createdAt type', async (test: any) => {
+    await EventMessageTest.test('should create an EventMetadata using Date as the createdAt type', async (test: any) => {
       let createdAt = new Date()
       let id = 'a'
       let { type, action } = new LogEventTypeAction(LogEventAction.debug)
@@ -360,7 +372,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       test.end()
     })
 
-    EventMessageTest.test('should create an EventTraceMetadata using Date as the createdAt type', async (test: any) => {
+    await EventMessageTest.test('should create an EventTraceMetadata using Date as the createdAt type', async (test: any) => {
       let startTimestamp = new Date()
       let service = 'a'
       let meta = new EventTraceMetadata({ startTimestamp, service })
@@ -368,7 +380,7 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       test.end()
     })
 
-    EventMessageTest.test('should create LogResponses of different status', async (test: any) => {
+    await EventMessageTest.test('should create LogResponses of different status', async (test: any) => {
       let response = new LogResponse(LogResponseStatus.UNDEFINED)
       test.equal(response.status, LogResponseStatus.UNDEFINED)
       response = new LogResponse(LogResponseStatus.accepted)
@@ -376,34 +388,22 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
       test.end()
     })
 
-    EventMessageTest.test('should create an EventTraceMetadata and finish it', async (test: any) => {
-      let now = new Date()
-      let trace = Trace.createSpan('a')
-      trace.finishSpan()
-      test.ok(trace.finishTimestamp);
-      trace.finishSpan(now)
-      test.deepEqual(now.toISOString(), trace.finishTimestamp)
-      trace.finishSpan(now.toISOString())
-      test.deepEqual(now.toISOString(), trace.finishTimestamp)
-      test.end()
-    })
-
-    EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid trace id', async (test: any) => {
+    await EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid trace id', async (test: any) => {
       test.throws(() => new EventTraceMetadata({ service: 'a', traceId: 'b' }), Error);
       test.end()
     })
 
-    EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid span id', async (test: any) => {
+    await EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid span id', async (test: any) => {
       test.throws(() => new EventTraceMetadata({ service: 'a', spanId: 'b' }), Error);
       test.end()
     })
 
-    EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid parentSpan id', async (test: any) => {
+    await EventMessageTest.test('should throw Error when creating an EventTraceMetadata with invalid parentSpan id', async (test: any) => {
       test.throws(() => new EventTraceMetadata({ service: 'a', parentSpanId: 'b' }), Error);
       test.end()
     })
 
-    EventMessageTest.test('GetContext should return the context', async (test: any) => {
+    await EventMessageTest.test('GetContext should return the context', async (test: any) => {
       let context = {
         "startTimestamp": "2019-07-16T11:40:44.320Z",
         "service": "new-span",
@@ -411,141 +411,200 @@ Test('EventLogger Class Test', (eventLoggerTests: any) => {
         "spanId": "6ae55cdac0c97978",
         "tags": {}
       }
-  
-      let trace = new Trace(context)
-      test.deepEqual(context, trace.getContext())
+
+      let trace = Tracer.createChildSpanFromContext(context.service, context)
+      test.equal(context.traceId, trace.getContext().traceId)
       test.end()
     })
 
-    EventMessageTest.end()
-    })
+    await EventMessageTest.end()
+  })
 
-    const messageProtocol = {
-      id: "xyz1234",
-      to: "DFSP1",
-      from: "DFSP1",
-      type: 'application/json',
-      content: {
-        headers: {},
-        payload: "http://example.com/v1/go"
-      },
-      metadata: {
-        event: {
-          id: Uuid(),
-          type: 'prepare',
-          action: 'prepare',
-          createdAt: new Date(),
-          state: {
-            status: 'success',
-            code: 0
-          }
+  const messageProtocol = {
+    id: "xyz1234",
+    to: "DFSP1",
+    from: "DFSP1",
+    type: 'application/json',
+    content: {
+      headers: {},
+      payload: "http://example.com/v1/go"
+    },
+    metadata: {
+      event: {
+        id: Uuid(),
+        type: 'prepare',
+        action: 'prepare',
+        createdAt: new Date(),
+        state: {
+          status: 'success',
+          code: 0
         }
-      } 
+      }
+    }
+  }
+
+  await eventLoggerTests.test('Tracer should get child span', async (test: any) => {
+    let config_with_sidecar = {
+      SIDECAR_DISABLED: false,
+      EVENT_LOGGER_SERVER_HOST: 'localhost',
+      EVENT_LOGGER_SERVER_PORT: 50051
     }
 
-    let config = {
-      SIDECAR_DISABLED: false
-    }
-    
-    let tracer = Tracer.createSpan('span', config)
-    sinon.stub(tracer.client.grpcClient, "log").callsFake((wireEvent: any, cb: any) => {
+    // process.env.EVENT_SDK_SIDECAR_DISABLED = 'false'
+
+    let Span = proxyquire('../../src/Span.ts', { '../config/default.json': config_with_sidecar })
+
+    let grpcClient = new EventLoggingServiceClient(config_with_sidecar.EVENT_LOGGER_SERVER_HOST, config_with_sidecar.EVENT_LOGGER_SERVER_PORT)
+    let tracer = Tracer.createSpan('span', {}, { defaultRecorder: new DefaultSidecarRecorder(grpcClient) })
+    sinon.stub(grpcClient.grpcClient, "log").callsFake((wireEvent: any, cb: any) => {
       cb(null, new LogResponse(LogResponseStatus.accepted))
     });
-
-    eventLoggerTests.test('Tracer should create a parent span', async (test: any) => {
-      await tracer.info({content: {messageProtocol}})
-      await tracer.debug({content: {messageProtocol}})
-      await tracer.verbose({content: {messageProtocol}})
-      await tracer.error({content: {messageProtocol}})
-      await tracer.warning({content: {messageProtocol}})
-      await tracer.performance({content: {messageProtocol}})
-      test.equal(tracer.service, 'span')
+    await eventLoggerTests.test('Tracer should create a parent span', async (test: any) => {
+      await tracer.info({ content: { messageProtocol } })
+      await tracer.debug({ content: { messageProtocol } })
+      await tracer.verbose({ content: { messageProtocol } })
+      await tracer.error({ content: { messageProtocol } })
+      await tracer.warning({ content: { messageProtocol } })
+      await tracer.performance({ content: { messageProtocol } })
+      test.equal(tracer.spanContext.service, 'span')
       test.end()
     })
 
-    config.SIDECAR_DISABLED = true
+    // config.SIDECAR_DISABLED = true
 
-    let newTracer = Tracer.createSpan('service1', config)
-    newTracer.setTags({tag: 'value'})
-    eventLoggerTests.test('Tracer should get child span', async (test: any) => {
-      let child = newTracer.getChild('service2')
-      test.equal(newTracer.spanId, child.parentSpanId, 'parentSpanId taken from parent spanId')
-      test.equal(newTracer.traceId, child.traceId, 'traceId same as parent trace')
-      test.equal(child.service, 'service2')
-      test.deepEqual(child.tags, {tag: 'value'}, 'tags match')
-      let traceContext = child.getContext()
-      let IIChild = Tracer.createChildSpanFromContext('service3', traceContext)
-      test.equal(child.spanId, IIChild.parentSpanId, 'parentSpanId taken from parent spanId')
-      test.equal(newTracer.traceId, IIChild.traceId, 'traceId same as parent trace')
-      test.equal(IIChild.service, 'service3')
-      let newMessage = await IIChild.injectContextToMessage(messageProtocol)
-      let expected = Object.assign({}, messageProtocol, { metadata: { event: messageProtocol.metadata.event, trace: IIChild.getContext() } })
-      test.equal(JSON.stringify(newMessage), JSON.stringify(expected))
-      let extractedContext = Tracer.extractContextFromMessage(newMessage)
-      let IIIChild = Tracer.createChildSpanFromContext('service4', extractedContext)
-      test.equal(IIChild.spanId, IIIChild.parentSpanId, 'parentSpanId taken from parent spanId')
-      test.equal(newTracer.traceId, IIIChild.traceId, 'traceId same as parent trace')
-      test.equal(IIIChild.service, 'service4')
-      let finishtime = new Date()
-      await newTracer.finish(finishtime)
-      test.deepEqual(finishtime.toISOString(), newTracer.finishTimestamp)
-      try {
-        await newTracer.finish()
-        test.fail('should throw')
-        test.end()
-      } catch (e) {
-        test.ok(e)
-      }
-      try {
-        await newTracer.trace()
-        test.fail('should throw')
-        test.end()
-      } catch (e) {
-        test.ok(e)
-      }
-      try {
-        await newTracer.audit(<EventMessage>newMessage)
-        test.fail('should throw')
-        test.end()
-      } catch (e) {
-        test.ok(e)
-      }
+    let newTracer = Tracer.createSpan('service1')
+    newTracer.setTags({ tag: 'value' })
 
-      let result = await child.trace()
+    let child = newTracer.getChild('service2')
+    test.equal(newTracer.spanContext.spanId, child.spanContext.parentSpanId, 'parentSpanId taken from parent spanId')
+    test.equal(newTracer.spanContext.traceId, child.spanContext.traceId, 'traceId same as parent trace')
+    test.equal(child.spanContext.service, 'service2')
+    test.deepEqual(child.spanContext.tags, { tag: 'value' }, 'tags match')
+    let spanContext = child.getContext()
+    let IIChild = Tracer.createChildSpanFromContext('service3', spanContext)
+    test.equal(child.spanContext.spanId, IIChild.spanContext.parentSpanId, 'parentSpanId taken from parent spanId')
+    test.equal(newTracer.spanContext.traceId, IIChild.spanContext.traceId, 'traceId same as parent trace')
+    test.equal(IIChild.spanContext.service, 'service3')
+    let newMessage = await Tracer.injectContextToMessage(IIChild.getContext(), messageProtocol)
+    let expected = Object.assign({}, messageProtocol, { metadata: { event: messageProtocol.metadata.event, trace: IIChild.getContext() } })
+    let newM = await IIChild.injectContextToMessage(messageProtocol)
+    test.equal(JSON.stringify(newMessage), JSON.stringify(expected))
+    test.equal(JSON.stringify(newM), JSON.stringify(expected))
+    let extractedContext = Tracer.extractContextFromMessage(newMessage)
+    let IIIChild = Tracer.createChildSpanFromContext('service4', extractedContext)
+    test.equal(IIChild.spanContext.spanId, IIIChild.spanContext.parentSpanId, 'parentSpanId taken from parent spanId')
+    test.equal(newTracer.spanContext.traceId, IIIChild.spanContext.traceId, 'traceId same as parent trace')
+    test.equal(IIIChild.spanContext.service, 'service4')
+    // let finishtime = new Date()
+    // await newTracer.finish('', finishtime)
+    // test.deepEqual(finishtime.toISOString(), newTracer.spanContext.finishTimestamp)
+    let newM1 = await IIIChild.injectContextToMessage({ trace: {} })
+    let expected1 = { trace: IIIChild.getContext() }
+    test.equal(JSON.stringify(newM1), JSON.stringify(expected1))
+    let newMeta = await IIIChild.injectContextToMessage(new EventTraceMetadata({ service: '1' }))
+    test.equal(JSON.stringify(newMeta), JSON.stringify(IIIChild.getContext()))
+    let newM2 = await IIIChild.injectContextToMessage({ message: { value: { metadata: { here: {} } } } }, { path: 'message.value.metadata' })
+    let expected2 = { message: { value: { metadata: { here: {}, trace: IIIChild.getContext() } } } }
+    test.equal(JSON.stringify(newM2), JSON.stringify(expected2))
+
+    let newM3 = await Tracer.injectContextToMessage(IIIChild.getContext(), { trace: {} })
+    let expected3 = { trace: IIIChild.getContext() }
+    test.equal(JSON.stringify(newM3), JSON.stringify(expected3))
+    let newMeta2 = await Tracer.injectContextToMessage(IIIChild.getContext(), new EventTraceMetadata({ service: '1' }))
+    test.equal(JSON.stringify(newMeta2), JSON.stringify(IIIChild.getContext()))
+    let newM4 = await Tracer.injectContextToMessage(IIIChild.getContext(), { message: { value: { metadata: { here: {} } } } }, { path: 'message.value.metadata' })
+    let expected4 = { message: { value: { metadata: { here: {}, trace: IIIChild.getContext() } } } }
+    test.equal(JSON.stringify(newM4), JSON.stringify(expected4))
+
+    try {
+      await newTracer.finish()
+      test.ok('trace finished')
+    } catch (e) {
+      test.fail('should not throw ', e)
+      test.end()
+    }
+
+    try {
+      await newTracer.finish()
+      test.fail('should throw')
+      test.end()
+    } catch (e) {
+      test.ok(e)
+    }
+    try {
+      await newTracer.audit(<EventMessage>newMessage)
+      test.fail('should throw')
+      test.end()
+    } catch (e) {
+      test.ok(e)
+    }
+
+    // try {
+    //   let child = newTracer.getChild('b')
+    //   child.finish()
+    //   let childII = child.getChild('a')
+    //   test.fail('should throw')
+    // } catch (e) {
+    //   test.ok(e)
+    // }
+
+    let logresult = await child.audit(<EventMessage>newMessage)
+    test.ok(logresult)
+
+    await child.info('message')
+    await child.debug('message')
+    await child.verbose('message')
+    await child.error('message')
+    await child.warning('message')
+    await child.performance('message')
+
+    test.end()
+  })
+
+  await eventLoggerTests.test('recorder test', async (test: any) => {
+    try {
+      const message = {
+        id: "xyz1234",
+        to: "DFSP1",
+        from: "DFSP1",
+        type: 'application/json',
+        content: {
+          headers: {},
+          payload: "http://example.com/v1/go"
+        }
+      }
+      let recorder = new DefaultLoggerRecorder()
+      let result = await recorder.record(message)
       test.ok(result)
-      
-      // try {
-      //   await child.trace(null, { state: { status: 'fake' } })
-      //   test.fail('should throw')
-      // } catch (e) {
-      //   test.ok(e)
-      // }
-      let logresult = await child.audit(<EventMessage>newMessage)
-      test.ok(logresult)
-
-      await child.info('message')
-      await child.debug('message')
-      await child.verbose('message')
-      await child.error('message')
-      await child.warning('message')
-      await child.performance('message')
-
       test.end()
-    })
-  
-    // eventLoggerTests.test('EventLoger should create a child span', async (test: any) => {
-    //   let rootSpan = await eventLogger.createSpanForMessageEnvelope(messageProtocol, 'ml-api-adapter');
-    //   // const topicConfig = Utility.createGeneralTopicConf(TRANSFER, PREPARE, message.transferId)
-    //   // Logger.debug(`domain::transfer::prepare::messageProtocol - ${messageProtocol}`)
-    //   let childSpan1 = await eventLogger.createChildSpanForMessageEnvelope(messageProtocol, rootSpan, 'ml-api-adapter-stage1')
-    //   await eventLogger.logSpan(childSpan1);
-    //   await eventLogger.logSpan(rootSpan);
-    //   test.equal(childSpan1.traceId, rootSpan.traceId)
-    //   test.equal(childSpan1.parentSpanId, rootSpan.spanId)
-    //   test.notEqual(childSpan1.spanId, rootSpan.spanId)
-    //   test.end()
-  // })
+    } catch (e) {
+      test.fail(e)
+      test.end()
+    }
+  })
+
+  await eventLoggerTests.test('recorder test', async (test: any) => {
+    try {
+      const message = {
+        id: "xyz1234",
+        to: "DFSP1",
+        from: "DFSP1",
+        type: 'application/json',
+        content: {
+          headers: {},
+          payload: "http://example.com/v1/go"
+        }
+      }
+      let recorder = new DefaultLoggerRecorder()
+      let result = await recorder.record(message)
+      test.ok(result)
+      test.end()
+    } catch (e) {
+      test.fail(e)
+      test.end()
+    }
+  })
 
 
-  eventLoggerTests.end()
+  await eventLoggerTests.end()
 })

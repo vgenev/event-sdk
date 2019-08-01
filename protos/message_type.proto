@@ -47,6 +47,7 @@ enum EventTypeAction {
   perf = 6;
   error = 7;
   span = 8;
+  default = 9;
 }
 
 enum EventStatusType {
