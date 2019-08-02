@@ -238,7 +238,7 @@ class Span implements Partial<ISpan> {
    */
   private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, action?: TraceEventAction, state?: EventStateMetadata): Promise<any> {
     if (!message) message = new EventMessage({
-      type: 'trace',
+      type: 'application/json',
       content: spanContext
     })
     try {
@@ -368,13 +368,13 @@ class Span implements Partial<ISpan> {
     let messageToLog
     if (typeof message === 'string') {
       messageToLog = new EventMessage({
-        content: { payload: { message } },
-        type
+        content: { payload: message },
+        type: 'application/json'
       })
     } else if ((typeof message === 'object') && (!(message.hasOwnProperty('content')) || !(message.hasOwnProperty('type')))) {
       messageToLog = new EventMessage({
-        content: { payload: { message } },
-        type
+        content: message,
+        type: 'application/json'
       })
     } else {
       messageToLog = new EventMessage(<TypeEventMessage>message)

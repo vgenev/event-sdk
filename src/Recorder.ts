@@ -19,7 +19,12 @@ interface IEventRecorder {
 }
 
 class DefaultLoggerRecorder implements IEventRecorder {
-  recorder: Function = Logger
+  recorder: Function
+
+  constructor(recorder?: EventLoggingServiceClient) {
+    this.recorder = recorder ? recorder : Logger
+    return this
+  }
 
   preProcess = (event: EventMessage): EventMessage => {
     return event

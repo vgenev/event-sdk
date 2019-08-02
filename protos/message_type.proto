@@ -39,16 +39,17 @@ enum EventType {
 
 enum EventTypeAction {
   UNDEFINED = 0;
-  start = 1;
-  end = 2;
-  info = 3;
-  debug = 4;
-  verbose = 5;
-  perf = 6;
-  error = 7;
-  span = 8;
-  default = 9;
+  info = 1;
+  debug = 2;
+  verbose = 3;
+  perf = 4;
+  warn = 5;
+  error = 6;
+  span = 7;
+  default = 8;
 }
+
+//TODO add whats missing
 
 enum EventStatusType {
   UNDEFINED = 0;
@@ -95,7 +96,7 @@ message EventMessage {
   string pp = 4; // Optional
   MessageMetadata metadata = 5; // Optional
   string type = 6;
-  google.protobuf.Struct content = 7;
+  google.protobuf.Any content = 7;
 }
 
 enum LogResponseStatus {
