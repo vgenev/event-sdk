@@ -98,12 +98,11 @@ const main = async () => {
   let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
 
   // Creates child span from extracted trace context.
-  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
-  // await sleep(500)
-  await parentSpan.finish(event)
+  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage, { defaultRecorder: new DefaultLoggerRecorder() })
+  await sleep(500)
   IIChildSpan.finish()
   IIIChild.finish()
-  // await sleep(1000)
+  await sleep(1000)
 }
 
 main()
