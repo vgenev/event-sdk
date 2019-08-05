@@ -23,7 +23,7 @@
  --------------
  ******/
 import { EventMessage, LogResponse, LogResponseStatus } from "../model/EventMessage";
-import { convertStructToJson } from "./JsonToStructMapper";
+import { convertStructToJson, fromAny } from "./JsonToStructMapper";
 import { loadEventLoggerService } from "./EventLoggerServiceLoader";
 
 import events = require('events');
@@ -72,7 +72,8 @@ class EventLoggingServiceServer extends events.EventEmitter{
       let eventMessage : EventMessage = Object.assign({}, event);
       // Convert the event.content wich is an Struct to a plan object
       if (eventMessage.content) {
-        eventMessage.content = convertStructToJson(eventMessage.content.fields)
+        // eventMessage.content = convertStructToJson(eventMessage.content.fields)
+        eventMessage.content = fromAny(eventMessage.content)
       }
 
       this.emit(EVENT_RECEIVED, eventMessage);

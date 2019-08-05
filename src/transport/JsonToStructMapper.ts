@@ -47,7 +47,7 @@ function convertJsontoStruct(data: any) {
   };
 }
 
-function valueToProto (value: any) : any {
+function valueToProto(value: any): any {
   var valueRep: any = {};
   var typeString = toString.call(value);
   switch (typeString) {
@@ -66,8 +66,8 @@ function valueToProto (value: any) : any {
       //   // Repeated field of dynamically typed values.
       //   repeated Value values = 1;
       // }        
-      var values = value.map ( (each : any) => valueToProto(each));
-      valueRep.listValue =  { values : values };
+      var values = value.map((each: any) => valueToProto(each));
+      valueRep.listValue = { values: values };
       break;
     case '[object Number]':
       valueRep.numberValue = value;
@@ -87,7 +87,7 @@ function valueToProto (value: any) : any {
   return valueRep;
 }
 
-function protoValueToJs (val: any) {
+function protoValueToJs(val: any) {
   var kind = val.kind
   var value = val[kind]
   if (kind === 'listValue') {
@@ -96,20 +96,44 @@ function protoValueToJs (val: any) {
     })
   } else if (kind === 'structValue') {
     return convertStructToJson(value.fields)
-  } else { 
+  } else {
     return value
   }
 }
 
-function convertStructToJson (struct: any) {
-  var result : any = {}
+function convertStructToJson(struct: any) {
+  var result: any = {}
   Object.keys(struct).forEach(function (key) {
     result[key] = protoValueToJs(struct[key])
   })
   return result
 }
 
+function toAny(data: any, type: string) {
+  let byteArrayData
+  if (data && (type === 'text/plain')) {
+    byteArrayData = Buffer.from(data)
+  } else if (data && (type === 'application/json')) {
+    byteArrayData = Buffer.from(JSON.stringify(data))
+  }
+  return {
+    type_url: type,
+    value: byteArrayData
+  }
+}
+
+function fromAny(data: any) {
+  let { type_url, value } = data
+  if (type_url === 'text/plain') {
+    return value.toString()
+  } else if (type_url === 'application/json') {
+    return JSON.parse(value.toString())
+  }
+}
+
 export {
   convertJsontoStruct,
-  convertStructToJson
+  convertStructToJson,
+  toAny,
+  fromAny
 }

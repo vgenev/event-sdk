@@ -28,7 +28,8 @@
  *
  */
 
-const { Tracer, DefaultLoggerRecorder } = require('../../lib/index')
+const { Tracer } = require('../../lib/index')
+const { DefaultLoggerRecorder } = require('../../lib/index')
 
 function sleep (ms) {
   return new Promise(resolve => {
@@ -87,11 +88,11 @@ const main = async () => {
   await parentSpan.audit(event)
 
   // Finish the span. This also sends the trace context to the tracing platform. All further operations are forbidden after the span is finished.
-  await parentSpan.finish(event)
+  // await parentSpan.finish(event)
 
   // Injects trace context to a message carrier. When the trace is carried across few services, the trace context can be injects in the carrier that transports the data.
   let messageWithContext = await IIChildSpan.injectContextToMessage(event)
-  await sleep(2000)
+  // await sleep(2000)
 
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
   let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
@@ -100,8 +101,8 @@ const main = async () => {
   let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage, { defaultRecorder: new DefaultLoggerRecorder() })
   await sleep(500)
   IIChildSpan.finish()
-  await sleep(1000)
   IIIChild.finish()
+  await sleep(1000)
 }
 
 main()

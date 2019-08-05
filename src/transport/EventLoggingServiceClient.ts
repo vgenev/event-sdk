@@ -22,11 +22,11 @@
 
  --------------
  ******/
-import { EventMessage, LogResponse, LogResponseStatus } from "../model/EventMessage";
-import { convertJsontoStruct, convertStructToJson } from "./JsonToStructMapper";
+import { EventMessage, LogResponse } from "../model/EventMessage";
+import { toAny } from "./JsonToStructMapper";
 import { loadEventLoggerService } from "./EventLoggerServiceLoader";
+
 const Logger = require('@mojaloop/central-services-shared').Logger
-const path = require('path');
 const grpc = require('grpc')
 
 class EventLoggingServiceClient {
@@ -50,13 +50,19 @@ class EventLoggingServiceClient {
       if ( !event.content ) {
         throw new Error('Invalid eventMessage: content is mandatory');
       }
-      wireEvent.content = convertJsontoStruct(event.content);
+      try {
+      // wireEvent.content = convertJsontoStruct(event.content);
+      wireEvent.content = toAny(event.content, event.type);
       Logger.info(`EventLoggingServiceClient.log sending wireEvent: ${JSON.stringify(wireEvent, null, 2)}`);
       this.grpcClient.log(wireEvent, (error: any, response: LogResponse) => {
         Logger.info(`EventLoggingServiceClient.log  received response: ${JSON.stringify(response, null, 2)}`);
         if ( error ) { reject(error); }
         resolve(response);
       })
+    } catch (e) {
+      Logger.error(e)
+      reject(e)
+    }
     })
   }
 }
