@@ -59,7 +59,7 @@ Test('EventLogger Class Test', async (eventLoggerTests: any) => {
   await eventLoggerTests.test('EventMessage', async (EventMessageTest: any) => {
 
     let config_without_sidecar = {
-      SIDECAR_DISABLED: true,
+      EVENT_LOGGER_SIDECAR_DISABLED: true,
       EVENT_LOGGER_SERVER_HOST: 'localhost',
       EVENT_LOGGER_SERVER_PORT: 50051
     }
@@ -445,7 +445,7 @@ Test('EventLogger Class Test', async (eventLoggerTests: any) => {
 
   await eventLoggerTests.test('Tracer should get child span', async (test: any) => {
     let config_with_sidecar = {
-      SIDECAR_DISABLED: false,
+      EVENT_LOGGER_SIDECAR_DISABLED: false,
       EVENT_LOGGER_SERVER_HOST: 'localhost',
       EVENT_LOGGER_SERVER_PORT: 50051
     }
