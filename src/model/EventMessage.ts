@@ -60,7 +60,9 @@ enum LogEventAction {
  */
 
 enum AuditEventAction {
-  default = "default"
+  default = "default",
+  start = "start",
+  end = "end"
 }
 
 

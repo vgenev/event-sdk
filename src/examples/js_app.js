@@ -67,7 +67,7 @@ const main = async () => {
   await parentSpan.debug('message')
   await parentSpan.verbose('message')
   await parentSpan.performance('message')
-  await parentSpan.audit('message')
+  await parentSpan.audit('message', 'start')
   // Logs message with logging level debug from the parent span
   await parentSpan.debug('this is debug log')
 
@@ -76,7 +76,7 @@ const main = async () => {
   let IIChildSpan = parentSpan.getChild('child II service')
 
   // Creates audit event message
-  await IIChildSpan.audit({ content: event })
+  await IIChildSpan.audit({ content: event }, 'end')
 
   // Set tags to the span
   IIChildSpan.setTags({ one: 'two' })
