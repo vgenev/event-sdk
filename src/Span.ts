@@ -32,7 +32,7 @@ const Config = require('./lib/config')
 
 type RecorderKeys = 'defaultRecorder' | 'logRecorder' | 'auditRecorder' | 'traceRecorder'
 
-const defaultRecorder = Config.SIDECAR_DISABLED
+const defaultRecorder = Config.EVENT_LOGGER_SIDECAR_DISABLED
   ? new DefaultLoggerRecorder()
   : new DefaultSidecarRecorder(new EventLoggingServiceClient(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT))
 
