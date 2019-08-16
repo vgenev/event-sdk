@@ -1,4 +1,4 @@
-const RC = require('rc')('EVENT_SDK', require('../../config/default.json'))
+const RC = require('parse-strings-in-object')(require('rc')('EVENT_SDK', require('../../config/default.json')))
 
 module.exports = {
   EVENT_LOGGER_SERVER_HOST: RC.SERVER_HOST,
