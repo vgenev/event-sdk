@@ -55,6 +55,14 @@ const event = {
   type: 'application/json'
 }
 
+const request = {
+  headers: {
+    host: 'localhost:4000',
+    'user-agent': 'curl/7.59.0',
+    accept: '*/*'
+  }
+}
+
 const main = async () => {
   // Creates a new parent span for given service
   // this sets new traceId and new spanId.
@@ -62,6 +70,7 @@ const main = async () => {
 
   // Logs message with logging level info from the parent span
   await parentSpan.info(event)
+  await parentSpan.info('this is event message')
   await parentSpan.warning('event')
   await parentSpan.error('event')
   await parentSpan.debug('message')
@@ -88,15 +97,17 @@ const main = async () => {
   await parentSpan.audit(event)
 
   // Finish the span. This also sends the trace context to the tracing platform. All further operations are forbidden after the span is finished.
-  // await parentSpan.finish(event)
+  await parentSpan.finish(event)
 
   // Injects trace context to a message carrier. When the trace is carried across few services, the trace context can be injects in the carrier that transports the data.
   let messageWithContext = await IIChildSpan.injectContextToMessage(event)
   // await sleep(2000)
-
+  let requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
+  console.log(requestHeadersWithContext)
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
   let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
-
+  let context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
+  console.log(context)
   // Creates child span from extracted trace context.
   let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage, { defaultRecorder: new DefaultLoggerRecorder() })
   await sleep(500)

@@ -1,4 +1,4 @@
-import { TraceTags, TypeSpanContext } from "./model/EventMessage";
+import { TraceTags, TypeSpanContext, HttpRequestOptions } from "./model/EventMessage";
 import { Span, ContextOptions, Recorders } from "./Span";
 /**
  * Describes Event SDK methods from Tracer perspective
@@ -11,9 +11,15 @@ declare abstract class ATracer {
     }, path?: string) => {
         [key: string]: any;
     };
+    static injectContextToHttpRequest: (context: TypeSpanContext, request: {
+        [key: string]: any;
+    }, type?: HttpRequestOptions) => {
+        [key: string]: any;
+    };
     static extractContextFromMessage: (message: {
         [key: string]: any;
     }, path?: string) => TypeSpanContext;
+    static extractContextFromHttpRequest: (request: any, type?: HttpRequestOptions) => TypeSpanContext;
 }
 declare class Tracer implements ATracer {
     /**
@@ -42,6 +48,11 @@ declare class Tracer implements ATracer {
     }, injectOptions?: ContextOptions): Promise<{
         [key: string]: any;
     }>;
+    static injectContextToHttpRequest(context: TypeSpanContext, request: {
+        [key: string]: any;
+    }, type?: HttpRequestOptions): Promise<{
+        [key: string]: any;
+    }>;
     /**
      * Extracts trace context from a carrier (ex: kafka message, event message, metadata, trace)
      * with optional path for the trace context to be extracted.
@@ -51,5 +62,8 @@ declare class Tracer implements ATracer {
     static extractContextFromMessage(carrier: {
         [key: string]: any;
     }, extractOptions?: ContextOptions): TypeSpanContext;
+    static extractContextFromHttpRequest(request: {
+        [key: string]: any;
+    }, type?: HttpRequestOptions): TypeSpanContext;
 }
 export { Tracer };

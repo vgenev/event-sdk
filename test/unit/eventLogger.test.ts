@@ -46,13 +46,16 @@ import {
   LogResponse,
   LogResponseStatus,
   TypeMessageMetadata,
-  NullEventAction
+  NullEventAction,
+  HttpRequestOptions
 } from "../../src/model/EventMessage"
 
 // import { Span } from "../../src/Span"
 import { Tracer } from "../../src/Tracer"
-import { DefaultSidecarRecorder, DefaultLoggerRecorder, IEventRecorder } from "../../src/Recorder";
+import { DefaultSidecarRecorder, DefaultLoggerRecorder, IEventRecorder, DefaultSidecarRecorderAsync } from "../../src/Recorder";
 import { EventLoggingServiceClient } from "../../src/transport/EventLoggingServiceClient";
+
+const Config = require('../../src/lib/config')
 
 Test('EventLogger Class Test', async (eventLoggerTests: any) => {
 
@@ -516,8 +519,35 @@ Test('EventLogger Class Test', async (eventLoggerTests: any) => {
     let expected4 = { message: { value: { metadata: { here: {}, trace: IIIChild.getContext() } } } }
     test.equal(JSON.stringify(newM4), JSON.stringify(expected4))
 
+    let newHeader = await Tracer.injectContextToHttpRequest(IIIChild.getContext(), { headers: {} })
+    test.ok(newHeader.headers.traceparent, 'headers created')
+    let newHeader2 = await Tracer.injectContextToHttpRequest(IIIChild.getContext(), { headers: { tracestate: 'm=dadfafa,j=123' } })
+    test.ok(newHeader2.headers.traceparent, 'headers created')
+    let newHeader3 = await Tracer.injectContextToHttpRequest(IIIChild.getContext(), { headers: { tracestate: 'm=dadfafa,j=123,mojaloop=dfasdfads' } })
+    test.ok(newHeader3.headers.tracestate.includes('mojaloop'), 'tracestate created')
+    let newHeader4 = await newTracer.injectContextToHttpRequest({ headers: { tracestate: 'm=dadfafa,j=123,mojaloop=dfasdfads' } })
+    test.ok(newHeader4.headers.traceparent, 'headers created')
+    test.ok(newHeader4.headers.tracestate.includes('mojaloop'), 'tracestate created')
+    let newHeader5 = await newTracer.injectContextToHttpRequest({ headers: { tracestate: 'm=dadfafa,j=123,mojaloop=dfasdfads' } }, HttpRequestOptions.xb3)
+    test.ok(newHeader5.headers['X-B3-SpanId'], 'headers created')
+    let newHeader6 = await IIChild.injectContextToHttpRequest({ headers: { tracestate: 'm=dadfafa,j=123,mojaloop=dfasdfads' } }, HttpRequestOptions.xb3)
+    test.ok(newHeader6.headers['X-B3-SpanId'], 'headers created')
+    let newcxt = Tracer.extractContextFromHttpRequest(newHeader)
+    test.ok(newcxt.spanId)
+    let newcxt2 = Tracer.extractContextFromHttpRequest(newHeader6, HttpRequestOptions.xb3)
+    test.ok(newcxt2.spanId)
+
     try {
-      await newTracer.finish()
+      let finishtime = new Date()
+      await newTracer.finish('message', finishtime)
+      test.ok('trace finished')
+    } catch (e) {
+      test.fail('should not throw ', e)
+      test.end()
+    }
+
+    try {
+      await IIChild.finish()
       test.ok('trace finished')
     } catch (e) {
       test.fail('should not throw ', e)
@@ -605,6 +635,28 @@ Test('EventLogger Class Test', async (eventLoggerTests: any) => {
     }
   })
 
+  await eventLoggerTests.test('recorder test', async (test: any) => {
+    try {
+      const message = {
+        id: "xyz1234",
+        to: "DFSP1",
+        from: "DFSP1",
+        type: 'application/json',
+        content: {
+          headers: {},
+          payload: "http://example.com/v1/go"
+        }
+      }
+      let recorder = new DefaultSidecarRecorderAsync(new EventLoggingServiceClient(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT))
+      let result = recorder.record(message)
+      test.ok(result)
+      test.end()
+    } catch (e) {
+      test.fail(e)
+      test.end()
+    }
+  })
 
+  DefaultSidecarRecorderAsync
   await eventLoggerTests.end()
 })

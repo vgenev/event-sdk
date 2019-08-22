@@ -1,4 +1,4 @@
-import { AuditEventAction, TraceTags, TypeSpanContext, EventTraceMetadata, EventStateMetadata } from './model/EventMessage';
+import { AuditEventAction, TraceTags, TypeSpanContext, EventTraceMetadata, EventStateMetadata, HttpRequestOptions } from './model/EventMessage';
 import { IEventRecorder } from './Recorder';
 declare type PartialWithDefaultRecorder<T> = {
     [P in keyof T]?: T[P];
@@ -50,6 +50,7 @@ declare type ContextOptions = {
  * @param getChild Defines a method to get child span
  * @param setTags Defines a method to set tags to the span
  * @param injectContextToMessage Defnies a method to inject current span context into message carrier
+ * @param injectContextToHttpRequest Defnies a method to inject current span context http request headers
  */
 interface ISpan {
     spanContext: TypeSpanContext;
@@ -69,6 +70,11 @@ interface ISpan {
     injectContextToMessage: (message: {
         [key: string]: any;
     }, injectOptions: ContextOptions) => {
+        [key: string]: any;
+    };
+    injectContextToHttpRequest: (request: {
+        [key: string]: any;
+    }, type?: HttpRequestOptions) => {
         [key: string]: any;
     };
 }
@@ -106,6 +112,11 @@ declare class Span implements Partial<ISpan> {
     injectContextToMessage(carrier: {
         [key: string]: any;
     }, injectOptions?: ContextOptions): Promise<{
+        [key: string]: any;
+    }>;
+    injectContextToHttpRequest(request: {
+        [key: string]: any;
+    }, type?: HttpRequestOptions): Promise<{
         [key: string]: any;
     }>;
     /**
@@ -200,4 +211,9 @@ declare class Span implements Partial<ISpan> {
      */
     private createEventMessage;
 }
-export { Span, ContextOptions, Recorders };
+declare const setHttpHeader: (context: TypeSpanContext, type: HttpRequestOptions, headers: {
+    [key: string]: any;
+}) => {
+    [key: string]: any;
+};
+export { Span, ContextOptions, Recorders, setHttpHeader };
