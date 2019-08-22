@@ -16,7 +16,7 @@ abstract class ATracer {
   static injectContextToMessage: (context: TypeSpanContext, message: { [key: string]: any }, path?: string) => { [key: string]: any }
   static injectContextToHttpRequest: (context: TypeSpanContext, request: { [key: string]: any }, type?: HttpRequestOptions) => { [key: string]: any }
   static extractContextFromMessage: (message: { [key: string]: any }, path?: string) => TypeSpanContext
-  static extractContextFromHttpRequest: (request: any, type?: HttpRequestOptions) => TypeSpanContext
+  static extractContextFromHttpRequest: (request: any, type?: HttpRequestOptions) => TypeSpanContext | undefined
 }
 
 class Tracer implements ATracer {
@@ -89,11 +89,13 @@ class Tracer implements ATracer {
     return <TypeSpanContext>spanContext
   }
 
-  static extractContextFromHttpRequest(request: { [key: string] : any }, type: HttpRequestOptions = HttpRequestOptions.w3c): TypeSpanContext {
+  static extractContextFromHttpRequest(request: { [key: string] : any }, type: HttpRequestOptions = HttpRequestOptions.w3c): TypeSpanContext | undefined {
     let spanContext
     switch (type) {
       case HttpRequestOptions.xb3: {
         let result:{ [key: string]: string } = {}
+        // TODO validate are the headers are coming as lowercase
+        if (!request.headers || !request.headers['x-b3-traceid'] || !request.headers['x-b3-spanid']) return undefined
         for (let [ key, value ] of Object.entries(request.headers)) {
           let keyLowerCase = key.toLowerCase()
           if (keyLowerCase.startsWith('x-b3-')) {
@@ -106,6 +108,7 @@ class Tracer implements ATracer {
       }
       case HttpRequestOptions.w3c:
       default: {
+        if (!request.headers || !request.headers.traceparent) return undefined
         let context = TraceParent.fromString(request.headers.traceparent)
         let sampled: number = context.flags ? context.flags & 0x01 : 0
         spanContext = new EventTraceMetadata({
