@@ -1,5 +1,5 @@
 {
   "SERVER_HOST": "localhost",
   "SERVER_PORT": 50051,
-  "SIDECAR_DISABLED": false  
+  "SIDECAR_DISABLED": true  
 }
