@@ -15,7 +15,7 @@ interface IEventRecorder {
   recorder: EventLoggingServiceClient | Function
   preProcess: (event: EventMessage) => EventMessage
   postProcess?: (result: any) => any
-  record: (event: EventMessage, callback?: (result: any) => void ) => Promise<any>
+  record: (event: EventMessage, doLog?: boolean, callback?: (result: any) => void ) => Promise<any>
 }
 
 const logWithLevel = async (message: EventMessage): Promise<any> => {
@@ -81,8 +81,8 @@ class DefaultSidecarRecorder implements IEventRecorder {
     return result
   }
 
-  async record(event: EventMessage): Promise<any> {
-    await logWithLevel(event)
+  async record(event: EventMessage, doLog: boolean = true): Promise<any> {
+    doLog && await logWithLevel(event)
     let updatedEvent = this.preProcess(event)
     let result = await this.recorder.log(updatedEvent)
       return this.postProcess(result)
@@ -101,8 +101,8 @@ class DefaultSidecarRecorderAsync implements IEventRecorder {
     return event
   }
 
-  async record(event: EventMessage, callback?: (result: any) => void): Promise<any> {
-    logWithLevel(event)
+  async record(event: EventMessage, doLog: boolean = true, callback?: (result: any) => void): Promise<any> {
+    doLog && logWithLevel(event)
     let updatedEvent = this.preProcess(event)
     let result = this.recorder.log(updatedEvent)
     if (callback) {

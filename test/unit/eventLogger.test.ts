@@ -533,10 +533,11 @@ Test('EventLogger Class Test', async (eventLoggerTests: any) => {
     let newHeader6 = await IIChild.injectContextToHttpRequest({ headers: { tracestate: 'm=dadfafa,j=123,mojaloop=dfasdfads' } }, HttpRequestOptions.xb3)
     test.ok(newHeader6.headers['X-B3-SpanId'], 'headers created')
     let newcxt = Tracer.extractContextFromHttpRequest(newHeader)
-    test.ok(newcxt.spanId)
+    if (newcxt) test.ok(newcxt.spanId)
+    else test.fail('no trace header')
     let newcxt2 = Tracer.extractContextFromHttpRequest(newHeader6, HttpRequestOptions.xb3)
-    test.ok(newcxt2.spanId)
-
+    if (newcxt2) test.ok(newcxt2.spanId)
+    else test.fail('no trace header')
     try {
       let finishtime = new Date()
       await newTracer.finish('message', finishtime)

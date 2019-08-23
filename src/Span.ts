@@ -363,8 +363,8 @@ class Span implements Partial<ISpan> {
     let newEnvelope = this.createEventMessage(message, type, action, state)
     let logResult
     let key = <RecorderKeys>`${type}Recorder`
-    if (this.recorders[key]) logResult = await this.recorders[key]!.record(newEnvelope)
-    else logResult = await this.recorders.defaultRecorder.record(newEnvelope)
+    if (this.recorders[key]) logResult = await this.recorders[key]!.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
+    else logResult = await this.recorders.defaultRecorder.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
     if (LogResponseStatus.accepted == logResult.status) {
       return logResult
     } else {
@@ -442,6 +442,30 @@ const getDefaults = (type: EventType): IDefaultActions => {
 
 const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, headers: { [key: string]: any }): { [key: string]: any } => {
 
+  const createW3CTracestate = (tracestate: string, opaqueValue: string): string => {
+    let tracestateArray = (tracestate.split(','))
+    let resultMap = new Map()
+    let resultArray = []
+    let result
+    for (let states of tracestateArray) {
+      let [vendor] = states.split('=')
+      resultMap.set(vendor, states)
+    }
+
+    if (resultMap.has('mojaloop')) {
+      resultMap.delete('mojaloop')
+      for (let entry of resultMap.values()) {
+        resultArray.push(entry)
+      }
+      resultArray.unshift(`mojaloop=${opaqueValue}`)
+      result = resultArray.join(',')
+    } else {
+      tracestateArray.unshift(`mojaloop=${opaqueValue}`)
+      result = tracestateArray.join(',')
+    }
+    return result
+  }
+
   const { traceId, parentSpanId, spanId, flags, sampled } = context
 
   switch (type) {
@@ -471,35 +495,11 @@ const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, heade
         ? new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer, parentSpanIdBuff]))
         : new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer]))
       if (headers.tracestate) {
-        return Object.assign({ traceparent: W3CHeaders.toString() }, { tracestate: createTracestate(headers.tracestate, traceId), headers })
+        return Object.assign({ traceparent: W3CHeaders.toString() }, { tracestate: createW3CTracestate(headers.tracestate, traceId), headers })
       }
       return Object.assign({ traceparent: W3CHeaders.toString() }, headers)
     }
   }
-}
-
-const createTracestate = (tracestate: string, opaqueValue: string): string => {
-  let tracestateArray = (tracestate.split(','))
-  let resultMap = new Map()
-  let resultArray = []
-  let result
-  for (let states of tracestateArray) {
-    let [vendor] = states.split('=')
-    resultMap.set(vendor, states)
-  }
-
-  if (resultMap.has('mojaloop')) {
-    resultMap.delete('mojaloop')
-    for (let entry of resultMap.values()) {
-      resultArray.push(entry)
-    }
-    resultArray.unshift(`mojaloop=${opaqueValue}`)
-    result = resultArray.join(',')
-  } else {
-    tracestateArray.unshift(`mojaloop=${opaqueValue}`)
-    result = tracestateArray.join(',')
-  }
-  return result
 }
 
 export {

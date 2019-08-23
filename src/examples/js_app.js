@@ -29,7 +29,7 @@
  */
 
 const { Tracer } = require('../../lib/index')
-const { DefaultLoggerRecorder } = require('../../lib/index')
+const { AuditEventAction } = require('../../lib/index')
 
 function sleep (ms) {
   return new Promise(resolve => {
@@ -76,16 +76,16 @@ const main = async () => {
   await parentSpan.debug('message')
   await parentSpan.verbose('message')
   await parentSpan.performance('message')
-  await parentSpan.audit('message', 'start')
+  await parentSpan.audit('message', AuditEventAction.start)
   // Logs message with logging level debug from the parent span
   await parentSpan.debug('this is debug log')
 
   // Creates child span from the parent span with new service name.
   // The traceId remains the same. The spanId is new and the parentSpanId is the spanId of the parent.
-  let IIChildSpan = parentSpan.getChild('child II service')
+  let IIChildSpan = parentSpan.getChild('child fin service')
 
   // Creates audit event message
-  await IIChildSpan.audit({ content: event }, 'end')
+  await IIChildSpan.audit({ content: event }, AuditEventAction.end)
 
   // Set tags to the span
   IIChildSpan.setTags({ one: 'two' })
@@ -109,10 +109,12 @@ const main = async () => {
   let context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
   console.log(context)
   // Creates child span from extracted trace context.
-  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage, { defaultRecorder: new DefaultLoggerRecorder() })
+  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
   await sleep(500)
-  IIChildSpan.finish()
-  IIIChild.finish()
+  await IIChildSpan.finish()
+  await sleep(500)
+  await IIIChild.finish()
+  await sleep(500)
   await sleep(1000)
 }
 

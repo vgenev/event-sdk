@@ -94,8 +94,8 @@ class Tracer implements ATracer {
     switch (type) {
       case HttpRequestOptions.xb3: {
         let result:{ [key: string]: string } = {}
-        // TODO validate are the headers are coming as lowercase
-        if (!request.headers || !request.headers['x-b3-traceid'] || !request.headers['x-b3-spanid']) return undefined
+        const requestHasXB3headers = !!request.headers && Object.keys(request.headers).some(key => !!key.toLowerCase().match(/x-b3-/))
+        if (!requestHasXB3headers) return undefined
         for (let [ key, value ] of Object.entries(request.headers)) {
           let keyLowerCase = key.toLowerCase()
           if (keyLowerCase.startsWith('x-b3-')) {
