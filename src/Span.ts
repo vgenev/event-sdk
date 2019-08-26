@@ -109,7 +109,7 @@ interface ISpan {
   // trace: (message: { [key: string]: any}) => Promise<any> // TODO need to findout is there an usecase for that 
   defaultTagsSetter: (message?: TypeOfMessage) => Span
   getContext: () => TypeSpanContext
-  finish: (message?: TypeOfMessage, finishTimestamp?: TypeSpanContext["finishTimestamp"]) => Promise<any>
+  finish: (message?: TypeOfMessage, state?: EventStateMetadata, finishTimestamp?: TypeSpanContext["finishTimestamp"]) => Promise<any>
   getChild: (service: string, recorders?: Recorders) => ISpan
   setTags: (tags: TraceTags) => Span
   injectContextToMessage: (message: { [key: string]: any }, injectOptions: ContextOptions) => { [key: string]: any },
@@ -221,10 +221,10 @@ class Span implements Partial<ISpan> {
   * @param message optional parameter for a message to be passed to the tracing framework.
   * @param finishTimestamp optional parameter for the finish time. If omitted, current time is used.
   */
-  async finish(message?: TypeOfMessage, finishTimestamp?: string | Date): Promise<this> {
+  async finish(message?: TypeOfMessage, state?: EventStateMetadata, finishTimestamp?: string | Date): Promise<this> {
     if (this.spanContext.finishTimestamp) return Promise.reject(new Error('span already finished'))
     let spanContext = this._finishSpan(finishTimestamp).getContext()
-    await this.trace(message, spanContext)
+    await this.trace(message, spanContext, state)
     return Promise.resolve(this)
   }
 
@@ -253,7 +253,7 @@ class Span implements Partial<ISpan> {
    * @param action optional parameter for action. Defaults to 'span'
    * @param state optional parameter for state. Defaults to 'success'
    */
-  private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, action?: TraceEventAction, state?: EventStateMetadata): Promise<any> {
+  private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, state?: EventStateMetadata, action?: TraceEventAction ): Promise<any> {
     if (!message) message = new EventMessage({
       type: 'application/json',
       content: spanContext

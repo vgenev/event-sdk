@@ -69,23 +69,23 @@ const main = async () => {
   let parentSpan = Tracer.createSpan('parent service')
 
   // Logs message with logging level info from the parent span
-  await parentSpan.info(event)
-  await parentSpan.info('this is event message')
-  await parentSpan.warning('event')
-  await parentSpan.error('event')
-  await parentSpan.debug('message')
-  await parentSpan.verbose('message')
-  await parentSpan.performance('message')
-  await parentSpan.audit('message', AuditEventAction.start)
+  // await parentSpan.info(event)
+  // await parentSpan.info('this is event message')
+  // await parentSpan.warning('event')
+  // await parentSpan.error('event')
+  // await parentSpan.debug('message')
+  // await parentSpan.verbose('message')
+  // await parentSpan.performance('message')
+  // await parentSpan.audit('message', AuditEventAction.start)
   // Logs message with logging level debug from the parent span
-  await parentSpan.debug('this is debug log')
+  // await parentSpan.debug('this is debug log')
 
   // Creates child span from the parent span with new service name.
   // The traceId remains the same. The spanId is new and the parentSpanId is the spanId of the parent.
   let IIChildSpan = parentSpan.getChild('child fin service')
 
   // Creates audit event message
-  await IIChildSpan.audit({ content: event }, AuditEventAction.end)
+  await IIChildSpan.audit({ content: event }, AuditEventAction.finish)
 
   // Set tags to the span
   IIChildSpan.setTags({ one: 'two' })

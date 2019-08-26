@@ -540,7 +540,7 @@ Test('EventLogger Class Test', async (eventLoggerTests: any) => {
     else test.fail('no trace header')
     try {
       let finishtime = new Date()
-      await newTracer.finish('message', finishtime)
+      await newTracer.finish('message', undefined, finishtime)
       test.ok('trace finished')
     } catch (e) {
       test.fail('should not throw ', e)
