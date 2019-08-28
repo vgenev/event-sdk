@@ -17,7 +17,8 @@ import {
   TraceEventTypeAction,
   AuditEventTypeAction,
   LogEventTypeAction,
-  TypeEventAction
+  TypeEventAction,
+  HttpRequestOptions
 } from './model/EventMessage'
 
 import {
@@ -28,11 +29,13 @@ import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient
 
 const _ = require('lodash');
 
+const TraceParent = require('traceparent')
+
 const Config = require('./lib/config')
 
 type RecorderKeys = 'defaultRecorder' | 'logRecorder' | 'auditRecorder' | 'traceRecorder'
 
-const defaultRecorder = Config.SIDECAR_DISABLED
+const defaultRecorder = Config.EVENT_LOGGER_SIDECAR_DISABLED
   ? new DefaultLoggerRecorder()
   : new DefaultSidecarRecorder(new EventLoggingServiceClient(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT))
 
@@ -73,7 +76,6 @@ type ContextOptions = {
   path?: string
 }
 
-
 /**
  * Defines Span interface operations
  * @param {TypeSpanContext} spanContext the context of the span
@@ -91,6 +93,7 @@ type ContextOptions = {
  * @param getChild Defines a method to get child span
  * @param setTags Defines a method to set tags to the span
  * @param injectContextToMessage Defnies a method to inject current span context into message carrier
+ * @param injectContextToHttpRequest Defnies a method to inject current span context into http request
  */
 
 interface ISpan {
@@ -106,16 +109,18 @@ interface ISpan {
   // trace: (message: { [key: string]: any}) => Promise<any> // TODO need to findout is there an usecase for that 
   defaultTagsSetter: (message?: TypeOfMessage) => Span
   getContext: () => TypeSpanContext
-  finish: (message?: TypeOfMessage, finishTimestamp?: TypeSpanContext["finishTimestamp"]) => Promise<any>
+  finish: (message?: TypeOfMessage, state?: EventStateMetadata, finishTimestamp?: TypeSpanContext["finishTimestamp"]) => Promise<any>
   getChild: (service: string, recorders?: Recorders) => ISpan
   setTags: (tags: TraceTags) => Span
-  injectContextToMessage: (message: { [key: string]: any }, injectOptions: ContextOptions) => { [key: string]: any }
+  injectContextToMessage: (message: { [key: string]: any }, injectOptions: ContextOptions) => { [key: string]: any },
+  injectContextToHttpRequest: (request: { [key: string]: any }, type?: HttpRequestOptions) => { [key: string]: any }
+
 }
 
 class Span implements Partial<ISpan> {
   spanContext: TypeSpanContext
   recorders: Recorders
-  private _finished: boolean = false
+  isFinished: boolean = false
 
   /**
    * Creates new span. Normally this is not used directly, but by a Tracer.createSpan method
@@ -157,7 +162,7 @@ class Span implements Partial<ISpan> {
      */
   getChild(service: string, recorders: Recorders = this.recorders): Span {
     try {
-      if (this._finished) throw new Error('Finished trace cannot have a child span')
+      if (this.isFinished) throw new Error('Finished trace cannot have a child span')
       let inputTraceContext: TypeSpanContext = this.getContext()
       return new Span(new EventTraceMetadata(Object.assign({},
         inputTraceContext, {
@@ -176,14 +181,26 @@ class Span implements Partial<ISpan> {
    * @param carrier any kind of message or other object with keys of type String.
    * @param injectOptions type and path of the carrier. Type is not implemented yet. Path is the path to the trace context.
    */
-  injectContextToMessage(carrier: { [key: string]: any }, injectOptions: ContextOptions = {}): Promise<{ [key: string]: any }> {
+  injectContextToMessage(carrier: { [key: string]: any }, injectOptions: ContextOptions = {}): { [key: string]: any } {
     let result = _.cloneDeep(carrier)
     let { path } = injectOptions // type not implemented yet
     if (carrier instanceof EventMessage || (('metadata' in carrier))) path = 'metadata'
     else if (carrier instanceof EventTraceMetadata) return Promise.resolve(this.spanContext)
     if (!path) Object.assign(result, { trace: this.spanContext })
     else _.merge(_.get(result, path), { trace: this.spanContext })
-    return Promise.resolve(result)
+    return result
+  }
+
+  /**
+   * Injects trace context into a http request headers.
+   * @param request HTTP request.
+   * @param type type of the headers that will be created - 'w3c' or 'xb3'.
+   */
+
+  injectContextToHttpRequest(request: { [key: string]: any }, type: HttpRequestOptions = HttpRequestOptions.w3c): { [key: string]: any } {
+    let result = _.cloneDeep(request)
+    result.headers = setHttpHeader(this.spanContext, type, result.headers)
+    return result
   }
 
   /**
@@ -204,10 +221,10 @@ class Span implements Partial<ISpan> {
   * @param message optional parameter for a message to be passed to the tracing framework.
   * @param finishTimestamp optional parameter for the finish time. If omitted, current time is used.
   */
-  async finish(message?: TypeOfMessage, finishTimestamp?: string | Date): Promise<this> {
+  async finish(message?: TypeOfMessage, state?: EventStateMetadata, finishTimestamp?: string | Date): Promise<this> {
     if (this.spanContext.finishTimestamp) return Promise.reject(new Error('span already finished'))
     let spanContext = this._finishSpan(finishTimestamp).getContext()
-    await this.trace(message, spanContext)
+    await this.trace(message, spanContext, state)
     return Promise.resolve(this)
   }
 
@@ -236,14 +253,14 @@ class Span implements Partial<ISpan> {
    * @param action optional parameter for action. Defaults to 'span'
    * @param state optional parameter for state. Defaults to 'success'
    */
-  private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, action?: TraceEventAction, state?: EventStateMetadata): Promise<any> {
+  private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, state?: EventStateMetadata, action?: TraceEventAction ): Promise<any> {
     if (!message) message = new EventMessage({
       type: 'application/json',
       content: spanContext
     })
     try {
       await this.recordMessage(message, TraceEventTypeAction.getType(), action, state)
-      this._finished = this.spanContext.finishTimestamp ? true : false
+      this.isFinished = this.spanContext.finishTimestamp ? true : false
       return this
     } catch (e) {
       throw new Error(`Error when logging trace. ${JSON.stringify(e, null, 2)}`)
@@ -342,12 +359,12 @@ class Span implements Partial<ISpan> {
    */
 
   private async recordMessage(message: TypeOfMessage, type: TypeEventTypeAction['type'], action?: TypeEventTypeAction['action'], state?: EventStateMetadata) {
-    if (this._finished) throw new Error('span finished. no further actions allowed')
+    if (this.isFinished) throw new Error('span finished. no further actions allowed')
     let newEnvelope = this.createEventMessage(message, type, action, state)
     let logResult
     let key = <RecorderKeys>`${type}Recorder`
-    if (this.recorders[key]) logResult = await this.recorders[key]!.record(newEnvelope)
-    else logResult = await this.recorders.defaultRecorder.record(newEnvelope)
+    if (this.recorders[key]) logResult = await this.recorders[key]!.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
+    else logResult = await this.recorders.defaultRecorder.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
     if (LogResponseStatus.accepted == logResult.status) {
       return logResult
     } else {
@@ -371,13 +388,13 @@ class Span implements Partial<ISpan> {
         content: { payload: message },
         type: 'application/json'
       })
-    } else if ((typeof message === 'object') && (!(message.hasOwnProperty('content')) || !(message.hasOwnProperty('type')))) {
+    } else { // if ((typeof message === 'object') && (!(message.hasOwnProperty('content')) || !(message.hasOwnProperty('type')))) {
       messageToLog = new EventMessage({
         content: message,
         type: 'application/json'
       })
-    } else {
-      messageToLog = new EventMessage(<TypeEventMessage>message)
+      // } else {
+      //   messageToLog = new EventMessage(<TypeEventMessage>message)
     }
     return Object.assign(messageToLog, {
       metadata: {
@@ -423,8 +440,71 @@ const getDefaults = (type: EventType): IDefaultActions => {
   }
 }
 
+const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, headers: { [key: string]: any }): { [key: string]: any } => {
+
+  const createW3CTracestate = (tracestate: string, opaqueValue: string): string => {
+    let tracestateArray = (tracestate.split(','))
+    let resultMap = new Map()
+    let resultArray = []
+    let result
+    for (let states of tracestateArray) {
+      let [vendor] = states.split('=')
+      resultMap.set(vendor, states)
+    }
+
+    if (resultMap.has('mojaloop')) {
+      resultMap.delete('mojaloop')
+      for (let entry of resultMap.values()) {
+        resultArray.push(entry)
+      }
+      resultArray.unshift(`mojaloop=${opaqueValue}`)
+      result = resultArray.join(',')
+    } else {
+      tracestateArray.unshift(`mojaloop=${opaqueValue}`)
+      result = tracestateArray.join(',')
+    }
+    return result
+  }
+
+  const { traceId, parentSpanId, spanId, flags, sampled } = context
+
+  switch (type) {
+
+    case HttpRequestOptions.xb3: {
+      let XB3headers = {
+        'X-B3-TraceId': traceId,
+        'X-B3-SpanId': spanId,
+        'X-B3-Sampled': sampled,
+        'X-B3-Flags': flags,
+        'X-B3-Version': '0'
+      }
+      let result = parentSpanId ? Object.assign({ 'X-B3-ParentSpanId': parentSpanId }, XB3headers) : XB3headers
+      return Object.assign(headers, result)
+    }
+
+    case HttpRequestOptions.w3c:
+    default: {
+      const version = Buffer.alloc(1).fill(0)
+      const flagsForBuff = (flags && sampled) ? (flags | sampled) : flags ? flags : sampled ? sampled : 0x00
+      const flagsBuffer = Buffer.alloc(1).fill(flagsForBuff)
+      const traceIdBuff = Buffer.from(traceId, 'hex')
+      const spanIdBuff = Buffer.from(spanId, 'hex')
+      const parentSpanIdBuff = parentSpanId && Buffer.from(parentSpanId, 'hex')
+      let result = {}
+      let W3CHeaders = parentSpanIdBuff
+        ? new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer, parentSpanIdBuff]))
+        : new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer]))
+      if (headers.tracestate) {
+        return Object.assign({ traceparent: W3CHeaders.toString() }, { tracestate: createW3CTracestate(headers.tracestate, traceId), headers })
+      }
+      return Object.assign({ traceparent: W3CHeaders.toString() }, headers)
+    }
+  }
+}
+
 export {
   Span,
   ContextOptions,
-  Recorders
+  Recorders,
+  setHttpHeader
 }

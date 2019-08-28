@@ -47,6 +47,10 @@ enum EventTypeAction {
   error = 6;
   span = 7;
   default = 8;
+  start = 9;
+  finish = 10;
+  egress = 11;
+  ingress = 12;
 }
 
 //TODO add whats missing

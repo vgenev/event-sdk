@@ -1,6 +1,6 @@
 {
   "name": "@mojaloop/event-sdk",
-  "version": "7.2.1",
+  "version": "7.4.0",
   "description": "Shared code for Event Logging",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -52,9 +52,11 @@
     "grpc": "1.21.1",
     "lodash": "4.17.15",
     "moment": "2.24.0",
+    "parse-strings-in-object": "1.2.0",
     "protobufjs": "6.8.8",
     "rc": "1.2.8",
     "sinon": "7.3.2",
+    "traceparent": "1.0.0",
     "uuid4": "1.1.4"
   },
   "devDependencies": {
