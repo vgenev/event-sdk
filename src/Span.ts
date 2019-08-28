@@ -120,7 +120,7 @@ interface ISpan {
 class Span implements Partial<ISpan> {
   spanContext: TypeSpanContext
   recorders: Recorders
-  private _finished: boolean = false
+  isFinished: boolean = false
 
   /**
    * Creates new span. Normally this is not used directly, but by a Tracer.createSpan method
@@ -162,7 +162,7 @@ class Span implements Partial<ISpan> {
      */
   getChild(service: string, recorders: Recorders = this.recorders): Span {
     try {
-      if (this._finished) throw new Error('Finished trace cannot have a child span')
+      if (this.isFinished) throw new Error('Finished trace cannot have a child span')
       let inputTraceContext: TypeSpanContext = this.getContext()
       return new Span(new EventTraceMetadata(Object.assign({},
         inputTraceContext, {
@@ -260,7 +260,7 @@ class Span implements Partial<ISpan> {
     })
     try {
       await this.recordMessage(message, TraceEventTypeAction.getType(), action, state)
-      this._finished = this.spanContext.finishTimestamp ? true : false
+      this.isFinished = this.spanContext.finishTimestamp ? true : false
       return this
     } catch (e) {
       throw new Error(`Error when logging trace. ${JSON.stringify(e, null, 2)}`)
@@ -359,7 +359,7 @@ class Span implements Partial<ISpan> {
    */
 
   private async recordMessage(message: TypeOfMessage, type: TypeEventTypeAction['type'], action?: TypeEventTypeAction['action'], state?: EventStateMetadata) {
-    if (this._finished) throw new Error('span finished. no further actions allowed')
+    if (this.isFinished) throw new Error('span finished. no further actions allowed')
     let newEnvelope = this.createEventMessage(message, type, action, state)
     let logResult
     let key = <RecorderKeys>`${type}Recorder`
