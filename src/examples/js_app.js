@@ -30,6 +30,7 @@
 
 const { Tracer } = require('../../lib/index')
 const { DefaultLoggerRecorder } = require('../../lib/index')
+const EventSDK = require('../../lib/index')
 
 function sleep (ms) {
   return new Promise(resolve => {
@@ -61,10 +62,11 @@ const main = async () => {
   let parentSpan = Tracer.createSpan('parent service')
 
   // Logs message with logging level info from the parent span
-  await parentSpan.info(event)
+  const newEvent = new EventSDK.EventMessage(event)
+  await parentSpan.info(newEvent)
   await parentSpan.warning('event')
-  await parentSpan.error('event')
-  await parentSpan.debug('message')
+  await parentSpan.error('event-abc-d')
+  await parentSpan.debug(event)
   await parentSpan.verbose('message')
   await parentSpan.performance('message')
   await parentSpan.audit('message')
