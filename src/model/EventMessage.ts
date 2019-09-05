@@ -60,7 +60,11 @@ enum LogEventAction {
  */
 
 enum AuditEventAction {
-  default = "default"
+  default = "default",
+  start = "start",
+  finish = "finish",
+  ingress = "ingress",
+  egress = "egress"
 }
 
 
@@ -84,6 +88,12 @@ enum NullEventAction {
 enum EventStatusType {
   success = "success",
   failed = "failed"
+}
+
+
+enum HttpRequestOptions {
+  w3c = 'w3c',
+  xb3 = 'xb3'
 }
 
 /**
@@ -198,21 +208,25 @@ type TypeSpanContext = {
   readonly service: string,
   readonly traceId: string,
   readonly spanId: string,
-  readonly parentSpanId?: string,
   readonly sampled?: number,
   readonly flags?: number,
+  readonly parentSpanId?: string,
   readonly startTimestamp?: string | Date,
   finishTimestamp?: string,
   tags?: TraceTags
 }
 
+// type requiredSampled = Required<{ readonly sampled: 0|1 }>
+
+// type SpanContext = requiredSampled & Partial<TypeSpanContext>
+
 class EventTraceMetadata implements TypeSpanContext {
   service: string
   traceId: string
   spanId: string
+  sampled?: number  // = 0
+  flags?: number // = 0
   parentSpanId?: string
-  sampled?: number
-  flags?: number
   startTimestamp?: string = (new Date()).toISOString() // ISO 8601
   finishTimestamp?: string
   tags?: { [key: string]: string }
@@ -242,8 +256,8 @@ class EventTraceMetadata implements TypeSpanContext {
       throw new Error(`Invalid parentSpanId: ${parentSpanId}`)
     }
     this.parentSpanId = parentSpanId
-    this.sampled = sampled
-    this.flags = flags
+    this.sampled = sampled // ? sampled : this.sampled
+    this.flags = flags // ? flags : this.flags
     this.tags = tags
     if (startTimestamp instanceof Date) {
       this.startTimestamp = startTimestamp.toISOString() // ISO 8601
@@ -472,5 +486,6 @@ export {
   TypeEventMetadata,
   TypeSpanContext,
   TypeEventTypeAction,
-  TraceTags
+  TraceTags,
+  HttpRequestOptions
 }

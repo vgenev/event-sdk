@@ -28,7 +28,7 @@
 
 import { Tracer } from './Tracer'
 
-import { DefaultLoggerRecorder, DefaultSidecarRecorder } from './Recorder'
+import { DefaultLoggerRecorder, DefaultSidecarRecorder, DefaultSidecarRecorderAsync } from './Recorder'
 
 import { Span, ContextOptions, Recorders } from './Span'
 
@@ -62,7 +62,8 @@ import {
   EventTraceMetadata,
   TypeEventTypeAction,
   EventStateMetadata,
-  TypeEventAction
+  TypeEventAction,
+  HttpRequestOptions
  } from "./model/EventMessage"
 
 // Re-export definitions and components on the public API
@@ -99,5 +100,7 @@ export {
   EventLoggingServiceServer,
   EVENT_RECEIVED,
   EventPostProcessor,
-  EventPreProcessor
+  EventPreProcessor,
+  HttpRequestOptions,
+  DefaultSidecarRecorderAsync
 }

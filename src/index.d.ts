@@ -24,11 +24,11 @@
  --------------
  ******/
 import { Tracer } from './Tracer';
-import { DefaultLoggerRecorder, DefaultSidecarRecorder } from './Recorder';
+import { DefaultLoggerRecorder, DefaultSidecarRecorder, DefaultSidecarRecorderAsync } from './Recorder';
 import { Span, ContextOptions, Recorders } from './Span';
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
 import { EventLoggingServiceServer, EVENT_RECEIVED } from "./transport/EventLoggingServiceServer";
 import { EventPostProcessor } from './EventPostProcessor';
 import { EventPreProcessor } from './EventPreProcessor';
-import { EventMessage, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, LogResponseStatus, LogResponse, TypeMessageMetadata, NullEventAction, EventType, TraceTags, TypeEventMessage, TypeEventMetadata, TypeSpanContext, EventTraceMetadata, TypeEventTypeAction, EventStateMetadata, TypeEventAction } from "./model/EventMessage";
-export { LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, EventMessage, LogResponseStatus, LogResponse, TypeMessageMetadata, Tracer, DefaultLoggerRecorder, DefaultSidecarRecorder, Span, ContextOptions, Recorders, NullEventAction, EventType, TraceTags, TypeEventMessage, TypeEventMetadata, TypeSpanContext, EventTraceMetadata, TypeEventTypeAction, EventStateMetadata, TypeEventAction, EventLoggingServiceClient, EventLoggingServiceServer, EVENT_RECEIVED, EventPostProcessor, EventPreProcessor };
+import { EventMessage, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, LogResponseStatus, LogResponse, TypeMessageMetadata, NullEventAction, EventType, TraceTags, TypeEventMessage, TypeEventMetadata, TypeSpanContext, EventTraceMetadata, TypeEventTypeAction, EventStateMetadata, TypeEventAction, HttpRequestOptions } from "./model/EventMessage";
+export { LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, EventStatusType, EventMetadata, EventMessage, LogResponseStatus, LogResponse, TypeMessageMetadata, Tracer, DefaultLoggerRecorder, DefaultSidecarRecorder, Span, ContextOptions, Recorders, NullEventAction, EventType, TraceTags, TypeEventMessage, TypeEventMetadata, TypeSpanContext, EventTraceMetadata, TypeEventTypeAction, EventStateMetadata, TypeEventAction, EventLoggingServiceClient, EventLoggingServiceServer, EVENT_RECEIVED, EventPostProcessor, EventPreProcessor, HttpRequestOptions, DefaultSidecarRecorderAsync };

@@ -47,7 +47,11 @@ declare enum LogEventAction {
  * Actions for event type Audit
  */
 declare enum AuditEventAction {
-    default = "default"
+    default = "default",
+    start = "start",
+    finish = "finish",
+    ingress = "ingress",
+    egress = "egress"
 }
 /**
  * Actions for event type trace
@@ -64,6 +68,10 @@ declare enum NullEventAction {
 declare enum EventStatusType {
     success = "success",
     failed = "failed"
+}
+declare enum HttpRequestOptions {
+    w3c = "w3c",
+    xb3 = "xb3"
 }
 /**
  * This `TypeEventAction` hierarchy models the restrictions between types and actions.
@@ -138,9 +146,9 @@ declare type TypeSpanContext = {
     readonly service: string;
     readonly traceId: string;
     readonly spanId: string;
-    readonly parentSpanId?: string;
     readonly sampled?: number;
     readonly flags?: number;
+    readonly parentSpanId?: string;
     readonly startTimestamp?: string | Date;
     finishTimestamp?: string;
     tags?: TraceTags;
@@ -149,9 +157,9 @@ declare class EventTraceMetadata implements TypeSpanContext {
     service: string;
     traceId: string;
     spanId: string;
-    parentSpanId?: string;
     sampled?: number;
     flags?: number;
+    parentSpanId?: string;
     startTimestamp?: string;
     finishTimestamp?: string;
     tags?: {
@@ -294,4 +302,4 @@ declare class LogResponse {
     status: LogResponseStatus;
     constructor(status: LogResponseStatus);
 }
-export { EventMessage, EventType, TypeEventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, NullEventAction, EventStatusType, TypeMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, TypeEventMessage, TypeEventMetadata, TypeSpanContext, TypeEventTypeAction, TraceTags };
+export { EventMessage, EventType, TypeEventAction, LogEventTypeAction, AuditEventTypeAction, TraceEventTypeAction, LogEventAction, AuditEventAction, TraceEventAction, NullEventAction, EventStatusType, TypeMessageMetadata, EventMetadata, EventStateMetadata, EventTraceMetadata, LogResponseStatus, LogResponse, TypeEventMessage, TypeEventMetadata, TypeSpanContext, TypeEventTypeAction, TraceTags, HttpRequestOptions };

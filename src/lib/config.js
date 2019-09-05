@@ -1,7 +1,8 @@
-const RC = require('rc')('EVENT_SDK', require('../../config/default.json'))
+const RC = require('parse-strings-in-object')(require('rc')('EVENT_SDK', require('../../config/default.json')))
 
 module.exports = {
   EVENT_LOGGER_SERVER_HOST: RC.SERVER_HOST,
   EVENT_LOGGER_SERVER_PORT: RC.SERVER_PORT,
-  SIDECAR_DISABLED: RC.DISABLE_SIDECAR
+  EVENT_LOGGER_SIDECAR_DISABLED: RC.SIDECAR_DISABLED,
+  EVENT_LOGGER_SIDECAR_WITH_LOGGER: RC.SIDECAR_WITH_LOGGER
 }

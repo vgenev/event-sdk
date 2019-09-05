@@ -29,7 +29,8 @@
  */
 
 const { Tracer } = require('../../lib/index')
-const { DefaultLoggerRecorder } = require('../../lib/index')
+const { AuditEventAction } = require('../../lib/index')
+// const { DefaultLoggerRecorder } = require('../../lib/index')
 const EventSDK = require('../../lib/index')
 
 function sleep (ms) {
@@ -56,6 +57,14 @@ const event = {
   type: 'application/json'
 }
 
+const request = {
+  headers: {
+    host: 'localhost:4000',
+    'user-agent': 'curl/7.59.0',
+    accept: '*/*'
+  }
+}
+
 const main = async () => {
   // Creates a new parent span for given service
   // this sets new traceId and new spanId.
@@ -71,14 +80,14 @@ const main = async () => {
   await parentSpan.performance('message')
   await parentSpan.audit('message')
   // Logs message with logging level debug from the parent span
-  await parentSpan.debug('this is debug log')
+  // await parentSpan.debug('this is debug log')
 
   // Creates child span from the parent span with new service name.
   // The traceId remains the same. The spanId is new and the parentSpanId is the spanId of the parent.
-  let IIChildSpan = parentSpan.getChild('child II service')
+  let IIChildSpan = parentSpan.getChild('child fin service')
 
   // Creates audit event message
-  await IIChildSpan.audit({ content: event })
+  await IIChildSpan.audit({ content: event }, AuditEventAction.finish)
 
   // Set tags to the span
   IIChildSpan.setTags({ one: 'two' })
@@ -90,20 +99,24 @@ const main = async () => {
   await parentSpan.audit(event)
 
   // Finish the span. This also sends the trace context to the tracing platform. All further operations are forbidden after the span is finished.
-  // await parentSpan.finish(event)
+  await parentSpan.finish(event)
 
   // Injects trace context to a message carrier. When the trace is carried across few services, the trace context can be injects in the carrier that transports the data.
   let messageWithContext = await IIChildSpan.injectContextToMessage(event)
   // await sleep(2000)
-
+  let requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
+  console.log(requestHeadersWithContext)
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
   let contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
-
+  let context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
+  console.log(context)
   // Creates child span from extracted trace context.
-  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage, { defaultRecorder: new DefaultLoggerRecorder() })
+  let IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
   await sleep(500)
-  IIChildSpan.finish()
-  IIIChild.finish()
+  await IIChildSpan.finish()
+  await sleep(500)
+  await IIIChild.finish()
+  await sleep(500)
   await sleep(1000)
 }
 
