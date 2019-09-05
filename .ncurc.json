@@ -1,16 +1,5 @@
 {
   "reject": [
-    "@types/node",
-    "@typescript-eslint/eslint-plugin",
-    "@typescript-eslint/parser",
-    "nyc",
-    "proxyquire",
-    "standard",
-    "tape",
-    "tap-xunit",
-    "ts-node",
-    "tslint",
-    "typedoc",
     "typescript"
   ]
 }
