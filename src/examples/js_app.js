@@ -69,55 +69,58 @@ const main = async () => {
   // Creates a new parent span for given service
   // this sets new traceId and new spanId.
   const parentSpan = Tracer.createSpan('parent service')
+  const IIChildSpan = parentSpan.getChild('child fin service')
+  const state = new EventSDK.EventStateMetadata(EventSDK.EventStatusType.failed, '2001', 'its an errrrrrorrrr')
+  // await parentSpan.finish(new Error('error object'), state)
+  await IIChildSpan.finish(('error message'), state)
 
   // Logs message with logging level info from the parent span
-  const newEvent = new EventSDK.EventMessage(event)
-  await parentSpan.info(newEvent)
-  await parentSpan.warning('event')
-  await parentSpan.error('event-abc-d')
-  await parentSpan.debug(event)
-  await parentSpan.verbose('message')
-  await parentSpan.performance('message')
-  await parentSpan.audit('message')
+
+  // const newEvent = new EventSDK.EventMessage(event)
+  // await parentSpan.info(newEvent)
+  // await parentSpan.warning('event')
+  // await parentSpan.debug(event)
+  // await parentSpan.verbose('message')
+  // await parentSpan.performance('message')
+  // await parentSpan.audit('message')
   // Logs message with logging level debug from the parent span
   // await parentSpan.debug('this is debug log')
 
   // Creates child span from the parent span with new service name.
   // The traceId remains the same. The spanId is new and the parentSpanId is the spanId of the parent.
-  const IIChildSpan = parentSpan.getChild('child fin service')
 
   // Creates audit event message
-  await IIChildSpan.audit({ content: event }, AuditEventAction.finish)
+  // await IIChildSpan.audit({ content: event }, AuditEventAction.finish)
 
-  // Set tags to the span
-  IIChildSpan.setTags({ one: 'two' })
+  // // Set tags to the span
+  // IIChildSpan.setTags({ one: 'two' })
 
-  // Creates error log event from the IIChildSpan
-  await IIChildSpan.error({ content: { message: 'error appeared' } })
+  // // Creates error log event from the IIChildSpan
+  // await IIChildSpan.error({ content: { message: 'error appeared' } })
 
-  // Creates audit event message
-  await parentSpan.audit(event)
+  // // Creates audit event message
+  // await parentSpan.audit(event)
 
-  // Finish the span. This also sends the trace context to the tracing platform. All further operations are forbidden after the span is finished.
-  await parentSpan.finish(event)
+  // // Finish the span. This also sends the trace context to the tracing platform. All further operations are forbidden after the span is finished.
+  // await parentSpan.finish(event)
 
-  // Injects trace context to a message carrier. When the trace is carried across few services, the trace context can be injects in the carrier that transports the data.
-  const messageWithContext = await IIChildSpan.injectContextToMessage(event)
-  // await sleep(2000)
-  const requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
-  console.log(requestHeadersWithContext)
-  // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
-  const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
-  const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
-  console.log(context)
-  // Creates child span from extracted trace context.
-  const IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
-  await sleep(500)
-  await IIChildSpan.finish()
-  await sleep(500)
-  await IIIChild.finish()
-  await sleep(500)
-  await sleep(1000)
+  // // Injects trace context to a message carrier. When the trace is carried across few services, the trace context can be injects in the carrier that transports the data.
+  // const messageWithContext = await IIChildSpan.injectContextToMessage(event)
+  // // await sleep(2000)
+  // const requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
+  // console.log(requestHeadersWithContext)
+  // // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
+  // const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
+  // const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
+  // console.log(context)
+  // // Creates child span from extracted trace context.
+  // const IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
+  // await sleep(500)
+  // await IIChildSpan.finish()
+  // await sleep(500)
+  // await IIIChild.finish()
+  // await sleep(500)
+  // await sleep(1000)
 }
 
 main()
