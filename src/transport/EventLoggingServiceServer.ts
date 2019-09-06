@@ -66,7 +66,7 @@ class EventLoggingServiceServer extends events.EventEmitter{
     if (!event.id) {
       callback(new Error(`Couldn't parse message parameter. It doesn't have an id property. parameter: ${event}`))
     }
-    Logger.info()
+
     Logger.debug(`Server.logEventReceivedHandler event: ${JSON.stringify(event, null, 2)}`)
   
     try {
