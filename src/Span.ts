@@ -29,7 +29,8 @@ import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient
 
 import serializeError from 'serialize-error';
 
-import ErrorCallsites from 'error-callsites'
+// import ErrorCallsites from 'error-callsites'
+// const ErrorCallsites = require('error-callsites')
 
 const _ = require('lodash');
 
@@ -388,8 +389,8 @@ class Span implements Partial<ISpan> {
     let action = _action ? _action : defaults.action
     let messageToLog
     if ((action === LogEventAction.error || action === TraceEventAction.span) && message instanceof Error) {
-      const callsites = ErrorCallsites(message)
-      message.__error_callsites = callsites
+      // const callsites = ErrorCallsites(message)
+      // message.__error_callsites = callsites
       messageToLog = new EventMessage({
         content: { error: serializeError(message) },
         type: 'application/json'
