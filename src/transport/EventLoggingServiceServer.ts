@@ -29,6 +29,7 @@ import { loadEventLoggerService } from "./EventLoggerServiceLoader";
 import events = require('events');
 
 const grpc = require('grpc')
+const Logger = require('@mojaloop/central-services-shared').Logger
 
 const EVENT_RECEIVED = 'eventReceived';
 
@@ -56,7 +57,7 @@ class EventLoggingServiceServer extends events.EventEmitter{
   start() : any {
     this.server.bind(`${this.host}:${this.port}`, grpc.ServerCredentials.createInsecure())
     this.server.start()
-    console.log('Server listening')
+    Logger.info(`Server listening on ${this.host}:${this.port}...`)
   }
 
   logEventReceivedHandler (call: any, callback: any) {
@@ -65,7 +66,8 @@ class EventLoggingServiceServer extends events.EventEmitter{
     if (!event.id) {
       callback(new Error(`Couldn't parse message parameter. It doesn't have an id property. parameter: ${event}`))
     }
-    console.log('Server.logEventReceivedHandler event: ', JSON.stringify(event, null, 2))
+    Logger.info()
+    Logger.debug(`Server.logEventReceivedHandler event: ${JSON.stringify(event, null, 2)}`)
   
     try {
       // Convert it to a EventMessage
