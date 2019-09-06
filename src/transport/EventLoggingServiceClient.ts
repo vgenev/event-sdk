@@ -55,7 +55,7 @@ class EventLoggingServiceClient {
       wireEvent.content = toAny(event.content, event.type);
       Logger.debug(`EventLoggingServiceClient.log sending wireEvent: ${JSON.stringify(wireEvent, null, 2)}`);
       this.grpcClient.log(wireEvent, (error: any, response: LogResponse) => {
-        Logger.debug(`EventLoggingServiceClient.log  received response: ${JSON.stringify(response, null, 2)}`);
+        Logger.debug(`EventLoggingServiceClient.log received response: ${JSON.stringify(response, null, 2)}`);
         if ( error ) { reject(error); }
         resolve(response);
       })
