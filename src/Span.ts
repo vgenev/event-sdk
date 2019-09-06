@@ -388,7 +388,7 @@ class Span implements Partial<ISpan> {
     let defaults = getDefaults(type)
     let action = _action ? _action : defaults.action
     let messageToLog
-    if ((action === LogEventAction.error || action === TraceEventAction.span) && message instanceof Error) {
+    if (message instanceof Error) {
       // const callsites = ErrorCallsites(message)
       // message.__error_callsites = callsites
       messageToLog = new EventMessage({
