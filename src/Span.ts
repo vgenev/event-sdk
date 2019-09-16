@@ -27,6 +27,11 @@ import {
 
 import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient';
 
+import serializeError from 'serialize-error';
+
+// import ErrorCallsites from 'error-callsites'
+// const ErrorCallsites = require('error-callsites')
+
 const _ = require('lodash');
 
 const TraceParent = require('traceparent')
@@ -253,7 +258,7 @@ class Span implements Partial<ISpan> {
    * @param action optional parameter for action. Defaults to 'span'
    * @param state optional parameter for state. Defaults to 'success'
    */
-  private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, state?: EventStateMetadata, action?: TraceEventAction ): Promise<any> {
+  private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, state?: EventStateMetadata, action?: TraceEventAction): Promise<any> {
     if (!message) message = new EventMessage({
       type: 'application/json',
       content: spanContext
@@ -383,7 +388,14 @@ class Span implements Partial<ISpan> {
     let defaults = getDefaults(type)
     let action = _action ? _action : defaults.action
     let messageToLog
-    if (typeof message === 'string') {
+    if (message instanceof Error) {
+      // const callsites = ErrorCallsites(message)
+      // message.__error_callsites = callsites
+      messageToLog = new EventMessage({
+        content: { error: serializeError(message) },
+        type: 'application/json'
+      })
+    } else if (typeof message === 'string') {
       messageToLog = new EventMessage({
         content: { payload: message },
         type: 'application/json'

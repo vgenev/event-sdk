@@ -26,7 +26,7 @@ import { EventMessage, LogResponse } from "../model/EventMessage";
 import { toAny } from "./JsonToStructMapper";
 import { loadEventLoggerService } from "./EventLoggerServiceLoader";
 
-const Logger = require('@mojaloop/central-services-shared').Logger
+const Logger = require('@mojaloop/central-services-logger')
 const grpc = require('grpc')
 
 class EventLoggingServiceClient {
@@ -53,9 +53,9 @@ class EventLoggingServiceClient {
       try {
       // wireEvent.content = convertJsontoStruct(event.content);
       wireEvent.content = toAny(event.content, event.type);
-      Logger.info(`EventLoggingServiceClient.log sending wireEvent: ${JSON.stringify(wireEvent, null, 2)}`);
+      Logger.debug(`EventLoggingServiceClient.log sending wireEvent: ${JSON.stringify(wireEvent, null, 2)}`);
       this.grpcClient.log(wireEvent, (error: any, response: LogResponse) => {
-        Logger.info(`EventLoggingServiceClient.log  received response: ${JSON.stringify(response, null, 2)}`);
+        Logger.debug(`EventLoggingServiceClient.log received response: ${JSON.stringify(response, null, 2)}`);
         if ( error ) { reject(error); }
         resolve(response);
       })

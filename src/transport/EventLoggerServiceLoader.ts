@@ -35,7 +35,7 @@ function loadEventLoggerService() : any {
     { keepCase: true,
       longs: String,
       enums: String,
-      defaults: true,
+      defaults: false,
       oneofs: true
     })
   let protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
