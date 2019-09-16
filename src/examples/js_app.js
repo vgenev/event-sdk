@@ -29,9 +29,11 @@
  */
 
 const { Tracer } = require('../../lib/index')
-const { AuditEventAction } = require('../../lib/index')
+// const { AuditEventAction } = require('../../lib/index')
 // const { DefaultLoggerRecorder } = require('../../lib/index')
 const EventSDK = require('../../lib/index')
+
+const Logger = require('@mojaloop/central-services-logger')
 
 function sleep (ms) {
   return new Promise(resolve => {
@@ -70,9 +72,6 @@ const main = async () => {
   // this sets new traceId and new spanId.
   const parentSpan = Tracer.createSpan('parent service')
   const IIChildSpan = parentSpan.getChild('child fin service')
-  const state = new EventSDK.EventStateMetadata(EventSDK.EventStatusType.failed, '2001', 'its an errrrrrorrrr')
-  // await parentSpan.finish(new Error('error object'), state)
-  await IIChildSpan.finish(('error message'), state)
 
   // Logs message with logging level info from the parent span
 
@@ -90,7 +89,7 @@ const main = async () => {
   // The traceId remains the same. The spanId is new and the parentSpanId is the spanId of the parent.
 
   // Creates audit event message
-  await IIChildSpan.audit({ content: event }, AuditEventAction.finish)
+  // await IIChildSpan.audit({ content: event }, AuditEventAction.finish)
 
   // // Set tags to the span
   IIChildSpan.setTags({ one: 'two' })
@@ -108,15 +107,16 @@ const main = async () => {
   const messageWithContext = await IIChildSpan.injectContextToMessage(event)
   // await sleep(2000)
   const requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
-  console.log(requestHeadersWithContext)
+  Logger.info(requestHeadersWithContext)
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
   const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
   const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
-  console.log(context)
+  Logger.info(context)
   // Creates child span from extracted trace context.
   const IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
   await sleep(500)
-  await IIChildSpan.finish()
+  const state = new EventSDK.EventStateMetadata(EventSDK.EventStatusType.failed, '2001', 'its an errrrrrorrrr')
+  await IIChildSpan.finish(('error message'), state)
   await sleep(500)
   await IIIChild.finish()
   await sleep(500)

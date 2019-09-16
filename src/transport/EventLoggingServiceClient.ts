@@ -26,7 +26,7 @@ import { EventMessage, LogResponse } from "../model/EventMessage";
 import { toAny } from "./JsonToStructMapper";
 import { loadEventLoggerService } from "./EventLoggerServiceLoader";
 
-const Logger = require('@mojaloop/central-services-shared').Logger
+const Logger = require('@mojaloop/central-services-logger')
 const grpc = require('grpc')
 
 class EventLoggingServiceClient {
