@@ -39,7 +39,13 @@ class Tracer implements ATracer {
    * @param recorders optional recorders. Defaults to defaultRecorder, which is either logger or sidecar client, based on default.json DISABLE_SIDECAR value
    */
   static createChildSpanFromContext(service: string, spanContext: TypeSpanContext, recorders?: Recorders): Span {
-    let outputContext = <TypeSpanContext>Object.assign({}, spanContext, { service, spanId: undefined, parentSpanId: spanContext.spanId, startTimestamp: undefined })
+    let outputContext = <TypeSpanContext>Object.assign({}, spanContext, {
+      service,
+      spanId: undefined,
+      parentSpanId: spanContext.spanId,
+      startTimestamp: undefined,
+      finishTimestamp: undefined
+    })
     return new Span(new EventTraceMetadata(outputContext), recorders) as Span
   }
 
