@@ -167,13 +167,13 @@ class Span implements Partial<ISpan> {
      */
   getChild(service: string, recorders: Recorders = this.recorders): Span {
     try {
-      if (this.isFinished) throw new Error('Finished trace cannot have a child span')
       let inputTraceContext: TypeSpanContext = this.getContext()
       return new Span(new EventTraceMetadata(Object.assign({},
         inputTraceContext, {
           service,
           spanId: undefined,
           startTimestamp: undefined,
+          finishTimestamp: undefined,
           parentSpanId: inputTraceContext.spanId
         })), recorders, this.defaultTagsSetter)
     } catch (e) {
