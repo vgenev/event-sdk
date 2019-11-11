@@ -18,15 +18,37 @@
  * Gates Foundation
  - Name Surname <name.surname@gatesfoundation.com>
 
+ * ModusBox
  - Ramiro González Maciel <ramiro@modusbox.com>
+
+ * Crosslake
+ - Lewis Daly <lewisd@crosslaketech.com>
 
  --------------
  ******/
-import { EventMessage } from "./model/EventMessage";
-/**
- * Defines a method to pre process an Event object
- */
-interface EventPreProcessor {
-    preProcess(event: EventMessage): EventMessage;
-}
-export { EventPreProcessor };
+
+import { DefaultLoggerRecorder, DefaultSidecarRecorderAsync } from "../../src/Recorder"
+
+
+describe('Recorder', () => {
+  it('records a message with the DefaultLoggerRecorder', async () => {
+    // Arrange
+    const message = {
+      id: "xyz1234",
+      to: "DFSP1",
+      from: "DFSP1",
+      type: 'application/json',
+      content: {
+        headers: {},
+        payload: "http://example.com/v1/go"
+      }
+    }
+    const recorder = new DefaultLoggerRecorder()
+    
+    // Act
+    const result = await recorder.record(message)
+    
+    // Assert
+    expect(result).toStrictEqual({status: 'accepted'})
+  })
+})

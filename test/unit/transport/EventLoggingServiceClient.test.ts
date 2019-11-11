@@ -18,9 +18,43 @@
  * Gates Foundation
  - Name Surname <name.surname@gatesfoundation.com>
 
- - Ramiro González Maciel <ramiro@modusbox.com>
+ * Crosslake
+ - Lewis Daly <lewisd@crosslaketech.com>
 
  --------------
  ******/
-declare function loadEventLoggerService(): any;
-export { loadEventLoggerService };
+
+import Uuid from 'uuid/v4'
+import Sinon from 'sinon'
+
+import { EventLoggingServiceClient } from '../../../src/transport/EventLoggingServiceClient'
+import { EventMessage } from '../../../src/model/EventMessage'
+
+
+let client: EventLoggingServiceClient
+let sandbox: Sinon.SinonSandbox
+
+describe('EventLoggingServiceClient', () => {
+  beforeAll(() => {
+    client = new EventLoggingServiceClient('localhost', 55555)
+    sandbox = Sinon.createSandbox()
+  })
+
+  afterEach(() => {
+    sandbox.reset()
+  })
+
+  it('throws when content is null or undefined', async () => {
+    // Arrange
+    const invalidEvent: EventMessage = <EventMessage>{
+      type: 'application/json',
+      id: Uuid()
+    }
+    
+    // Act
+    const action = async () => await client.log(invalidEvent)
+    
+    // Assert
+    await expect(action()).rejects.toThrowError('Invalid eventMessage: content is mandatory')
+  })
+})

@@ -18,7 +18,19 @@ interface IEventRecorder {
   record: (event: EventMessage, doLog?: boolean, callback?: (result: any) => void ) => Promise<any>
 }
 
-const logWithLevel = async (message: EventMessage): Promise<any> => {
+type LogResponseType = LogResponseTypeAccepted | LogResponseTypeError
+type LogResponseTypeAccepted = {
+  status: LogResponseStatus.accepted,
+}
+
+type LogResponseTypeError = {
+  status: LogResponseStatus,
+  error: any,
+}
+
+
+
+const logWithLevel = async (message: EventMessage): Promise<LogResponseType> => {
   return new Promise((resolve, reject) => {
     try {
       let type: TypeEventTypeAction['type']
@@ -30,10 +42,14 @@ const logWithLevel = async (message: EventMessage): Promise<any> => {
         type = EventType.log
         action = LogEventAction.info
       }
-      if (type === EventType.log && Object.values(LogEventAction).includes(action)) 
+
+      if (type === EventType.log && Object.values(LogEventAction).includes(<LogEventAction>action)) {
         Logger.log(action, JSON.stringify(message, null, 2))
-      else 
+      }
+      else {
         Logger.log(type, JSON.stringify(message, null, 2))
+      }
+
       resolve({ status: LogResponseStatus.accepted })
     } catch(e) {
       reject({status: LogResponseStatus.error, error: e})
@@ -117,5 +133,8 @@ export {
   DefaultLoggerRecorder,
   DefaultSidecarRecorder,
   DefaultSidecarRecorderAsync,
-  IEventRecorder
+  IEventRecorder,
+  LogResponseType,
+  LogResponseTypeAccepted,
+  LogResponseTypeError
 }

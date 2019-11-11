@@ -1,3 +1,7 @@
+import serializeError from 'serialize-error';
+import _ from 'lodash'
+const TraceParent = require('traceparent')
+
 import {
   NullEventAction,
   AuditEventAction,
@@ -20,23 +24,11 @@ import {
   TypeEventAction,
   HttpRequestOptions
 } from './model/EventMessage'
-
 import {
   IEventRecorder, DefaultLoggerRecorder, DefaultSidecarRecorder
 } from './Recorder'
-
 import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient';
-
-import serializeError from 'serialize-error';
-
-// import ErrorCallsites from 'error-callsites'
-// const ErrorCallsites = require('error-callsites')
-
-const _ = require('lodash');
-
-const TraceParent = require('traceparent')
-
-const Config = require('./lib/config')
+import Config from './lib/config'
 
 type RecorderKeys = 'defaultRecorder' | 'logRecorder' | 'auditRecorder' | 'traceRecorder'
 
@@ -364,17 +356,31 @@ class Span implements Partial<ISpan> {
    */
 
   private async recordMessage(message: TypeOfMessage, type: TypeEventTypeAction['type'], action?: TypeEventTypeAction['action'], state?: EventStateMetadata) {
-    if (this.isFinished) throw new Error('span finished. no further actions allowed')
+    if (this.isFinished) {
+      throw new Error('span finished. no further actions allowed')
+    }
+
     let newEnvelope = this.createEventMessage(message, type, action, state)
-    let logResult
     let key = <RecorderKeys>`${type}Recorder`
-    if (this.recorders[key]) logResult = await this.recorders[key]!.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
-    else logResult = await this.recorders.defaultRecorder.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
-    if (LogResponseStatus.accepted == logResult.status) {
-      return logResult
-    } else {
+
+    let recorder = this.recorders.defaultRecorder
+    if (this.recorders[key]) {
+      recorder = this.recorders[key]!
+    }
+
+    if (Config.ASYNC_OVERRIDE) {
+      //Don't wait for .record() to resolve, return straight away
+      recorder.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
+      return true
+    }
+
+    const logResult = await recorder.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
+
+    if (logResult.status !== LogResponseStatus.accepted) {
       throw new Error(`Error when recording ${type}-${action} event. status: ${logResult.status}`)
     }
+
+    return logResult;
   }
 
   /**

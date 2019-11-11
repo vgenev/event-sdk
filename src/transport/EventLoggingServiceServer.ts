@@ -23,7 +23,7 @@
  --------------
  ******/
 import { EventMessage, LogResponse, LogResponseStatus } from "../model/EventMessage";
-import { convertStructToJson, fromAny } from "./JsonToStructMapper";
+import { fromAny } from "./MessageMapper";
 import { loadEventLoggerService } from "./EventLoggerServiceLoader";
 
 import events = require('events');
@@ -34,7 +34,7 @@ const Logger = require('@mojaloop/central-services-logger')
 const EVENT_RECEIVED = 'eventReceived';
 
 
-class EventLoggingServiceServer extends events.EventEmitter{
+class EventLoggingServiceServer extends events.EventEmitter {
 
   private server: any;
   private host : string;
@@ -68,26 +68,26 @@ class EventLoggingServiceServer extends events.EventEmitter{
     }
 
     Logger.debug(`Server.logEventReceivedHandler event: ${JSON.stringify(event, null, 2)}`)
-  
+    
+    let response: LogResponse;
+
     try {
       // Convert it to a EventMessage
-      let eventMessage : EventMessage = Object.assign({}, event);
-      // Convert the event.content wich is an Struct to a plan object
+      const eventMessage: EventMessage = Object.assign({}, event);
+      // Convert the event.content which is an Struct to a plain object
       if (eventMessage.content) {
-        // eventMessage.content = convertStructToJson(eventMessage.content.fields)
         eventMessage.content = fromAny(eventMessage.content)
       }
 
       this.emit(EVENT_RECEIVED, eventMessage);
     
-      let response = new LogResponse(LogResponseStatus.accepted)
-      callback(null, response)
+      response = new LogResponse(LogResponseStatus.accepted)
     } catch (error) {
-      let response = new LogResponse(LogResponseStatus.error)
-      callback(null, response)      
+      response = new LogResponse(LogResponseStatus.error)
     }
-  }
-  
+
+    callback(null, response)
+  } 
 }
 
 export {

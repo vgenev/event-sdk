@@ -411,8 +411,8 @@ type TypeMessageMetadata = {
  */
 
 type TypeEventMessage = {
-  type: string
-  content: any
+  type: 'application/json' | 'text/plain',
+  content: any,
   id?: string
   from?: string
   to?: string
@@ -421,7 +421,7 @@ type TypeEventMessage = {
 }
 
 class EventMessage implements TypeEventMessage {
-  type: string = ''
+  type: any =  'application/json'
   content: any
   id: string = Uuid()
   from?: string

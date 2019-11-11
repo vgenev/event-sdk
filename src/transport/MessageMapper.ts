@@ -18,17 +18,53 @@
  * Gates Foundation
  - Name Surname <name.surname@gatesfoundation.com>
 
+ * ModusBox
  - Ramiro González Maciel <ramiro@modusbox.com>
+
+ * Crosslake
+ - Lewis Daly <lewisd@crosslaketech.com>
 
  --------------
  ******/
-import { EventMessage, LogResponse } from "../model/EventMessage";
-declare class EventLoggingServiceClient {
-    grpcClient: any;
-    constructor(host: string, port: number);
-    /**
-     * Log an event
-     */
-    log: (event: EventMessage) => Promise<LogResponse>;
+'use strict'
+
+function toAny(data: any, type: string) {
+  let value
+  if (!data) {
+    throw new Error('`toAny()` called with null or undefined data')
+  }
+
+  switch(type) {
+    case 'text/plain':
+      value = Buffer.from(data)
+    break;
+    case 'application/json':
+      value = Buffer.from(JSON.stringify(data))
+    break;
+    default: 
+      throw new Error(`toAny called with unsupported data type ${type}`)
+  }
+
+  return {
+    type_url: type,
+    value
+  }
 }
-export { EventLoggingServiceClient };
+
+function fromAny(data: {type_url: string, value: any}) {
+  const { type_url, value } = data
+
+  switch (type_url) {
+    case 'text/plain':
+      return value.toString()
+    case 'application/json':
+      return JSON.parse(value.toString())
+    default:
+      throw new Error(`fromAny called with unsupported data.type_url ${type_url}`)
+  }
+}
+
+export {
+  toAny,
+  fromAny
+}

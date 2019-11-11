@@ -20,6 +20,9 @@ coverage
 # nyc test coverage
 .nyc_output
 
+# jsunit test output
+junit.xml
+
 # Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
@@ -38,6 +41,9 @@ jspm_packages/
 
 # TypeScript v1 declaration files
 typings/
+
+# TypeScript dist folder
+dist/
 
 # Optional npm cache directory
 .npm
