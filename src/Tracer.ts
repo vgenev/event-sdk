@@ -1,6 +1,7 @@
 import { TraceTags, EventTraceMetadata, EventMessage, TypeSpanContext, HttpRequestOptions } from "./model/EventMessage";
 
 import { Span, ContextOptions, Recorders, setHttpHeader } from "./Span"
+import Config from "./lib/config";
 
 const _ = require('lodash');
 
@@ -16,7 +17,7 @@ abstract class ATracer {
   static injectContextToMessage: (context: TypeSpanContext, message: { [key: string]: any }, path?: string) => { [key: string]: any }
   static injectContextToHttpRequest: (context: TypeSpanContext, request: { [key: string]: any }, type?: HttpRequestOptions) => { [key: string]: any }
   static extractContextFromMessage: (message: { [key: string]: any }, path?: string) => TypeSpanContext
-  static extractContextFromHttpRequest: (request: any, type?: HttpRequestOptions) => TypeSpanContext | undefined
+  static extractContextFromHttpRequest: (request: any, type?: HttpRequestOptions, tracestateDecoder?: (tracestate: string) => string | {[key: string]: string} ) => TypeSpanContext | undefined
 }
 
 class Tracer implements ATracer {
@@ -95,8 +96,31 @@ class Tracer implements ATracer {
     return <TypeSpanContext>spanContext
   }
 
-  static extractContextFromHttpRequest(request: { [key: string] : any }, type: HttpRequestOptions = HttpRequestOptions.w3c): TypeSpanContext | undefined {
+  private static defaultTracestateDecoder(vendor: string | undefined, tracestate: string): { [key: string]: string } {
+    if (!vendor) vendor = 'outsideVendor'
+    return {
+      vendor,
+      parentId: tracestate
+    }
+  }
+
+  static extractContextFromHttpRequest(request: { [key: string] : any }, type: HttpRequestOptions = HttpRequestOptions.w3c, tracestateDecoder = this.defaultTracestateDecoder): TypeSpanContext | undefined {
     let spanContext
+    
+    function getOwnVendorTracestate(tracestateHeader: string): { [key: string] : string } | undefined {
+      let tracestateArray = (tracestateHeader.split(','))
+      let resultMap: { [key: string]: any } = {}
+      let vendor
+      for (let rawStates of tracestateArray) {
+        let states = rawStates.trim()
+        let [vendorRaw, tracestateRaw] = states.split('=')
+        vendor = vendorRaw.trim()
+        resultMap[vendor] = tracestateRaw.trim()
+      }
+      const tracestate = (Config.EVENT_LOGGER_VENDOR_PREFIX in resultMap) ? resultMap[Config.EVENT_LOGGER_VENDOR_PREFIX] : undefined
+      return tracestateDecoder(vendor, tracestate)
+    }
+  
     switch (type) {
       case HttpRequestOptions.xb3: {
         let result:{ [key: string]: string } = {}
@@ -115,20 +139,27 @@ class Tracer implements ATracer {
       case HttpRequestOptions.w3c:
       default: {
         if (!request.headers || !request.headers.traceparent) return undefined
-        let context = TraceParent.fromString(request.headers.traceparent)
-        let sampled: number = context.flags ? context.flags & 0x01 : 0
-        spanContext = new EventTraceMetadata({
-          traceId: context.traceId,
-          spanId: context.id,
-          flags: context.flags,
-          parentSpanId: context.parentId,
-          sampled: sampled
-        })
+        const context = TraceParent.fromString(request.headers.traceparent)
+        const sampled: number = context.flags ? context.flags & 0x01 : 0
+        const tracestateDecoded = request.headers.tracestate ? getOwnVendorTracestate(request.headers.tracestate) : undefined
+        const parentId = (!!tracestateDecoded && !!tracestateDecoded.parentId) ? ((tracestateDecoded.parentId !== context.id) ? context.id : tracestateDecoded.parentId) : undefined
+        spanContext = (!!tracestateDecoded && tracestateDecoded.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX)
+          ? new EventTraceMetadata({
+            traceId: context.traceId,
+            spanId: context.id,
+            flags: context.flags,
+            parentSpanId: parentId,
+            sampled: sampled
+          })
+          : ({
+            traceId: context.traceId,
+            flags: context.flags,
+            sampled: sampled
+          })
         return <TypeSpanContext>spanContext
       }
     }
   }
-
 }
 
 export {

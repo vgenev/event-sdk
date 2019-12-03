@@ -465,20 +465,21 @@ const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, heade
     let resultMap = new Map()
     let resultArray = []
     let result
-    for (let states of tracestateArray) {
-      let [vendor] = states.split('=')
-      resultMap.set(vendor, states)
+    for (let rawStates of tracestateArray) {
+      let states = rawStates.trim()
+      let [vendorRaw] = states.split('=')
+      resultMap.set(vendorRaw.trim(), states)
     }
 
-    if (resultMap.has('mojaloop')) {
-      resultMap.delete('mojaloop')
+    if (resultMap.has(Config.EVENT_LOGGER_VENDOR_PREFIX)) {
+      resultMap.delete(Config.EVENT_LOGGER_VENDOR_PREFIX)
       for (let entry of resultMap.values()) {
         resultArray.push(entry)
       }
-      resultArray.unshift(`mojaloop=${opaqueValue}`)
+      resultArray.unshift(`${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`)
       result = resultArray.join(',')
     } else {
-      tracestateArray.unshift(`mojaloop=${opaqueValue}`)
+      tracestateArray.unshift(`${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`)
       result = tracestateArray.join(',')
     }
     return result
@@ -513,7 +514,7 @@ const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, heade
         ? new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer, parentSpanIdBuff]))
         : new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer]))
       if (headers.tracestate) {
-        return Object.assign({ traceparent: W3CHeaders.toString() }, { tracestate: createW3CTracestate(headers.tracestate, traceId), headers })
+        return Object.assign({ traceparent: W3CHeaders.toString() }, { tracestate: createW3CTracestate(headers.tracestate, spanId), headers })
       }
       return Object.assign({ traceparent: W3CHeaders.toString() }, headers)
     }
