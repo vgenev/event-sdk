@@ -32,7 +32,7 @@ Edit the file in `./config/default.json` to configure the logger, or set the fol
 | `EVENT_SDK_SERVER_PORT` | The port for the gRPC server to listen on. | `50055` | Any valid port value |
 | `EVENT_SDK_SIDECAR_DISABLED` | Enables or disables the event sidecar. If disabled, the events will be logged to the host console only. | `true` | `true`, `false` |
 | `EVENT_SDK_SIDECAR_WITH_LOGGER` | If true, the events will be logged to the host console, as well as sent to the sidecar. Only applicable if the event sidecar is enabled. | `false` | `true`, `false` |
-| `VENDOR_PREFIX` | Prefix for vendor specific tracestate handler. For more information refer to [w3c spec](https://github.com/w3c/trace-context/blob/master/spec/20-http_header_format.md#tracestate-header) | `acmevendor` | Any string |
+| `EVENT_SDK_VENDOR_PREFIX` | Prefix for vendor specific tracestate handler. For more information refer to [w3c spec](https://github.com/w3c/trace-context/blob/master/spec/20-http_header_format.md#tracestate-header) | `acmevendor` | Any string |
 
 ## Usage
 
