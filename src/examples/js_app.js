@@ -29,7 +29,7 @@
  */
 
 const { Tracer } = require('../../dist/index')
-// const { AuditEventAction } = require('../../lib/index')
+const { AuditEventAction } = require('../../dist/index')
 // const { DefaultLoggerRecorder } = require('../../lib/index')
 const EventSDK = require('../../dist/index')
 
@@ -73,18 +73,18 @@ const main = async () => {
   // Creates a new parent span for given service
   // this sets new traceId and new spanId.
   const parentSpan = Tracer.createSpan('parent service')
-  const IIChildSpan = parentSpan.getChild('child fin service')
+  // const IIChildSpan = parentSpan.getChild('child fin service')
 
   // Logs message with logging level info from the parent span
 
-  const newEvent = new EventSDK.EventMessage(event)
+  // const newEvent = new EventSDK.EventMessage(event)
   // await parentSpan.info(newEvent)
   // await parentSpan.warning('event')
   // await parentSpan.debug(event)
   // await parentSpan.verbose('message')
   // await parentSpan.performance('message')
   // await parentSpan.audit('message')
-  // Logs message with logging level debug from the parent span
+  // // Logs message with logging level debug from the parent span
   // await parentSpan.debug('this is debug log')
 
   // Creates child span from the parent span with new service name.
@@ -103,30 +103,32 @@ const main = async () => {
   // await parentSpan.audit(event)
 
   // // Finish the span. This also sends the trace context to the tracing platform. All further operations are forbidden after the span is finished.
+  await sleep(2000)
   await parentSpan.finish(event)
 
   // // Injects trace context to a message carrier. When the trace is carried across few services, the trace context can be injects in the carrier that transports the data.
   // const messageWithContext = await IIChildSpan.injectContextToMessage(event)
   // await sleep(2000)
-  const requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
-  Logger.info(JSON.stringify(requestHeadersWithContext, null, 2))
-  // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
+  // const requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
+  // Logger.info(JSON.stringify(requestHeadersWithContext, null, 2))
+  // // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
   // const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
-  const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
-  Logger.info(JSON.stringify(context, null, 2))
-  const spanFromHttp = Tracer.createChildSpanFromContext('http_span', context)
-  Logger.info(JSON.stringify(spanFromHttp.getContext(), null, 2))
-  // Creates child span from extracted trace context.
-  const IIIChild = spanFromHttp.getChild('child III service')
-  // const IIIChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
-  await sleep(500)
-  spanFromHttp.finish()
-  const state = new EventSDK.EventStateMetadata(EventSDK.EventStatusType.failed, '2001', 'its an errrrrrorrrr')
-  await IIChildSpan.finish(('error message'), state)
-  await sleep(500)
-  await IIIChild.finish()
-  await sleep(500)
-  await sleep(1000)
+  // const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
+  // Logger.info(JSON.stringify(context, null, 2))
+  // const spanFromHttp = Tracer.createChildSpanFromContext('http_span', context)
+  // Logger.info(JSON.stringify(spanFromHttp.getContext(), null, 2))
+  // // Creates child span from extracted trace context.
+  // const IIIChild = spanFromHttp.getChild('child III service')
+  // const IVChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
+  // await sleep(500)
+  // spanFromHttp.finish()
+  // const state = new EventSDK.EventStateMetadata(EventSDK.EventStatusType.failed, '2001', 'its an errrrrrorrrr')
+  // await IIChildSpan.finish(('error message'), state)
+  // await sleep(500)
+  // await IIIChild.finish()
+  // await sleep(500)
+  // await sleep(1000)
+  // await IVChild.finish()
 }
 
 main()
