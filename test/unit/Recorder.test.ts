@@ -27,8 +27,9 @@
  --------------
  ******/
 
-import { DefaultLoggerRecorder, DefaultSidecarRecorderAsync } from "../../src/Recorder"
-
+import { DefaultLoggerRecorder, DefaultSidecarRecorderAsync, DefaultSidecarRecorder } from "../../src/Recorder"
+import * as EventSdk from "../../src/index"
+import { EventLoggingServiceClient } from "../../src/transport/EventLoggingServiceClient";
 
 describe('Recorder', () => {
   it('records a message with the DefaultLoggerRecorder', async () => {
@@ -44,11 +45,156 @@ describe('Recorder', () => {
       }
     }
     const recorder = new DefaultLoggerRecorder()
-    
+
     // Act
     const result = await recorder.record(message)
-    
+    // defaultRecorder = recorder
     // Assert
-    expect(result).toStrictEqual({status: 'accepted'})
+    expect(result).toStrictEqual({ status: 'accepted' })
   })
+
+  it('records a message with the DefaultSidecarRecorderAsync', async () => {
+    // Arrange
+    const message = {
+      id: "xyz1234",
+      to: "DFSP1",
+      from: "DFSP1",
+      type: 'application/json',
+      content: {
+        headers: {},
+        payload: "http://example.com/v1/go"
+      },
+      metadata: {
+        event: {
+          type: EventSdk.EventType.log,
+          action: EventSdk.LogEventAction.warning,
+          state: {
+            status: EventSdk.EventStatusType.success
+          }
+        }
+      }
+    }
+
+    const configWithSidecar = {
+      EVENT_LOGGER_SIDECAR_DISABLED: true,
+      EVENT_LOGGER_SERVER_HOST: 'localhost',
+      EVENT_LOGGER_SERVER_PORT: 50051
+    }
+    jest.mock('../../src/transport/EventLoggingServiceClient', () => {
+      return jest.fn().mockImplementation(() => {
+        return { log: () => { }, grpcClient: () => { } };
+      })
+    })
+
+    const grpcClient = new EventLoggingServiceClient(configWithSidecar.EVENT_LOGGER_SERVER_HOST, configWithSidecar.EVENT_LOGGER_SERVER_PORT)
+    jest.spyOn(grpcClient.grpcClient, 'log').mockImplementation((wireEvent: any, cb: any) => {
+      return cb(null, new EventSdk.LogResponse(EventSdk.LogResponseStatus.accepted))
+    })
+
+    const recorder = new DefaultSidecarRecorderAsync(grpcClient)
+
+    // Act
+    const result = await recorder.record(message)
+
+    // Assert
+    expect(grpcClient.grpcClient.log).toHaveBeenCalled();
+    expect(result).toEqual(<EventSdk.LogResponse>{ status: 'accepted' })
+  })
+
+  it('records a message with the DefaultSidecarRecorderAsync', async () => {
+    // Arrange
+    const message = {
+      id: "xyz1234",
+      to: "DFSP1",
+      from: "DFSP1",
+      type: 'application/json',
+      content: {
+        headers: {},
+        payload: "http://example.com/v1/go"
+      },
+      metadata: {
+        event: {
+          type: EventSdk.EventType.audit,
+          action: EventSdk.AuditEventAction.default,
+          state: {
+            status: EventSdk.EventStatusType.success
+          }
+        }
+      }
+    }
+
+    const configWithSidecar = {
+      EVENT_LOGGER_SIDECAR_DISABLED: true,
+      EVENT_LOGGER_SERVER_HOST: 'localhost',
+      EVENT_LOGGER_SERVER_PORT: 50051
+    }
+    jest.mock('../../src/transport/EventLoggingServiceClient', () => {
+      return jest.fn().mockImplementation(() => {
+        return { log: () => { }, grpcClient: () => { } };
+      })
+    })
+
+    const grpcClient = new EventLoggingServiceClient(configWithSidecar.EVENT_LOGGER_SERVER_HOST, configWithSidecar.EVENT_LOGGER_SERVER_PORT)
+    jest.spyOn(grpcClient.grpcClient, 'log').mockImplementation((wireEvent: any, cb: any) => {
+      return cb(null, new EventSdk.LogResponse(EventSdk.LogResponseStatus.accepted))
+    })
+
+    const recorder = new DefaultSidecarRecorderAsync(grpcClient)
+
+    // Act
+    const result = await recorder.record(message, true, () => {})
+
+    // Assert
+    expect(grpcClient.grpcClient.log).toHaveBeenCalled();
+    expect(result).resolves
+  })
+
+  it('records a message with the DefaultSidecarRecorderAsync', async () => {
+    // Arrange
+    const message = {
+      id: "xyz1234",
+      to: "DFSP1",
+      from: "DFSP1",
+      type: 'application/json',
+      content: {
+        headers: {},
+        payload: "http://example.com/v1/go"
+      },
+      metadata: {
+        event: {
+          type: EventSdk.EventType.audit,
+          action: EventSdk.AuditEventAction.default,
+          state: {
+            status: EventSdk.EventStatusType.success
+          }
+        }
+      }
+    }
+
+    const configWithSidecar = {
+      EVENT_LOGGER_SIDECAR_DISABLED: true,
+      EVENT_LOGGER_SERVER_HOST: 'localhost',
+      EVENT_LOGGER_SERVER_PORT: 50051
+    }
+    jest.mock('../../src/transport/EventLoggingServiceClient', () => {
+      return jest.fn().mockImplementation(() => {
+        return { log: () => { }, grpcClient: () => { } };
+      })
+    })
+
+    const grpcClient = new EventLoggingServiceClient(configWithSidecar.EVENT_LOGGER_SERVER_HOST, configWithSidecar.EVENT_LOGGER_SERVER_PORT)
+    jest.spyOn(grpcClient.grpcClient, 'log').mockImplementation((wireEvent: any, cb: any) => {
+      return cb(null, new EventSdk.LogResponse(EventSdk.LogResponseStatus.accepted))
+    })
+
+    const recorder = new DefaultSidecarRecorderAsync(grpcClient)
+
+    // Act
+    const result = await recorder.record(message)
+
+    // Assert
+    expect(grpcClient.grpcClient.log).toHaveBeenCalled();
+    expect(result).resolves
+  })
+
 })

@@ -182,6 +182,10 @@ describe('Tracer', () => {
     let newContextB = Tracer.extractContextFromHttpRequest(header, HttpRequestOptions.xb3)
     expect(newContextB).not.toBeUndefined()
     
+    header = await Tracer.injectContextToHttpRequest(IIIChild.getContext(), { headers: {tracestate: 'mojaloop=12312312', traceparent: '00-1234567890123456-12345678-01'} })
+    let newContextC = Tracer.extractContextFromHttpRequest(header)
+    expect(newContextC).not.toBeUndefined()
+
     let finishtime = new Date()
     await tracer.finish('message', undefined, finishtime)
     await IIChild.finish()
