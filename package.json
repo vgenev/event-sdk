@@ -1,6 +1,6 @@
 {
   "name": "@mojaloop/event-sdk",
-  "version": "8.6.0",
+  "version": "8.6.1",
   "description": "Shared code for Event Logging",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
