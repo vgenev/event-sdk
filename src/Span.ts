@@ -29,7 +29,6 @@ import {
 } from './Recorder'
 import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient';
 import Config from './lib/config'
-import { opaqueType } from '@babel/types';
 
 type RecorderKeys = 'defaultRecorder' | 'logRecorder' | 'auditRecorder' | 'traceRecorder'
 
