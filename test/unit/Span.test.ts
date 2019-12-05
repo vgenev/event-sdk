@@ -26,7 +26,6 @@
 
 import Sinon, { SinonSandbox } from 'sinon'
 
-import { Tracer } from '../../src/Tracer'
 import Config from '../../src/lib/config'
 import { Recorders } from '../../src/Span'
 import { EventMessage, LogResponseStatus } from '../../src/model/EventMessage'
@@ -65,11 +64,12 @@ describe('Span', () => {
     const testTimeoutNonAsync = 3 * 1000 //3 seconds
     const recordDelay = 2 * 1000 //2 seconds
 
-    it('returns immediately when ASYNC_OVERRIDE is on', async () => {
+    it('returns `info` when ASYNC_OVERRIDE_EVENTS is `log`', async () => {
       // Arrange
       sandbox.mock(Config)
-      Config.ASYNC_OVERRIDE = true
-      const parentSpan = Tracer.createSpan('parent_service', {tagA: 'valueA'}, testRecorder(recordDelay))
+      Config.ASYNC_OVERRIDE_EVENTS = 'log'
+      const TracerProxy = jest.requireActual('../../src/Tracer').Tracer
+      const parentSpan = TracerProxy.createSpan('parent_service', {tagA: 'valueA'}, testRecorder(recordDelay))
       
       // Act
       await parentSpan.info('async message')
@@ -78,11 +78,12 @@ describe('Span', () => {
       expect(true).toBe(true)
     }, testTimeoutAsync)
 
-    it('waits until logging is complete when ASYNC_OVERRIDE is off', async () => {
+    it('waits until logging is complete when ASYNC_OVERRIDE_EVENTS is empty', async () => {
       // Arrange
       sandbox.mock(Config)
-      Config.ASYNC_OVERRIDE = false
-      const parentSpan = Tracer.createSpan('parent_service', { tagA: 'valueA' }, testRecorder(recordDelay))
+      Config.ASYNC_OVERRIDE_EVENTS = ''
+      const TracerProxy = jest.requireActual('../../src/Tracer').Tracer
+      const parentSpan = TracerProxy.createSpan('parent_service', { tagA: 'valueA' }, testRecorder(recordDelay))
 
       // Act
       await parentSpan.info('async message')

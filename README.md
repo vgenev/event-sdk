@@ -27,7 +27,7 @@ Edit the file in `./config/default.json` to configure the logger, or set the fol
 
 | Environment variable | Description | Default | Available Values |
 | --- | --- | --- | --- |
-| `EVENT_SDK_ASYNC_OVERRIDE` | If `true`, logging calls will return immediately, without waiting for the `recorder.record()` function to resolve. | `false` | `true`, `false` |
+| `EVENT_SDK_ASYNC_OVERRIDE_EVENTS` | A comma-separated list of events that should return immediately instead of waiting for the promises to resolve in the `recorder.record()` function. | `''` | Any combination of: `log,audit,trace` |
 | `EVENT_SDK_SERVER_HOST` | The hostname for the gRPC server to bind to. | `localhost` | Any valid hostname |
 | `EVENT_SDK_SERVER_PORT` | The port for the gRPC server to listen on. | `50055` | Any valid port value |
 | `EVENT_SDK_SIDECAR_DISABLED` | Enables or disables the event sidecar. If disabled, the events will be logged to the host console only. | `true` | `true`, `false` |
