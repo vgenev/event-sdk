@@ -105,7 +105,6 @@ class Tracer implements ATracer {
   }
 
   static extractContextFromHttpRequest(request: { [key: string] : any }, type: HttpRequestOptions = HttpRequestOptions.w3c, tracestateDecoder = this.defaultTracestateDecoder): TypeSpanContext | undefined {
-    if (!Config.EVENT_LOGGER_TRACE_HEADERS_ENABLED) throw new Error('Enable EVENT_SDK_TRACE_HEADERS_ENABLED to use this functionality')
     let spanContext
     
     const getOwnVendorTracestate = (tracestateHeader: string): { [key: string] : string } | undefined => {
@@ -152,7 +151,6 @@ class Tracer implements ATracer {
             parentSpanId: parentId,
             sampled: sampled,
             tags: {
-              traceparent: request.headers.traceparent,
               tracestate: request.headers.tracestate
             }
           })
@@ -161,7 +159,6 @@ class Tracer implements ATracer {
             flags: context.flags,
             sampled: sampled,
             tags: {
-              traceparent: request.headers.traceparent,
               tracestate: request.headers.tracestate
             }
           })

@@ -30,7 +30,6 @@
 
 const { Tracer } = require('../../dist/index')
 const { AuditEventAction } = require('../../dist/index')
-// const { DefaultLoggerRecorder } = require('../../lib/index')
 const EventSDK = require('../../dist/index')
 
 const Logger = require('@mojaloop/central-services-logger')
@@ -64,8 +63,7 @@ const request = {
     host: 'localhost:4000',
     'user-agent': 'curl/7.59.0',
     accept: '*/*',
-    traceparent: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
-    tracestate: 'af=b7ad6b7169203331'
+    traceparent: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01'
   }
 }
 
