@@ -4,5 +4,6 @@
   "SERVER_PORT": 50055,
   "SIDECAR_DISABLED": true,
   "SIDECAR_WITH_LOGGER": false,
-  "VENDOR_PREFIX": "acmevendor"
+  "VENDOR_PREFIX": "acmevendor",
+  "TRACE_HEADERS_ENABLED": true
 }

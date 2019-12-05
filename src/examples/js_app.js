@@ -29,7 +29,7 @@
  */
 
 const { Tracer } = require('../../dist/index')
-const { AuditEventAction } = require('../../lib/index')
+const { AuditEventAction } = require('../../dist/index')
 // const { DefaultLoggerRecorder } = require('../../lib/index')
 const EventSDK = require('../../dist/index')
 

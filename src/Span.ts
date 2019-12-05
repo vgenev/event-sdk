@@ -29,6 +29,7 @@ import {
 } from './Recorder'
 import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient';
 import Config from './lib/config'
+import { opaqueType } from '@babel/types';
 
 type RecorderKeys = 'defaultRecorder' | 'logRecorder' | 'auditRecorder' | 'traceRecorder'
 
@@ -142,6 +143,12 @@ class Span implements Partial<ISpan> {
    */
 
   defaultTagsSetter(message?: TypeOfMessage): Span {
+    if (!Config.EVENT_LOGGER_TRACE_HEADERS_ENABLED) return this
+    const w3cHeaders = {
+      traceparent: createW3Ctreaceparent(this.spanContext),
+      tracestate: createW3CTracestate(this.spanContext, this.spanContext.tags!.tracestate)
+    }
+    this.setTags({ ...this.spanContext.tags, ...w3cHeaders })
     return this
   }
 
@@ -162,12 +169,12 @@ class Span implements Partial<ISpan> {
       let inputTraceContext: TypeSpanContext = this.getContext()
       return new Span(new EventTraceMetadata(Object.assign({},
         inputTraceContext, {
-          service,
-          spanId: undefined,
-          startTimestamp: undefined,
-          finishTimestamp: undefined,
-          parentSpanId: inputTraceContext.spanId
-        })), recorders, this.defaultTagsSetter)
+        service,
+        spanId: undefined,
+        startTimestamp: undefined,
+        finishTimestamp: undefined,
+        parentSpanId: inputTraceContext.spanId
+      })), recorders, this.defaultTagsSetter)
     } catch (e) {
       throw (e)
     }
@@ -195,6 +202,7 @@ class Span implements Partial<ISpan> {
    */
 
   injectContextToHttpRequest(request: { [key: string]: any }, type: HttpRequestOptions = HttpRequestOptions.w3c): { [key: string]: any } {
+    if (!Config.EVENT_LOGGER_TRACE_HEADERS_ENABLED) throw new Error('Enable EVENT_SDK_TRACE_HEADERS_ENABLED to use this functionality')
     let result = _.cloneDeep(request)
     result.headers = setHttpHeader(this.spanContext, type, result.headers)
     return result
@@ -459,32 +467,6 @@ const getDefaults = (type: EventType): IDefaultActions => {
 }
 
 const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, headers: { [key: string]: any }): { [key: string]: any } => {
-
-  const createW3CTracestate = (tracestate: string, opaqueValue: string): string => {
-    let tracestateArray = (tracestate.split(','))
-    let resultMap = new Map()
-    let resultArray = []
-    let result
-    for (let rawStates of tracestateArray) {
-      let states = rawStates.trim()
-      let [vendorRaw] = states.split('=')
-      resultMap.set(vendorRaw.trim(), states)
-    }
-
-    if (resultMap.has(Config.EVENT_LOGGER_VENDOR_PREFIX)) {
-      resultMap.delete(Config.EVENT_LOGGER_VENDOR_PREFIX)
-      for (let entry of resultMap.values()) {
-        resultArray.push(entry)
-      }
-      resultArray.unshift(`${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`)
-      result = resultArray.join(',')
-    } else {
-      tracestateArray.unshift(`${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`)
-      result = tracestateArray.join(',')
-    }
-    return result
-  }
-
   const { traceId, parentSpanId, spanId, flags, sampled } = context
 
   switch (type) {
@@ -503,27 +485,73 @@ const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, heade
 
     case HttpRequestOptions.w3c:
     default: {
-      const version = Buffer.alloc(1).fill(0)
-      const flagsForBuff = (flags && sampled) ? (flags | sampled) : flags ? flags : sampled ? sampled : 0x00
-      const flagsBuffer = Buffer.alloc(1).fill(flagsForBuff)
-      const traceIdBuff = Buffer.from(traceId, 'hex')
-      const spanIdBuff = Buffer.from(spanId, 'hex')
-      const parentSpanIdBuff = parentSpanId && Buffer.from(parentSpanId, 'hex')
-      let result = {}
-      let W3CHeaders = parentSpanIdBuff
-        ? new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer, parentSpanIdBuff]))
-        : new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer]))
-      if (headers.tracestate) {
-        return Object.assign({ traceparent: W3CHeaders.toString() }, { tracestate: createW3CTracestate(headers.tracestate, spanId), headers })
-      }
-      return Object.assign({ traceparent: W3CHeaders.toString() }, headers)
+      return {
+        ...headers, 
+        ...{
+          traceparent: context.tags!.traceparent,
+          tracestate: headers.tracestate ? createW3CTracestate(context, headers.tracestate) : context.tags!.tracestate }}
     }
   }
 }
+
+const encodeTracestate = (context: TypeSpanContext): {[key: string]: string} => {
+  return {
+    vendor: Config.EVENT_LOGGER_VENDOR_PREFIX,
+    opaqueValue: context.spanId
+  }
+}
+
+const createW3CTracestate = (spanContext: TypeSpanContext, tracestate?: string): string => {
+  const { vendor, opaqueValue } = encodeTracestate(spanContext)
+  if (!tracestate && Config.EVENT_LOGGER_TRACE_HEADERS_ENABLED) {
+    return `${vendor}=${opaqueValue}`
+  }
+  let tracestateArray = (tracestate!.split(','))
+  let resultMap = new Map()
+  let resultArray = []
+  let result
+  for (let rawStates of tracestateArray) {
+    let states = rawStates.trim()
+    let [vendorRaw] = states.split('=')
+    resultMap.set(vendorRaw.trim(), states)
+  }
+
+  if (resultMap.has(Config.EVENT_LOGGER_VENDOR_PREFIX)) {
+    resultMap.delete(Config.EVENT_LOGGER_VENDOR_PREFIX)
+    for (let entry of resultMap.values()) {
+      resultArray.push(entry)
+    }
+    resultArray.unshift(`${vendor}=${opaqueValue}`)
+    result = resultArray.join(',')
+  } else {
+    tracestateArray.unshift(`${vendor}=${opaqueValue}`)
+    result = tracestateArray.join(',')
+  }
+  return result
+}
+
+const createW3Ctreaceparent = (spanContext: TypeSpanContext) : string => {
+  const { traceId, parentSpanId, spanId, flags, sampled } = spanContext
+  const version = Buffer.alloc(1).fill(0)
+  const flagsForBuff = (flags && sampled) ? (flags | sampled) : flags ? flags : sampled ? sampled : 0x00
+  const flagsBuffer = Buffer.alloc(1).fill(flagsForBuff)
+  const traceIdBuff = Buffer.from(traceId, 'hex')
+  const spanIdBuff = Buffer.from(spanId, 'hex')
+  const parentSpanIdBuff = parentSpanId && Buffer.from(parentSpanId, 'hex')
+
+  let W3CHeaders = parentSpanIdBuff
+    ? new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer, parentSpanIdBuff]))
+    : new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer]))
+
+  return W3CHeaders.toString()
+}
+
+
 
 export {
   Span,
   ContextOptions,
   Recorders,
-  setHttpHeader
+  setHttpHeader,
+  createW3CTracestate
 }
