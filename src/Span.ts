@@ -29,6 +29,7 @@ import {
 } from './Recorder'
 import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient';
 import Config from './lib/config'
+import Util from './lib/util'
 
 type RecorderKeys = 'defaultRecorder' | 'logRecorder' | 'auditRecorder' | 'traceRecorder'
 
@@ -36,6 +37,12 @@ const defaultRecorder = Config.EVENT_LOGGER_SIDECAR_DISABLED
   ? new DefaultLoggerRecorder()
   : new DefaultSidecarRecorder(new EventLoggingServiceClient(Config.EVENT_LOGGER_SERVER_HOST, Config.EVENT_LOGGER_SERVER_PORT))
 
+
+/**
+ * A dict containing EventTypes which should be treated asynchronously
+ * 
+ */
+const asyncOverrides = Util.eventAsyncOverrides(Config.ASYNC_OVERRIDE_EVENTS)
 
 type PartialWithDefaultRecorder<T> = {
   [P in keyof T]?: T[P]
@@ -354,7 +361,6 @@ class Span implements Partial<ISpan> {
    * @param action optional parameter for action. The default is based on type defaults
    * @param state optional parameter for state. Defaults to 'success'
    */
-
   private async recordMessage(message: TypeOfMessage, type: TypeEventTypeAction['type'], action?: TypeEventTypeAction['action'], state?: EventStateMetadata) {
     if (this.isFinished) {
       throw new Error('span finished. no further actions allowed')
@@ -368,7 +374,7 @@ class Span implements Partial<ISpan> {
       recorder = this.recorders[key]!
     }
 
-    if (Config.ASYNC_OVERRIDE) {
+    if (Util.shouldOverrideEvent(asyncOverrides, type)) {
       //Don't wait for .record() to resolve, return straight away
       recorder.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
       return true

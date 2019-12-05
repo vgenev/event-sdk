@@ -1,7 +1,7 @@
 const RC = require('parse-strings-in-object')(require('rc')('EVENT_SDK', require('../../config/default.json')))
 
 type ConfigType = {
-  ASYNC_OVERRIDE: boolean,
+  ASYNC_OVERRIDE_EVENTS: string,
   EVENT_LOGGER_SERVER_HOST: string,
   EVENT_LOGGER_SERVER_PORT: number,
   EVENT_LOGGER_SIDECAR_DISABLED: boolean,
@@ -10,7 +10,7 @@ type ConfigType = {
 }
 
 const Config: ConfigType = {
-  ASYNC_OVERRIDE: RC.ASYNC_OVERRIDE,
+  ASYNC_OVERRIDE_EVENTS: RC.ASYNC_OVERRIDE_EVENTS,
   EVENT_LOGGER_SERVER_HOST: RC.SERVER_HOST,
   EVENT_LOGGER_SERVER_PORT: RC.SERVER_PORT,
   EVENT_LOGGER_SIDECAR_DISABLED: RC.SIDECAR_DISABLED,
