@@ -61,7 +61,9 @@ class Tracer implements ATracer {
     let { path } = injectOptions // type not implemented yet
     if (carrier instanceof EventMessage || (('metadata' in carrier))) path = 'metadata'
     else if (carrier instanceof EventTraceMetadata) return Promise.resolve(context)
-    if (!path) Object.assign(result, { trace: context })
+    if (!path) {
+      Object.assign(result, { trace: context })
+    }
     else _.merge(_.get(result, path), { trace: context })
     return result
   }
@@ -97,7 +99,7 @@ class Tracer implements ATracer {
   }
 
   private static defaultTracestateDecoder(vendor: string | undefined, tracestate: string): { [key: string]: string } {
-    if (!vendor) vendor = 'outsideVendor'
+    vendor = vendor ? vendor : 'outsideVendor'
     return {
       vendor,
       parentId: tracestate
@@ -125,7 +127,9 @@ class Tracer implements ATracer {
       case HttpRequestOptions.xb3: {
         let result:{ [key: string]: string } = {}
         const requestHasXB3headers = !!request.headers && Object.keys(request.headers).some(key => !!key.toLowerCase().match(/x-b3-/))
-        if (!requestHasXB3headers) return undefined
+        if (!requestHasXB3headers) {
+          return undefined
+        }
         for (let [ key, value ] of Object.entries(request.headers)) {
           let keyLowerCase = key.toLowerCase()
           if (keyLowerCase.startsWith('x-b3-')) {
@@ -138,7 +142,9 @@ class Tracer implements ATracer {
       }
       case HttpRequestOptions.w3c:
       default: {
-        if (!request.headers || !request.headers.traceparent) return undefined
+        if (!request.headers || !request.headers.traceparent) {
+          return undefined
+        }
         const context = TraceParent.fromString(request.headers.traceparent)
         const sampled: number = context.flags ? context.flags & 0x01 : 0
         const tracestateDecoded = request.headers.tracestate ? getOwnVendorTracestate(request.headers.tracestate) : undefined
