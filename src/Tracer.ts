@@ -99,7 +99,7 @@ class Tracer implements ATracer {
   }
 
   private static defaultTracestateDecoder(vendor: string | undefined, tracestate: string): { [key: string]: string } {
-    vendor = vendor ? vendor : 'outsideVendor'
+    vendor = !!vendor ? vendor : 'unknownVendor'
     return {
       vendor,
       parentId: tracestate
@@ -112,15 +112,19 @@ class Tracer implements ATracer {
     const getOwnVendorTracestate = (tracestateHeader: string): { [key: string] : string } | undefined => {
       let tracestateArray = (tracestateHeader.split(','))
       let resultMap: { [key: string]: any } = {}
-      let vendor
+
       for (let rawStates of tracestateArray) {
         let states = rawStates.trim()
         let [vendorRaw, tracestateRaw] = states.split('=')
-        vendor = vendorRaw.trim()
-        resultMap[vendor] = tracestateRaw.trim()
+        let vendor = vendorRaw.trim()
+        resultMap[vendor] = {
+          vendor,
+          parentId: tracestateRaw.trim()
+        }
       }
-      const tracestate = (Config.EVENT_LOGGER_VENDOR_PREFIX in resultMap) ? resultMap[Config.EVENT_LOGGER_VENDOR_PREFIX] : undefined
-      return tracestateDecoder(vendor, tracestate)
+      const tracestate = (Config.EVENT_LOGGER_VENDOR_PREFIX in resultMap) ? resultMap[Config.EVENT_LOGGER_VENDOR_PREFIX] : {}
+      console.log(`getOwnVendorTracestate:tracestate(request=${JSON.stringify(tracestateHeader)})=${JSON.stringify(tracestate)}`)
+      return tracestateDecoder(tracestate.vendor, tracestate.parentId)
     }
   
     switch (type) {
@@ -147,8 +151,19 @@ class Tracer implements ATracer {
         }
         const context = TraceParent.fromString(request.headers.traceparent)
         const sampled: number = context.flags ? context.flags & 0x01 : 0
+        console.log(`extractContextFromHttpRequest::spanContext=${JSON.stringify(spanContext)}`)
         const tracestateDecoded = request.headers.tracestate ? getOwnVendorTracestate(request.headers.tracestate) : undefined
-        const parentId = (!!tracestateDecoded && !!tracestateDecoded.parentId) ? ((tracestateDecoded.parentId !== context.id) ? context.id : tracestateDecoded.parentId) : undefined
+        const parentId = (!!tracestateDecoded && !!tracestateDecoded.parentId) ? tracestateDecoded.parentId : (!!context && !!context.id ? context.id : undefined) 
+        console.log(`extractContextFromHttpRequest::parentId= ${parentId}`)
+        console.log(`extractContextFromHttpRequest::(!!tracestateDecoded && !!tracestateDecoded.parentId)= ${(!!tracestateDecoded && !!tracestateDecoded.parentId)}`)
+        console.log(`extractContextFromHttpRequest::context.id= ${context.id}`)
+        console.log(`extractContextFromHttpRequest::(!!context && !!context.id)= ${(!!context && !!context.id)}`)
+        console.log(`parentIdparentIdparentIdparentIdparentIdparentId[traceId=${context.traceId}, id=${context.id}, tracestate=${request.headers.tracestate}, tracestateDecoded.parentId=${tracestateDecoded!.parentId}, tracestateDecoded.vendor=${tracestateDecoded!.vendor}]=${parentId}`)
+        console.log(`extractContextFromHttpRequest::tracestateDecoded= ${tracestateDecoded}`)
+        console.log(`extractContextFromHttpRequest::tracestateDecoded.vendor= ${tracestateDecoded!.vendor}`)
+        console.log(`extractContextFromHttpRequest::Config.EVENT_LOGGER_VENDOR_PREFIX= ${Config.EVENT_LOGGER_VENDOR_PREFIX}`)
+        console.log(`extractContextFromHttpRequest::tracestateDecoded.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX=${tracestateDecoded!.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX}`)
+        console.log(`extractContextFromHttpRequest::(!!tracestateDecoded && tracestateDecoded.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX)=${(!!tracestateDecoded && tracestateDecoded.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX)}`)
         spanContext = (!!tracestateDecoded && tracestateDecoded.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX)
           ? new EventTraceMetadata({
             traceId: context.traceId,
