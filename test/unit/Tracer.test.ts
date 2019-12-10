@@ -113,7 +113,7 @@ describe('Tracer', () => {
     expect(tracer.spanContext.spanId).toBe(child.spanContext.parentSpanId)
     expect(tracer.spanContext.traceId).toBe(child.spanContext.traceId)
     expect(child.spanContext.service).toBe('service2')
-    expect(child.spanContext.tags).toStrictEqual({ tag: 'value' })
+    expect(child.spanContext.tags).toMatchObject({ tag: 'value' })
 
     let spanContext = child.getContext()
     let IIChild = Tracer.createChildSpanFromContext('service3', spanContext)

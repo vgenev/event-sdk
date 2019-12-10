@@ -92,4 +92,43 @@ describe('Span', () => {
       expect(true).toBe(true)
     }, testTimeoutNonAsync)
   })
+
+  describe('Trace-context headers', () => {
+    it('TRACESTATE_HEADER_ENABLED, when true, enables tracestate header', () => {
+      // Arrange
+      sandbox.mock(Config)
+      Config.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED = true
+      const TracerProxy = jest.requireActual('../../src/Tracer').Tracer
+      const parentSpan = TracerProxy.createSpan('parent_service', {tagA: 'valueA'})
+      const request = {
+        headers: {
+          host: 'localhost:4000',
+          'user-agent': 'curl/7.59.0',
+          accept: '*/*',
+        }
+      }
+            
+      // Act
+      const resultRequest = parentSpan.injectContextToHttpRequest(request)
+      const spanContext = parentSpan.getContext()
+
+      // Assert
+      expect(spanContext).toMatchObject({ tags: { tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${spanContext.spanId}` } })
+      expect(resultRequest).toMatchObject({ headers: { tracestate: spanContext.tags.tracestate } })
+    })
+
+    it('TRACESTATE_HEADER_ENABLED, when false, disables tracestae', () => {
+      // Arrange
+      sandbox.mock(Config)
+      Config.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED = false
+      const TracerProxy = jest.requireActual('../../src/Tracer').Tracer
+      const parentSpan = TracerProxy.createSpan('parent_service', {tagA: 'valueA'})
+      // Act
+      const spanContext = parentSpan.getContext()
+      
+      // Assert
+      expect(spanContext).not.toMatchObject({ tags: { tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${spanContext.spanId}` } })
+    })
+
+  })
 })

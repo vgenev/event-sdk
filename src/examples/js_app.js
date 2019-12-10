@@ -29,8 +29,7 @@
  */
 
 const { Tracer } = require('../../dist/index')
-const { AuditEventAction } = require('../../lib/index')
-// const { DefaultLoggerRecorder } = require('../../lib/index')
+const { AuditEventAction } = require('../../dist/index')
 const EventSDK = require('../../dist/index')
 
 const Logger = require('@mojaloop/central-services-logger')
@@ -65,7 +64,7 @@ const request = {
     'user-agent': 'curl/7.59.0',
     accept: '*/*',
     traceparent: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
-    tracestate: 'af=b7ad6b7169203331'
+    tracestate: 'af=b7ad6b7169203331,acmevendor=aaad6b7169203331'
   }
 }
 
@@ -106,19 +105,22 @@ const main = async () => {
   await parentSpan.finish(event)
 
   // // Injects trace context to a message carrier. When the trace is carried across few services, the trace context can be injects in the carrier that transports the data.
-  const messageWithContext = await IIChildSpan.injectContextToMessage(event)
+  // const messageWithContext = await IIChildSpan.injectContextToMessage(event)
   await sleep(2000)
   const requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
+
+  const httpFromRequest = await Tracer.extractContextFromHttpRequest(request)
+  console.log(`http from request ${httpFromRequest}`)
+  const IVChild = Tracer.createChildSpanFromContext('child III service', httpFromRequest) //, { defaultRecorder: new DefaultLoggerRecorder() })
   Logger.info(JSON.stringify(requestHeadersWithContext, null, 2))
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
-  const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
+  // const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
   const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
   Logger.info(JSON.stringify(context, null, 2))
   const spanFromHttp = Tracer.createChildSpanFromContext('http_span', context)
   Logger.info(JSON.stringify(spanFromHttp.getContext(), null, 2))
   // Creates child span from extracted trace context.
   const IIIChild = spanFromHttp.getChild('child III service')
-  const IVChild = Tracer.createChildSpanFromContext('child III service', contextFromMessage) //, { defaultRecorder: new DefaultLoggerRecorder() })
   await sleep(500)
   spanFromHttp.finish()
   const state = new EventSDK.EventStateMetadata(EventSDK.EventStatusType.failed, '2001', 'its an errrrrrorrrr')

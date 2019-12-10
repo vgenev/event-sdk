@@ -144,11 +144,13 @@ class Span implements Partial<ISpan> {
   }
 
   /**
-   * A method to set tags by default. Not implemented yet
+   * A method to set tags by default.
    * @param message the message which tags will be extracted from
    */
 
-  defaultTagsSetter(message?: TypeOfMessage): Span {
+   defaultTagsSetter(message?: TypeOfMessage): Span {
+    const w3cHeaders = getTracestateTag(this.spanContext)
+    !!w3cHeaders && this.setTags({ ...this.spanContext.tags, ...w3cHeaders })
     return this
   }
 
@@ -169,12 +171,12 @@ class Span implements Partial<ISpan> {
       let inputTraceContext: TypeSpanContext = this.getContext()
       return new Span(new EventTraceMetadata(Object.assign({},
         inputTraceContext, {
-          service,
-          spanId: undefined,
-          startTimestamp: undefined,
-          finishTimestamp: undefined,
-          parentSpanId: inputTraceContext.spanId
-        })), recorders, this.defaultTagsSetter)
+        service,
+        spanId: undefined,
+        startTimestamp: undefined,
+        finishTimestamp: undefined,
+        parentSpanId: inputTraceContext.spanId
+      })), recorders, this.defaultTagsSetter)
     } catch (e) {
       throw (e)
     }
@@ -189,9 +191,14 @@ class Span implements Partial<ISpan> {
     let result = _.cloneDeep(carrier)
     let { path } = injectOptions // type not implemented yet
     if (carrier instanceof EventMessage || (('metadata' in carrier))) path = 'metadata'
-    else if (carrier instanceof EventTraceMetadata) return Promise.resolve(this.spanContext)
-    if (!path) Object.assign(result, { trace: this.spanContext })
-    else _.merge(_.get(result, path), { trace: this.spanContext })
+    else if (carrier instanceof EventTraceMetadata) {
+      return Promise.resolve(this.spanContext)
+    }
+    if (!path) {
+      Object.assign(result, { trace: this.spanContext })
+    } else {
+      _.merge(_.get(result, path), { trace: this.spanContext })
+    }
     return result
   }
 
@@ -226,7 +233,9 @@ class Span implements Partial<ISpan> {
   * @param finishTimestamp optional parameter for the finish time. If omitted, current time is used.
   */
   async finish(message?: TypeOfMessage, state?: EventStateMetadata, finishTimestamp?: string | Date): Promise<this> {
-    if (this.spanContext.finishTimestamp) return Promise.reject(new Error('span already finished'))
+    if (this.spanContext.finishTimestamp) {
+      return Promise.reject(new Error('span already finished'))
+    }
     let spanContext = this._finishSpan(finishTimestamp).getContext()
     await this.trace(message, spanContext, state)
     return Promise.resolve(this)
@@ -258,10 +267,12 @@ class Span implements Partial<ISpan> {
    * @param state optional parameter for state. Defaults to 'success'
    */
   private async trace(message?: TypeOfMessage, spanContext: TypeSpanContext = this.spanContext, state?: EventStateMetadata, action?: TraceEventAction): Promise<any> {
-    if (!message) message = new EventMessage({
-      type: 'application/json',
-      content: spanContext
-    })
+    if (!message) {
+      message = new EventMessage({
+        type: 'application/json',
+        content: spanContext
+      })
+    }
     try {
       await this.recordMessage(message, TraceEventTypeAction.getType(), action, state)
       this.isFinished = this.spanContext.finishTimestamp ? true : false
@@ -465,32 +476,6 @@ const getDefaults = (type: EventType): IDefaultActions => {
 }
 
 const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, headers: { [key: string]: any }): { [key: string]: any } => {
-
-  const createW3CTracestate = (tracestate: string, opaqueValue: string): string => {
-    let tracestateArray = (tracestate.split(','))
-    let resultMap = new Map()
-    let resultArray = []
-    let result
-    for (let rawStates of tracestateArray) {
-      let states = rawStates.trim()
-      let [vendorRaw] = states.split('=')
-      resultMap.set(vendorRaw.trim(), states)
-    }
-
-    if (resultMap.has(Config.EVENT_LOGGER_VENDOR_PREFIX)) {
-      resultMap.delete(Config.EVENT_LOGGER_VENDOR_PREFIX)
-      for (let entry of resultMap.values()) {
-        resultArray.push(entry)
-      }
-      resultArray.unshift(`${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`)
-      result = resultArray.join(',')
-    } else {
-      tracestateArray.unshift(`${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`)
-      result = tracestateArray.join(',')
-    }
-    return result
-  }
-
   const { traceId, parentSpanId, spanId, flags, sampled } = context
 
   switch (type) {
@@ -509,27 +494,87 @@ const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, heade
 
     case HttpRequestOptions.w3c:
     default: {
-      const version = Buffer.alloc(1).fill(0)
-      const flagsForBuff = (flags && sampled) ? (flags | sampled) : flags ? flags : sampled ? sampled : 0x00
-      const flagsBuffer = Buffer.alloc(1).fill(flagsForBuff)
-      const traceIdBuff = Buffer.from(traceId, 'hex')
-      const spanIdBuff = Buffer.from(spanId, 'hex')
-      const parentSpanIdBuff = parentSpanId && Buffer.from(parentSpanId, 'hex')
-      let result = {}
-      let W3CHeaders = parentSpanIdBuff
-        ? new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer, parentSpanIdBuff]))
-        : new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer]))
-      if (headers.tracestate) {
-        return Object.assign({ traceparent: W3CHeaders.toString() }, { tracestate: createW3CTracestate(headers.tracestate, spanId), headers })
-      }
-      return Object.assign({ traceparent: W3CHeaders.toString() }, headers)
+      const tracestate = headers.tracestate ? createW3CTracestate(context, headers.tracestate) : (context.tags && context.tags.tracestate) ? context.tags.tracestate : null
+      return _.pickBy({
+        ...headers,
+        ...{
+          traceparent: createW3Ctreaceparent(context),
+          tracestate
+        }
+      }, _.identity)
     }
   }
 }
+
+const encodeTracestate = (context: TypeSpanContext): { [key: string]: string } => {
+  return {
+    vendor: Config.EVENT_LOGGER_VENDOR_PREFIX,
+    opaqueValue: context.spanId
+  }
+}
+
+const createW3CTracestate = (spanContext: TypeSpanContext, tracestate?: string): string => {
+  const { vendor, opaqueValue } = encodeTracestate(spanContext)
+  if (!tracestate && Config.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED) {
+    return `${vendor}=${opaqueValue}`
+  }
+  let tracestateArray = (tracestate!.split(','))
+  let resultMap = new Map()
+  let resultArray = []
+  let result
+  for (let rawStates of tracestateArray) {
+    let states = rawStates.trim()
+    let [vendorRaw] = states.split('=')
+    resultMap.set(vendorRaw.trim(), states)
+  }
+
+  if (resultMap.has(Config.EVENT_LOGGER_VENDOR_PREFIX)) {
+    resultMap.delete(Config.EVENT_LOGGER_VENDOR_PREFIX)
+    for (let entry of resultMap.values()) {
+      resultArray.push(entry)
+    }
+    resultArray.unshift(`${vendor}=${opaqueValue}`)
+    result = resultArray.join(',')
+  } else {
+    tracestateArray.unshift(`${vendor}=${opaqueValue}`)
+    result = tracestateArray.join(',')
+  }
+  return result
+}
+
+const createW3Ctreaceparent = (spanContext: TypeSpanContext): string => {
+  const { traceId, parentSpanId, spanId, flags, sampled } = spanContext
+  const version = Buffer.alloc(1).fill(0)
+  const flagsForBuff = (flags && sampled) ? (flags | sampled) : flags ? flags : sampled ? sampled : 0x00
+  const flagsBuffer = Buffer.alloc(1).fill(flagsForBuff)
+  const traceIdBuff = Buffer.from(traceId, 'hex')
+  const spanIdBuff = Buffer.from(spanId, 'hex')
+  const parentSpanIdBuff = parentSpanId && Buffer.from(parentSpanId, 'hex')
+
+  let W3CHeaders = parentSpanIdBuff
+    ? new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer, parentSpanIdBuff]))
+    : new TraceParent(Buffer.concat([version, traceIdBuff, spanIdBuff, flagsBuffer]))
+
+  return W3CHeaders.toString()
+}
+
+const getTracestateTag = (spanContext: TypeSpanContext): { [ key: string ]: string } | false => {
+  let tracestate
+  if (!!Config.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED || (!!spanContext.tags && !!spanContext.tags!.tracestate)) {
+    let currentTracestate = undefined
+    if (!!spanContext.tags && !!spanContext.tags.tracestate) currentTracestate = spanContext.tags.tracestate
+    tracestate = createW3CTracestate(spanContext, currentTracestate)
+    if(tracestate) return { tracestate }
+  }
+  return false
+}
+
 
 export {
   Span,
   ContextOptions,
   Recorders,
-  setHttpHeader
+  setHttpHeader,
+  createW3CTracestate,
+  getTracestateTag
 }
