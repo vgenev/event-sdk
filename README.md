@@ -28,12 +28,31 @@ Edit the file in `./config/default.json` to configure the logger, or set the fol
 | Environment variable | Description | Default | Available Values |
 | --- | --- | --- | --- |
 | `EVENT_SDK_ASYNC_OVERRIDE_EVENTS` | A comma-separated list of events that should return immediately instead of waiting for the promises to resolve in the `recorder.record()` function. | `''` | Any combination of: `log,audit,trace` |
+|`EVENT_SDK_LOG_FILTER` | Comma deliminated List of `<eventType>`:`<eventAction>` key pairs that will be logged to the host console, as well as sent to the sidecar. Note `*:*` wildcard entry will print all logs, and if this field is empty ` ` then no logs will be printed. See [Current Supported Events](#current-supported-events) | `audit:*`, `log:info`, `log:error`, `log:warning` | `audit:*`, `log:info`, `log:error` |
+|`EVENT_SDK_LOG_METADATA_ONLY` | This flag will only print the metadata portion of the event message, and exclude the content to minimise log verbosity. | `false` | `true`, `false` |
 | `EVENT_SDK_SERVER_HOST` | The hostname for the gRPC server to bind to. | `localhost` | Any valid hostname |
 | `EVENT_SDK_SERVER_PORT` | The port for the gRPC server to listen on. | `50055` | Any valid port value |
-| `EVENT_SDK_SIDECAR_DISABLED` | Enables or disables the event sidecar. If disabled, the events will be logged to the host console only. | `true` | `true`, `false` |
-| `EVENT_SDK_SIDECAR_WITH_LOGGER` | If true, the events will be logged to the host console, as well as sent to the sidecar. Only applicable if the event sidecar is enabled. | `false` | `true`, `false` |
+| `EVENT_SDK_SIDECAR_DISABLED` | Enables or disables the logging to event sidecar. | `true` | `true`, `false` |
+| ~~`EVENT_SDK_SIDECAR_WITH_LOGGER`~~ | _DEPRECATED BY `EVENT_SDK_LOG_FILTER`_ - If true, the events will be logged to the host console, as well as sent to the sidecar. Only applicable if the event sidecar is enabled. | `false` | `true`, `false` |
 | `EVENT_SDK_VENDOR_PREFIX` | Prefix for vendor specific tracestate handler. For more information refer to [w3c spec](https://github.com/w3c/trace-context/blob/master/spec/20-http_header_format.md#tracestate-header) | `acmevendor` | Any string |
 | `EVENT_SDK_TRACESTATE_HEADER_ENABLED` | If enabled, the tracestate value is kept updated with every child and is inserted into the span tags. Otherwise, the tracestate is only updated if `injectContextToHttpRequest` is called and the `tracestate` is included into the request headers. | `false` | `true`, `false` |
+
+## Current Supported Events
+
+| eventType | eventAction | Description |
+| --- | --- | --- |
+| audit | default | |
+| audit | start | |
+| audit | ingress | |
+| audit | egress | |
+| audit | finish | |
+| log | info | |
+| log | debug | |
+| log | error | |
+| log | verbose | |
+| log | warning | |
+| log | performance | |
+| span | trace | |
 
 ## Usage
 
