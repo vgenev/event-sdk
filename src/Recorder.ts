@@ -1,5 +1,6 @@
-import { EventType, LogEventAction, LogResponseStatus, TypeEventTypeAction, EventMessage } from "./model/EventMessage";
+import { EventType, LogEventAction, LogResponseStatus, TypeEventTypeAction, EventMessage, EventMetadata, TypeEventMetadata, TypeMessageMetadata } from "./model/EventMessage";
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
+import Config from "./lib/config";
 
 const Logger = require('@mojaloop/central-services-logger')
 
@@ -13,7 +14,7 @@ const Logger = require('@mojaloop/central-services-logger')
 
 interface IEventRecorder {
   recorder: EventLoggingServiceClient | Function
-  preProcess: (event: EventMessage) => EventMessage
+  preProcess: (event: EventMessage) => EventMessage | TypeMessageMetadata
   postProcess?: (result: any) => any
   record: (event: EventMessage, doLog?: boolean, callback?: (result: any) => void ) => Promise<any>
 }
@@ -30,14 +31,14 @@ type LogResponseTypeError = {
 
 
 
-const logWithLevel = async (message: EventMessage): Promise<LogResponseType> => {
+const logWithLevel = async (message: EventMessage | TypeMessageMetadata): Promise<LogResponseType> => {
   return new Promise((resolve, reject) => {
     try {
       let type: TypeEventTypeAction['type']
       let action: TypeEventTypeAction['action']
-      if (message.metadata && message.metadata.event) {
-        type = message.metadata.event.type!
-        action = message.metadata.event.action!
+      if (message && ('metadata' in message) && ('event' in message.metadata!)) {
+        type = message.metadata!.event.type!
+        action = message.metadata!.event.action!
       } else {
         type = EventType.log
         action = LogEventAction.info
@@ -66,7 +67,10 @@ class DefaultLoggerRecorder implements IEventRecorder {
     return this
   }
 
-  preProcess = (event: EventMessage): EventMessage => {
+  preProcess = (event: EventMessage): EventMessage | TypeMessageMetadata => {
+    if (Config.EVENT_LOGGER_LOG_METADATA_ONLY) {
+      return event.metadata!
+    }
     return event
   }
 
@@ -74,7 +78,10 @@ class DefaultLoggerRecorder implements IEventRecorder {
     return result
   }
 
-  async record(event: EventMessage): Promise<any> {
+  async record(event: EventMessage, doLog: boolean = true): Promise<any> {
+    if (!doLog) {
+      return Promise.resolve({ status: LogResponseStatus.accepted })
+    }
     let updatedEvent = this.preProcess(event)
     let result = await logWithLevel(updatedEvent)
     return this.postProcess(result)

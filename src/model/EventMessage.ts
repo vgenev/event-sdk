@@ -26,6 +26,8 @@
 
 'use strict'
 
+import Config from '../lib/config'
+
 const crypto = require('crypto')
 const Uuid = require('uuid4')
 
@@ -464,6 +466,46 @@ function newSpanId() {
   return crypto.randomBytes(8).toString('hex');
 }
 
+const actionDictionary = ((): { [key: string]: Array<AuditEventAction | LogEventAction | TraceEventAction | NullEventAction> } => {
+  const dict: { [key: string]: Array<AuditEventAction | LogEventAction | TraceEventAction | NullEventAction> } = {}
+  Object.values(EventType).forEach(type => {
+    dict[type] =
+      (!!type && type === EventType.log) ? Object.values(LogEventAction) :
+        (!!type && type === EventType.audit) ? Object.values(AuditEventAction) :
+          (!!type && type === EventType.trace) ? Object.values(TraceEventAction) :
+            Object.values(NullEventAction)
+  })
+  return dict
+})()
+
+const logFilterMap = ((): Map<string, Array<TypeEventTypeAction['action']>> => {
+  const filterMap = new Map()
+
+  const getActionValue = (key: string, value: string): Array<string> => {
+    const actionValue = (value === '*') ? actionDictionary[key] : [value]
+    return actionValue
+  }
+
+  Config.EVENT_LOGGER_LOG_FILTER.forEach(filter => {
+    let [key, value] = filter.split(':')
+    const valueToAdd = getActionValue(key, value)
+    if (!filterMap.has(key)) {
+      filterMap.set(key, valueToAdd)
+    } else {
+      if (valueToAdd.length === actionDictionary[key].length) {
+        filterMap.set(key, valueToAdd)
+      } else {
+        let valueToUpdate = filterMap.get(key)
+        if (!valueToUpdate.includes(valueToAdd[0])) {
+          valueToUpdate.push(valueToAdd[0])
+          filterMap.set(key, valueToUpdate)
+        }
+      }
+    }
+  })
+  return filterMap
+})()
+
 export {
   EventMessage,
   EventType,
@@ -487,5 +529,6 @@ export {
   TypeSpanContext,
   TypeEventTypeAction,
   TraceTags,
-  HttpRequestOptions
+  HttpRequestOptions,
+  logFilterMap
 }

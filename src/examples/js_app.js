@@ -31,8 +31,9 @@
 const { Tracer } = require('../../dist/index')
 const { AuditEventAction } = require('../../dist/index')
 const EventSDK = require('../../dist/index')
+// const { DefaultLoggerRecorder } = require('../../dist/Recorder')
 
-const Logger = require('@mojaloop/central-services-logger')
+// const Logger = require('@mojaloop/central-services-logger')
 
 function sleep (ms) {
   return new Promise(resolve => {
@@ -110,15 +111,14 @@ const main = async () => {
   const requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
 
   const httpFromRequest = await Tracer.extractContextFromHttpRequest(request)
-  console.log(`http from request ${httpFromRequest}`)
   const IVChild = Tracer.createChildSpanFromContext('child III service', httpFromRequest) //, { defaultRecorder: new DefaultLoggerRecorder() })
-  Logger.info(JSON.stringify(requestHeadersWithContext, null, 2))
+  // Logger.info(JSON.stringify(requestHeadersWithContext, null, 2))
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
   // const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
   const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
-  Logger.info(JSON.stringify(context, null, 2))
+  // Logger.info(JSON.stringify(context, null, 2))
   const spanFromHttp = Tracer.createChildSpanFromContext('http_span', context)
-  Logger.info(JSON.stringify(spanFromHttp.getContext(), null, 2))
+  // Logger.info(JSON.stringify(spanFromHttp.getContext(), null, 2))
   // Creates child span from extracted trace context.
   const IIIChild = spanFromHttp.getChild('child III service')
   await sleep(500)
