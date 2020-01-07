@@ -288,7 +288,7 @@ class Span implements Partial<ISpan> {
    * @param action optional parameter for action. Defaults to 'default'
    * @param state optional parameter for state. Defaults to 'success'
    */
-  async audit(message: TypeOfMessage, action?: AuditEventAction, state?: EventStateMetadata): Promise<any> {
+  async audit(message: TypeOfMessage, action: AuditEventAction = AuditEventAction.default, state?: EventStateMetadata): Promise<any> {
     let result = await this.recordMessage(message, AuditEventTypeAction.getType(), action, state)
     return result
   }
@@ -387,11 +387,11 @@ class Span implements Partial<ISpan> {
 
     if (Util.shouldOverrideEvent(asyncOverrides, type)) {
       //Don't wait for .record() to resolve, return straight away
-      recorder.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
+      recorder.record(newEnvelope, Util.shouldLogToConsole(type, action))
       return true
     }
 
-    const logResult = await recorder.record(newEnvelope, Config.EVENT_LOGGER_SIDECAR_WITH_LOGGER)
+    const logResult = await recorder.record(newEnvelope, Util.shouldLogToConsole(type, action))
 
     if (logResult.status !== LogResponseStatus.accepted) {
       throw new Error(`Error when recording ${type}-${action} event. status: ${logResult.status}`)

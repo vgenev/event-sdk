@@ -20,13 +20,14 @@
 
  * Crosslake
  - Lewis Daly <lewisd@crosslaketech.com>
+ - Valentin Genev <valentin.genev@modusbox.com>
 
  --------------
  ******/
 
 'use strict'
 
-import { EventType, TypeEventTypeAction } from "model/EventMessage"
+import { EventType, TypeEventTypeAction, logFilterMap } from "../model/EventMessage"
 
 /**
  * @function eventAsyncOverrides
@@ -38,13 +39,12 @@ import { EventType, TypeEventTypeAction } from "model/EventMessage"
  * 
  * @returns overrideDict
  */
-function eventAsyncOverrides(asyncOverridesString: string = ''): { [index: string]: boolean} {
+function eventAsyncOverrides(asyncOverridesString: string = ''): { [index: string]: boolean } {
   const overrideDict: { [index: string]: boolean } = {}
   asyncOverridesString.split(',').map(val => overrideDict[val] = true)
 
   return overrideDict
 }
-
 
 /**
  * @function shouldOverrideEvent
@@ -65,7 +65,28 @@ function shouldOverrideEvent(overrideDict: { [index: string]: boolean }, eventTy
   return false
 }
 
+/**
+ * @function shouldLogToConsole
+ * 
+ * @description Given event type and action, based on configuration flags: EVENT_LOGGER_LOG_FILTER and EVENT_LOGGER_LOG_METADATA_ONLY
+ * returns should we log or not the event to the console/
+ *
+ * @param eventType 
+ * @param eventAction 
+ * 
+ * @returns boolean
+ */
+function shouldLogToConsole(eventType: EventType, eventAction: TypeEventTypeAction['action'] | undefined ): boolean {
+  const allowedActions = logFilterMap.get(eventType)
+  if (allowedActions && eventAction) {
+    return allowedActions.includes(eventAction)
+  } else {
+    return false
+  }
+}
+
 export default {
   eventAsyncOverrides,
-  shouldOverrideEvent
+  shouldOverrideEvent,
+  shouldLogToConsole
 }

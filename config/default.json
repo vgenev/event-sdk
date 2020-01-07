@@ -5,5 +5,8 @@
   "SIDECAR_DISABLED": true,
   "SIDECAR_WITH_LOGGER": false,
   "VENDOR_PREFIX": "acmevendor",
-  "TRACESTATE_HEADER_ENABLED": false
+  "TRACESTATE_HEADER_ENABLED": false,
+  "LOG_FILTER": ["audit:*", "log:info", "log:error", "log:warn"],
+  "LOG_METADATA_ONLY": true,
+  "TRACEID_PER_VENDOR": true
 }

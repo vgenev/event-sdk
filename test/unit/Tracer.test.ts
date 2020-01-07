@@ -20,6 +20,7 @@
 
  * ModusBox
  - Ramiro González Maciel <ramiro@modusbox.com>
+ - Valentin Genev <valentin.genev@modusbox.com>
 
  * Crosslake
  - Lewis Daly <lewisd@crosslaketech.com>
@@ -40,6 +41,21 @@ import { LogResponse, LogResponseStatus, EventTraceMetadata, HttpRequestOptions,
 const expectStringifyToMatch = (result: any, expected: any) => {
   return expect(JSON.stringify(result)).toBe(JSON.stringify(expected))
 }
+
+
+jest.mock('../../config/default.json', ()=>({
+    "ASYNC_OVERRIDE": false,
+    "SERVER_HOST": "localhost",
+    "SERVER_PORT": 50051,
+    "SIDECAR_DISABLED": true,
+    "SIDECAR_WITH_LOGGER": false,
+    "VENDOR_PREFIX": "acmevendor",
+    "TRACESTATE_HEADER_ENABLED": true,
+    "LOG_FILTER": ["audit:*", "log:info", "log:error", "log:warn", "log:debug"],
+    "LOG_METADATA_ONLY": true,
+    "TRACEID_PER_VENDOR": true  
+}), { virtual: true })
+
 
 
 let sandbox: Sinon.SinonSandbox
@@ -113,7 +129,9 @@ describe('Tracer', () => {
     expect(tracer.spanContext.spanId).toBe(child.spanContext.parentSpanId)
     expect(tracer.spanContext.traceId).toBe(child.spanContext.traceId)
     expect(child.spanContext.service).toBe('service2')
-    expect(child.spanContext.tags).toMatchObject({ tag: 'value' })
+    expect(child.spanContext.tags).toHaveProperty('tag')
+    expect(child.spanContext.tags!.tag).toBe('value')
+    expect(child.spanContext.tags!.tracestate).toContain('acmevendor')
 
     let spanContext = child.getContext()
     let IIChild = Tracer.createChildSpanFromContext('service3', spanContext)
@@ -157,8 +175,7 @@ describe('Tracer', () => {
 
     let header = await Tracer.injectContextToHttpRequest(IIIChild.getContext(), { headers: {} })
     expect(header.headers.traceparent).not.toBeUndefined()
-
-    header = await Tracer.injectContextToHttpRequest(IIIChild.getContext(), { headers: { tracestate: 'm=dadfafa,j=123' } })
+    header = await Tracer.injectContextToHttpRequest(IIIChild.getContext(), { headers: { tracestate: `m=dadfafa,j=123,acmevendor=12345` } })
     expect(header.headers.traceparent).not.toBeUndefined()
 
     header = await Tracer.injectContextToHttpRequest(IIIChild.getContext(), { headers: { tracestate: 'm=dadfafa,j=123,mojaloop=dfasdfads' } })
