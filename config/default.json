@@ -2,7 +2,7 @@
   "ASYNC_OVERRIDE": false,
   "SERVER_HOST": "localhost",
   "SERVER_PORT": 50051,
-  "SIDECAR_DISABLED": false,
+  "SIDECAR_DISABLED": true,
   "VENDOR_PREFIX": "acmevendor",
   "TRACESTATE_HEADER_ENABLED": true,
   "LOG_FILTER": "audit:*, log:info, log:error, log:warn",
