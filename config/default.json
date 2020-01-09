@@ -1,12 +1,11 @@
 {
   "ASYNC_OVERRIDE": false,
   "SERVER_HOST": "localhost",
-  "SERVER_PORT": 50055,
-  "SIDECAR_DISABLED": true,
-  "SIDECAR_WITH_LOGGER": false,
+  "SERVER_PORT": 50051,
+  "SIDECAR_DISABLED": false,
   "VENDOR_PREFIX": "acmevendor",
-  "TRACESTATE_HEADER_ENABLED": false,
+  "TRACESTATE_HEADER_ENABLED": true,
   "LOG_FILTER": "audit:*, log:info, log:error, log:warn",
-  "LOG_METADATA_ONLY": false,
+  "LOG_METADATA_ONLY": true,
   "TRACEID_PER_VENDOR": true
 }

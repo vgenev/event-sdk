@@ -98,7 +98,14 @@ class DefaultSidecarRecorder implements IEventRecorder {
     return this
   }
 
-  preProcess = (event: EventMessage): EventMessage => {
+  preProcess = (event: EventMessage): EventMessage | TypeMessageMetadata => {
+    return event
+  }
+
+  logLoad = (event: EventMessage): EventMessage | TypeMessageMetadata => {
+    if (Config.EVENT_LOGGER_LOG_METADATA_ONLY) {
+      return event.metadata!
+    }
     return event
   }
 
@@ -107,9 +114,9 @@ class DefaultSidecarRecorder implements IEventRecorder {
   }
 
   async record(event: EventMessage, doLog: boolean = true): Promise<any> {
-    doLog && await logWithLevel(event)
+    doLog && await logWithLevel(this.logLoad(event))
     let updatedEvent = this.preProcess(event)
-    let result = await this.recorder.log(updatedEvent)
+    let result = await this.recorder.log(<EventMessage>updatedEvent)
       return this.postProcess(result)
   }
 }
@@ -126,8 +133,15 @@ class DefaultSidecarRecorderAsync implements IEventRecorder {
     return event
   }
 
+  logLoad = (event: EventMessage): EventMessage | TypeMessageMetadata => {
+    if (Config.EVENT_LOGGER_LOG_METADATA_ONLY) {
+      return event.metadata!
+    }
+    return event
+  }
+
   async record(event: EventMessage, doLog: boolean = true, callback?: (result: any) => void): Promise<any> {
-    doLog && logWithLevel(event)
+    doLog && logWithLevel(this.logLoad(event))
     let updatedEvent = this.preProcess(event)
     let result = this.recorder.log(updatedEvent)
     if (callback) {
