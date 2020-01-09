@@ -51,7 +51,7 @@ jest.mock('../../config/default.json', ()=>({
     "SIDECAR_WITH_LOGGER": false,
     "VENDOR_PREFIX": "acmevendor",
     "TRACESTATE_HEADER_ENABLED": true,
-    "LOG_FILTER": ["audit:*", "log:info", "log:error", "log:warn", "log:debug"],
+    "LOG_FILTER": "audit:*, log:info, log:error, log:warn, log:debug",
     "LOG_METADATA_ONLY": true,
     "TRACEID_PER_VENDOR": true  
 }), { virtual: true })
