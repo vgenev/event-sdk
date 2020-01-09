@@ -1,6 +1,7 @@
 import { TraceTags, EventTraceMetadata, EventMessage, TypeSpanContext, HttpRequestOptions } from "./model/EventMessage";
 
-import { Span, ContextOptions, Recorders, setHttpHeader, getTracestateTag } from "./Span"
+import { Span, ContextOptions, Recorders, setHttpHeader } from "./Span"
+import Util from './lib/util'
 import Config from "./lib/config";
 import { setMaxListeners } from "cluster";
 
@@ -21,15 +22,6 @@ abstract class ATracer {
   static extractContextFromHttpRequest: (request: any, type?: HttpRequestOptions, tracestateDecoder?: (tracestate: string) => string | {[key: string]: string} ) => TypeSpanContext | undefined
 }
 
-const tracestateDecoder = (vendor: string | undefined, tracestate: string): { [key: string]: string } => {
-  vendor = !!vendor ? vendor : 'unknownVendor'
-  return {
-    vendor,
-    parentId: tracestate
-  }
-}
-
-
 class Tracer implements ATracer {
 
   private static getOwnVendorTracestate = (tracestateHeader: string): { [key: string] : string } | undefined => {
@@ -46,7 +38,7 @@ class Tracer implements ATracer {
       }
     }
     const tracestate = (Config.EVENT_LOGGER_VENDOR_PREFIX in resultMap) ? resultMap[Config.EVENT_LOGGER_VENDOR_PREFIX] : {}
-    return tracestateDecoder(tracestate.vendor, tracestate.parentId)
+    return Util.tracestateDecoder(tracestate.vendor, tracestate.parentId)
   }
 
     /**
@@ -57,7 +49,7 @@ class Tracer implements ATracer {
    * @param defaultTagsSetter optional default tags setter method.
    */
 
-  static createSpan(service: string, tags?: TraceTags, recorders?: Recorders, defaultTagsSetter?: Span['defaultTagsSetter']): Span {
+  static createSpan(service: string, tags?: TraceTags, recorders?: Recorders, defaultTagsSetter?: Span['defaultTagsSetter']): Span {``    
     return new Span(new EventTraceMetadata({ service, tags }), recorders, defaultTagsSetter)
   }
   /**
@@ -192,7 +184,7 @@ class Tracer implements ATracer {
           spanId: context.id,
           flags: context.flags,
           sampled 
-       })
+        })
         if (request.headers.tracestate || Config.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED) {
           spanContext = {...spanContext, ...{ tags: { tracestate: request.headers.tracestate } }}
         }

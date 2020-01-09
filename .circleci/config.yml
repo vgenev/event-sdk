@@ -1,13 +1,11 @@
-# CircleCI v2 Config
-version: 2
+# CircleCI v2.1 Config
+version: 2.1
 
-defaults_working_directory: &defaults_working_directory
-  working_directory: /home/circleci/project
-
-defaults_docker_node: &defaults_docker_node
-  docker:
-    - image: mhart/alpine-node:10.15.1
-
+##
+# defaults
+#
+# YAML defaults templates, in alphabetical order
+##
 defaults_Dependencies: &defaults_Dependencies |
     apk --no-cache add git
     apk --no-cache add ca-certificates
@@ -35,6 +33,13 @@ defaults_npm_auth: &defaults_npm_auth
   name: Update NPM registry auth token
   command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
 
+defaults_npm_publish_release: &defaults_npm_publish_release
+  name: Publish NPM $RELEASE_TAG artifact
+  command: |
+    source $BASH_ENV
+    echo "Publishing tag $RELEASE_TAG"
+    npm publish --tag $RELEASE_TAG --access public
+
 defaults_npm_publish_version: &defaults_npm_publish
   name: Update version to prerelease
   command: |
@@ -42,12 +47,11 @@ defaults_npm_publish_version: &defaults_npm_publish
     echo "Publishing tag $CIRCLE_TAG"
     npm publish --tag $CIRCLE_TAG --access public
 
-defaults_npm_publish_release: &defaults_npm_publish_release
-  name: Publish NPM $RELEASE_TAG artifact
+defaults_license_scanner: &defaults_license_scanner
+  name: Install and set up license-scanner
   command: |
-    source $BASH_ENV
-    echo "Publishing tag $RELEASE_TAG"
-    npm publish --tag $RELEASE_TAG --access public
+    git clone https://github.com/mojaloop/license-scanner /tmp/license-scanner
+    cd /tmp/license-scanner && make build default-files set-up
 
 defaults_slack_announcement: &defaults_slack_announcement
   name: Slack announcement for tag releases
@@ -56,19 +60,36 @@ defaults_slack_announcement: &defaults_slack_announcement
       $SLACK_WEBHOOK_ANNOUNCEMENT \
       -H 'Content-type: application/json' \
       -H 'cache-control: no-cache' \
-      -d "{
-      \"text\": \"*${CIRCLE_PROJECT_REPONAME}* - Release \`${CIRCLE_TAG}\`: https://github.com/mojaloop/${CIRCLE_PROJECT_REPONAME}/releases/tag/${CIRCLE_TAG}\"
-    }"
+      -d "{\"text\": \"*${CIRCLE_PROJECT_REPONAME}* - Release \`${CIRCLE_TAG}\`: https://github.com/mojaloop/${CIRCLE_PROJECT_REPONAME}/releases/tag/${CIRCLE_TAG}\"}"
 
+##
+# Executors
+#
+# CircleCI Executors
+##
+executors:
+  default-docker:
+    working_directory: /home/circleci/project
+    docker: 
+      - image: node:10.15.3-alpine
+
+  default-machine:
+    machine:
+      image: ubuntu-1604:201903-01
+    
+##
+# Jobs
+#
+# A map of CircleCI jobs
+##
 jobs:
   setup:
-    <<: *defaults_working_directory
-    <<: *defaults_docker_node
+    executor: default-docker
     steps:
+      - checkout
       - run:
           name: Install general dependencies
           command: *defaults_Dependencies
-      - checkout
       - run:
           name: Update NPM install
           command: npm install
@@ -78,13 +99,12 @@ jobs:
             - node_modules
 
   test-unit:
-    <<: *defaults_working_directory
-    <<: *defaults_docker_node
+    executor: default-docker
     steps:
+      - checkout
       - run:
           name: Install general dependencies
           command: *defaults_Dependencies
-      - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
@@ -103,16 +123,15 @@ jobs:
           path: ./test/results
 
   test-coverage:
-    <<: *defaults_working_directory
-    <<: *defaults_docker_node
+    executor: default-docker
     steps:
+      - checkout
       - run:
           name: Install general dependencies
           command: *defaults_Dependencies
       - run:
           name: Install AWS CLI dependencies
           command: *defaults_awsCliDependencies
-      - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
@@ -120,7 +139,7 @@ jobs:
           command: npm install tape tapes tap-xunit tap-spec nyc
       - run:
           name: Execute code coverage check
-          command: npm -s run test:coverage
+          command: npm -s run test:coverage-check
       - store_artifacts:
           path: coverage
           prefix: test
@@ -137,9 +156,48 @@ jobs:
                 echo "Not a release (env CIRCLE_BRANCH != 'master'), skipping sending lcov.info to SonarQube."
             fi
 
+  vulnerability-check:
+    executor: default-docker
+    steps:
+      - checkout
+      - run:
+          name: Install general dependencies
+          command: *defaults_Dependencies
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: Create dir for test results
+          command: mkdir -p ./audit/results
+      - run:
+          name: Check for new npm vulnerabilities
+          command: npm run audit:check --silent -- --json > ./audit/results/auditResults.json 
+      - store_artifacts:
+          path: ./audit/results
+          prefix: audit
+
+  audit-licenses:
+    executor: default-docker
+    steps:
+      - checkout
+      - run:
+          name: Install general dependencies
+          command: *defaults_Dependencies
+      - run:
+          <<: *defaults_license_scanner
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: Prune non-production packages before running license-scanner
+          command: npm prune --production
+      - run:
+          name: Run the license-scanner
+          command: cd /tmp/license-scanner && pathToRepo=$CIRCLE_WORKING_DIRECTORY make run
+      - store_artifacts:
+          path: /tmp/license-scanner/results
+          prefix: licenses
+
   build-snapshot:
-    <<: *defaults_working_directory
-    <<: *defaults_docker_node
+    executor: default-docker
     steps:
       - run:
           name: Install general dependencies
@@ -162,8 +220,7 @@ jobs:
           <<: *defaults_slack_announcement
 
   build:
-    <<: *defaults_working_directory
-    <<: *defaults_docker_node
+    executor: default-docker
     steps:
       - run:
           name: Install general dependencies
@@ -185,6 +242,11 @@ jobs:
       - run:
           <<: *defaults_slack_announcement
 
+##
+# Workflows
+#
+# CircleCI Workflow config
+##
 workflows:
   version: 2
   build_and_test:
@@ -220,12 +282,36 @@ workflows:
               ignore:
                 - /feature*/
                 - /bugfix*/
+      - vulnerability-check:
+          context: org-global
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore:
+                - /feature*/
+                - /bugfix*/
+      - audit-licenses:
+          context: org-global
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore:
+                - /feature*/
+                - /bugfix*/
       - build-snapshot:
           context: org-global
           requires:
             - setup
             - test-unit
             - test-coverage
+            - vulnerability-check
+            - audit-licenses
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*\-snapshot+((\.[0-9]+)?)/
@@ -238,6 +324,8 @@ workflows:
             - setup
             - test-unit
             - test-coverage
+            - vulnerability-check
+            - audit-licenses
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
