@@ -30,11 +30,9 @@ const Logger = require('../lib/logger')
 const grpc = require('grpc')
 
 class EventLoggingServiceClient {
-
   grpcClient : any;
 
-  constructor(host : string, port: number ) {
-
+  constructor(host: string, port: number) {
     let eventLoggerService = loadEventLoggerService();
 
     let client = new eventLoggerService(`${host}:${port}`, grpc.credentials.createInsecure())
@@ -47,28 +45,29 @@ class EventLoggingServiceClient {
   log = async (event: EventMessage): Promise<LogResponse> => {
     return new Promise((resolve, reject) => {
       let wireEvent: any = Object.assign({}, event);
-      if ( !event.content ) {
+      if (!event.content) {
         throw new Error('Invalid eventMessage: content is mandatory');
       }
-      try {
-      wireEvent.content = toAny(event.content, event.type);
 
-      let wireEventCopy : any = JSON.parse(JSON.stringify(wireEvent));
-      if (wireEventCopy.content.value.type === 'Buffer') {
-        wireEventCopy.content.value = `Buffer(${wireEventCopy.content.value.data.length})`
-      }
-      Logger.debug(`EventLoggingServiceClient.log sending wireEvent: ${JSON.stringify(wireEventCopy, null, 2)}`);
-      this.grpcClient.log(wireEvent, (error: any, response: LogResponse) => {
-        Logger.debug(`EventLoggingServiceClient.log received response: ${JSON.stringify(response, null, 2)}`);
-        if ( error ) {
-          reject(error); 
+      try {
+        wireEvent.content = toAny(event.content, event.type);
+
+        let wireEventCopy: any = JSON.parse(JSON.stringify(wireEvent));
+        if (wireEventCopy.content.value.type === 'Buffer') {
+          wireEventCopy.content.value = `Buffer(${wireEventCopy.content.value.data.length})`
         }
-        resolve(response);
-      })
-    } catch (e) {
-      Logger.error(e)
-      reject(e)
-    }
+        Logger.debug(`EventLoggingServiceClient.log sending wireEvent: ${JSON.stringify(wireEventCopy, null, 2)}`);
+        this.grpcClient.log(wireEvent, (error: any, response: LogResponse) => {
+          Logger.debug(`EventLoggingServiceClient.log received response: ${JSON.stringify(response, null, 2)}`);
+          if (error) {
+            reject(error); 
+          }
+          resolve(response);
+        })
+      } catch (e) {
+        Logger.error(e)
+        reject(e)
+      }
     })
   }
 }

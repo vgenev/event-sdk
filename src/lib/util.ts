@@ -66,6 +66,19 @@ function shouldOverrideEvent(overrideDict: { [index: string]: boolean }, eventTy
 }
 
 /**
+ * @function traceStateDecoder
+ * 
+ * @description A default implementation of a tracestateDecoder, which defaults vendor to 'unknownVendor'
+ */
+function tracestateDecoder(vendor: string | undefined, tracestate: string): { [key: string]: string } {
+  vendor = !!vendor ? vendor : 'unknownVendor'
+  return {
+    vendor,
+    parentId: tracestate
+  }
+}
+
+/**
  * @function shouldLogToConsole
  * 
  * @description Given event type and action, based on configuration flags: EVENT_LOGGER_LOG_FILTER and EVENT_LOGGER_LOG_METADATA_ONLY
@@ -88,5 +101,6 @@ function shouldLogToConsole(eventType: EventType, eventAction: TypeEventTypeActi
 export default {
   eventAsyncOverrides,
   shouldOverrideEvent,
-  shouldLogToConsole
+  shouldLogToConsole,
+  tracestateDecoder
 }

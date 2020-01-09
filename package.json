@@ -1,6 +1,6 @@
 {
   "name": "@mojaloop/event-sdk",
-  "version": "8.7.1",
+  "version": "8.8.1",
   "description": "Shared code for Event Logging",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -24,6 +24,8 @@
     "test:coverage-check": "jest --coverage --testMatch '**/test/unit/**/*.test.ts'",
     "git:standardFix": "standard --fix",
     "warn-pre-commit": "echo \"pre commit tasks running. build and test\"",
+    "audit:resolve": "SHELL=sh resolve-audit",
+    "audit:check": "SHELL=sh check-audit",
     "dep:check": "npx ncu -e 2",
     "dep:update": "npx ncu -u"
   },
@@ -86,6 +88,7 @@
     "faucet": "0.0.1",
     "jest": "24.9.0",
     "jest-junit": "10.0.0",
+    "npm-audit-resolver": "2.1.0",
     "npm-check-updates": "4.0.1",
     "nyc": "15.0.0",
     "pre-commit": "1.2.2",

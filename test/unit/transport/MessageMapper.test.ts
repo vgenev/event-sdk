@@ -116,5 +116,15 @@ describe('JsonToStructMapper', () => {
       // Assert
       expect(action).toThrow()
     })
+
+    it('throws if data is null or undefined', () => {
+      // Arrange
+      
+      // Act
+      const action = () => toAny(undefined, 'text/plain')
+
+      // Assert
+      expect(action).toThrow()
+    })
   })
 })

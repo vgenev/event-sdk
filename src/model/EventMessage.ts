@@ -482,9 +482,6 @@ const logFilterMap = ((): Map<string, Array<TypeEventTypeAction['action']>> => {
   let filterMap = new Map()
 
   const getActionValue = (key: string, value: string): Array<string> => {
-    // if (key === '*') {
-
-    // }
     const actionValue = (value === '*') ? actionDictionary[key] : [value]
     return actionValue
   }

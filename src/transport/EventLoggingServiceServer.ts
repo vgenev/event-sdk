@@ -65,6 +65,7 @@ class EventLoggingServiceServer extends events.EventEmitter {
     // We're on plain JavaScript, so although this *should* be a EventMessage since gRPC is typed, let's be sure
     if (!event.id) {
       callback(new Error(`Couldn't parse message parameter. It doesn't have an id property. parameter: ${event}`))
+      //TODO: should this return here? Otherwise callback is called twice
     }
 
     Logger.debug(`Server.logEventReceivedHandler event: ${JSON.stringify(event, null, 2)}`)
@@ -74,7 +75,7 @@ class EventLoggingServiceServer extends events.EventEmitter {
     try {
       // Convert it to a EventMessage
       const eventMessage: EventMessage = Object.assign({}, event);
-      // Convert the event.content which is an Struct to a plain object
+      // Convert the event.content which is a Struct to a plain object
       if (eventMessage.content) {
         eventMessage.content = fromAny(eventMessage.content)
       }

@@ -25,23 +25,17 @@
  ******/
 
 import Uuid from 'uuid/v4'
-import Sinon from 'sinon'
 
 import { EventLoggingServiceClient } from '../../../src/transport/EventLoggingServiceClient'
-import { EventMessage } from '../../../src/model/EventMessage'
+import { EventMessage, LogResponse, LogResponseStatus } from '../../../src/model/EventMessage'
 
 
 let client: EventLoggingServiceClient
-let sandbox: Sinon.SinonSandbox
 
 describe('EventLoggingServiceClient', () => {
   beforeAll(() => {
     client = new EventLoggingServiceClient('localhost', 55555)
-    sandbox = Sinon.createSandbox()
-  })
-
-  afterEach(() => {
-    sandbox.reset()
+    jest.resetAllMocks()
   })
 
   it('throws when content is null or undefined', async () => {
@@ -56,5 +50,62 @@ describe('EventLoggingServiceClient', () => {
     
     // Assert
     await expect(action()).rejects.toThrowError('Invalid eventMessage: content is mandatory')
+  })
+
+  it('handles an exception when processing the event', async () => {
+    // Arrange
+    const event: EventMessage = <EventMessage>{
+      type: 'invalid',
+      id: Uuid(),
+      content: `{"hello":true}`
+    }
+    
+    // Act
+    const action = async () => client.log(event)
+    
+    // Assert
+    await expect(action()).rejects.toThrowError('toAny called with unsupported data type invalid')
+  })
+
+  it('processes the event', async () => {
+    // Arrange
+    const event: EventMessage = <EventMessage>{
+      type: 'application/json',
+      id: Uuid(),
+      content: `{"hello":true}`
+    }
+    client.grpcClient = {
+      log: jest.fn().mockImplementationOnce((event, cbFunc) => {
+        const response = new LogResponse(LogResponseStatus.accepted)
+        cbFunc(null, response)
+      })
+    }
+    
+    // Act
+    const result = await client.log(event)
+    
+    // Assert
+    expect(result).toStrictEqual(new LogResponse(LogResponseStatus.accepted))
+  })
+
+  it('processes the event with an error callback', async () => {
+    // Arrange
+    const event: EventMessage = <EventMessage>{
+      type: 'application/json',
+      id: Uuid(),
+      content: `{"hello":true}`
+    }
+    client.grpcClient = {
+      log: jest.fn().mockImplementationOnce((event, cbFunc) => {
+        const error = new Error('test error')
+        cbFunc(error, null)
+      })
+    }
+    
+    // Act
+    const action = async () => client.log(event)
+    
+    // Assert
+    await expect(action()).rejects.toThrowError('test error')
   })
 })
