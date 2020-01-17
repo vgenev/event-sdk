@@ -186,8 +186,6 @@ describe('EventLoggingServiceServer', () => {
       // Assert
       expect(server.emit).toHaveBeenCalledTimes(0)
       expect(callback).toBeCalledWith(new Error(`Couldn't parse message parameter. It doesn't have an id property. parameter: ${call.request}`))
-      // TODO: I think this is a bug, but I don't want to touch the code while writing tests
-      expect(callback).toBeCalledWith(null, expectedResponse)
     })
   })
 })

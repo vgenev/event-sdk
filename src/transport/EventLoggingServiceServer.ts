@@ -64,8 +64,7 @@ class EventLoggingServiceServer extends events.EventEmitter {
     let event = call.request
     // We're on plain JavaScript, so although this *should* be a EventMessage since gRPC is typed, let's be sure
     if (!event.id) {
-      callback(new Error(`Couldn't parse message parameter. It doesn't have an id property. parameter: ${event}`))
-      //TODO: should this return here? Otherwise callback is called twice
+      return callback(new Error(`Couldn't parse message parameter. It doesn't have an id property. parameter: ${event}`))
     }
 
     Logger.debug(`Server.logEventReceivedHandler event: ${JSON.stringify(event, null, 2)}`)
