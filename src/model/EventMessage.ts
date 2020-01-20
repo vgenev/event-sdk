@@ -533,5 +533,6 @@ export {
   TypeEventTypeAction,
   TraceTags,
   HttpRequestOptions,
-  logFilterMap
+  logFilterMap,
+  actionDictionary
 }
