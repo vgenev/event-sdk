@@ -126,7 +126,7 @@ describe('Recorder', () => {
     const configWithSidecar = {
       EVENT_LOGGER_SIDECAR_DISABLED: true,
       EVENT_LOGGER_SERVER_HOST: 'localhost',
-      EVENT_LOGGER_SERVER_PORT: 50051
+      EVENT_LOGGER_SERVER_PORT: 50051,
     }
     jest.mock('../../src/transport/EventLoggingServiceClient', () => {
       return jest.fn().mockImplementation(() => {

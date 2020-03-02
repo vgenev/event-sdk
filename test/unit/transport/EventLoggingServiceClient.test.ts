@@ -88,6 +88,27 @@ describe('EventLoggingServiceClient', () => {
     expect(result).toStrictEqual(new LogResponse(LogResponseStatus.accepted))
   })
 
+  it('processes the event with buffer input', async () => {
+    // Arrange
+    const event: EventMessage = <EventMessage>{
+      type: 'text/plain',
+      id: <String>Uuid(),
+      content: Buffer.from(`{"hello":true}`)
+    }
+    client.grpcClient = {
+      log: jest.fn().mockImplementationOnce((event, cbFunc) => {
+        const response = new LogResponse(LogResponseStatus.accepted)
+        cbFunc(null, response)
+      })
+    }
+    
+    // Act
+    const result = await client.log(event)
+    
+    // Assert
+    expect(result).toStrictEqual(new LogResponse(LogResponseStatus.accepted))
+  })
+
   it('processes the event with an error callback', async () => {
     // Arrange
     const event: EventMessage = <EventMessage>{

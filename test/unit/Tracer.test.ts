@@ -31,7 +31,7 @@
 'use strict'
 
 // Mock out logging to make output less verbose
-// jest.mock('@mojaloop/central-services-logger')
+// jest.<String>Uuid()('@mojaloop/central-services-logger')
 
 const Uuid = require('uuid4')
 // import '@mojaloop/central-services-logger'
@@ -247,7 +247,7 @@ describe('Tracer', () => {
         EVENT_LOGGER_SERVER_PORT: 50051
       }
       const eventClient = new EventLoggingServiceClient(configWithSidecar.EVENT_LOGGER_SERVER_HOST, configWithSidecar.EVENT_LOGGER_SERVER_PORT)
-      const tracer = Tracer.createSpan('span', {}, { defaultRecorder: new DefaultSidecarRecorder(eventClient) })
+      const tracer = Tracer.createSpan('span', {}, { defaultRecorder: new DefaultSidecarRecorder(eventClient), logRecorder: new DefaultSidecarRecorder(eventClient) })
       eventClient.grpcClient = {
         log: jest.fn().mockImplementation((wireEvent: any, cb: any) =>
           cb(null, new LogResponse(LogResponseStatus.accepted))
@@ -259,6 +259,13 @@ describe('Tracer', () => {
       await tracer.debug({ content: { messageProtocol } })
       await tracer.verbose({ content: { messageProtocol } })
       await tracer.error({ content: { messageProtocol } })
+      await tracer.warning({ content: { messageProtocol } })
+      await tracer.performance({ content: { messageProtocol } })
+      mockConfig.EVENT_LOGGER_LOG_METADATA_ONLY = true
+      await tracer.info({ content: { messageProtocol } })
+      await tracer.debug({ content: { messageProtocol } })
+      await tracer.verbose({ content: { messageProtocol } })
+      await tracer.error(new Error('error'))
       await tracer.warning({ content: { messageProtocol } })
       await tracer.performance({ content: { messageProtocol } })
       
@@ -300,8 +307,13 @@ describe('Tracer', () => {
       expect(tracer.spanContext.traceId).toBe(IIIChild.spanContext.traceId)
       expect(IIIChild.spanContext.service).toBe('service4')
 
+      let IVChild = Tracer.createChildSpanFromContext('service4', { ...extractedContext, ...{tags: { tracestate: 'a=121' } } })
+      // expect(IIChild.spanContext.spanId).toBe(IVChild.spanContext.parentSpanId)
+      // expect(tracer.spanContext.traceId).toBe(IVChild.spanContext.traceId)
+      // expect(IIIChild.spanContext.service).toBe('service4')
+
       let newMessageC = IIIChild.injectContextToMessage({ trace: {} })
-      let expected1 = { trace: IIIChild.getContext() }
+      let expected1 = { trace: IIIChild.getContext() }  
       expectStringifyToMatch(newMessageC, expected1)
 
       let newMeta = await IIIChild.injectContextToMessage(new EventTraceMetadata({ service: '1' }))
@@ -360,9 +372,15 @@ describe('Tracer', () => {
       let action = async () => await tracer.finish()
       await expect(action()).rejects.toThrowError('span already finished')
 
+      let newSpan = Tracer.createSpan('span')
+      let finish = 'finish'
+      // await tracer.finish()
+      await newSpan.finish('message', undefined, finish)
+
       action = async () => await tracer.audit(<EventMessage>newMessageA)
+      let actionFinish = async () => await tracer.trace()
       await expect(action()).rejects.toThrowError('span finished. no further actions allowed')
-      
+      await expect(actionFinish()).rejects.toThrowError()
       const logresult = await child.audit(<EventMessage>newMessageA)
       expect(logresult).not.toBeUndefined()
     })

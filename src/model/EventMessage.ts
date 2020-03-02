@@ -270,9 +270,9 @@ class EventTraceMetadata implements TypeSpanContext {
     return this
   }
 
-  static create(service: string): EventTraceMetadata {
-    return new EventTraceMetadata({ service })
-  }
+//   static create(service: string): EventTraceMetadata {
+//     return new EventTraceMetadata({ service })
+//   }
 }
 
 /**
