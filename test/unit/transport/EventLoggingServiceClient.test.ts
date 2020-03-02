@@ -24,7 +24,7 @@
  --------------
  ******/
 
-import Uuid from 'uuid/v4'
+const Uuid = require('uuid4')
 
 import { EventLoggingServiceClient } from '../../../src/transport/EventLoggingServiceClient'
 import { EventMessage, LogResponse, LogResponseStatus } from '../../../src/model/EventMessage'
@@ -42,7 +42,7 @@ describe('EventLoggingServiceClient', () => {
     // Arrange
     const invalidEvent: EventMessage = <EventMessage>{
       type: 'application/json',
-      id: Uuid()
+      id: <String>Uuid()
     }
     
     // Act
@@ -56,7 +56,7 @@ describe('EventLoggingServiceClient', () => {
     // Arrange
     const event: EventMessage = <EventMessage>{
       type: 'invalid',
-      id: Uuid(),
+      id: <String>Uuid(),
       content: `{"hello":true}`
     }
     
@@ -71,7 +71,7 @@ describe('EventLoggingServiceClient', () => {
     // Arrange
     const event: EventMessage = <EventMessage>{
       type: 'application/json',
-      id: Uuid(),
+      id: <String>Uuid(),
       content: `{"hello":true}`
     }
     client.grpcClient = {
@@ -92,7 +92,7 @@ describe('EventLoggingServiceClient', () => {
     // Arrange
     const event: EventMessage = <EventMessage>{
       type: 'application/json',
-      id: Uuid(),
+      id: <String>Uuid(),
       content: `{"hello":true}`
     }
     client.grpcClient = {
