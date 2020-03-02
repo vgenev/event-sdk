@@ -53,9 +53,7 @@ class EventLoggingServiceClient {
         wireEvent.content = toAny(event.content, event.type);
 
         let wireEventCopy: any = JSON.parse(JSON.stringify(wireEvent));
-        if (wireEventCopy.content.value.type === 'Buffer') {
-          wireEventCopy.content.value = `Buffer(${wireEventCopy.content.value.data.length})`
-        }
+        wireEventCopy.content.value = `Buffer(${wireEventCopy.content.value.data.length})`
         Logger.debug(`EventLoggingServiceClient.log sending wireEvent: ${JSON.stringify(wireEventCopy, null, 2)}`);
         this.grpcClient.log(wireEvent, (error: any, response: LogResponse) => {
           Logger.debug(`EventLoggingServiceClient.log received response: ${JSON.stringify(response, null, 2)}`);

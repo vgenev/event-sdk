@@ -24,7 +24,7 @@
  --------------
  ******/
 
-import Uuid from 'uuid/v4'
+const Uuid = require('uuid4')
 
 import { EventLoggingServiceClient } from '../../../src/transport/EventLoggingServiceClient'
 import { EventMessage, LogResponse, LogResponseStatus } from '../../../src/model/EventMessage'
@@ -42,7 +42,7 @@ describe('EventLoggingServiceClient', () => {
     // Arrange
     const invalidEvent: EventMessage = <EventMessage>{
       type: 'application/json',
-      id: Uuid()
+      id: <String>Uuid()
     }
     
     // Act
@@ -56,7 +56,7 @@ describe('EventLoggingServiceClient', () => {
     // Arrange
     const event: EventMessage = <EventMessage>{
       type: 'invalid',
-      id: Uuid(),
+      id: <String>Uuid(),
       content: `{"hello":true}`
     }
     
@@ -71,8 +71,29 @@ describe('EventLoggingServiceClient', () => {
     // Arrange
     const event: EventMessage = <EventMessage>{
       type: 'application/json',
-      id: Uuid(),
+      id: <String>Uuid(),
       content: `{"hello":true}`
+    }
+    client.grpcClient = {
+      log: jest.fn().mockImplementationOnce((event, cbFunc) => {
+        const response = new LogResponse(LogResponseStatus.accepted)
+        cbFunc(null, response)
+      })
+    }
+    
+    // Act
+    const result = await client.log(event)
+    
+    // Assert
+    expect(result).toStrictEqual(new LogResponse(LogResponseStatus.accepted))
+  })
+
+  it('processes the event with buffer input', async () => {
+    // Arrange
+    const event: EventMessage = <EventMessage>{
+      type: 'text/plain',
+      id: <String>Uuid(),
+      content: Buffer.from(`{"hello":true}`)
     }
     client.grpcClient = {
       log: jest.fn().mockImplementationOnce((event, cbFunc) => {
@@ -92,7 +113,7 @@ describe('EventLoggingServiceClient', () => {
     // Arrange
     const event: EventMessage = <EventMessage>{
       type: 'application/json',
-      id: Uuid(),
+      id: <String>Uuid(),
       content: `{"hello":true}`
     }
     client.grpcClient = {

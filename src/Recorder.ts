@@ -2,7 +2,7 @@ import { EventType, LogEventAction, LogResponseStatus, TypeEventTypeAction, Even
 import { EventLoggingServiceClient } from "./transport/EventLoggingServiceClient";
 import Config from "./lib/config";
 
-const Logger = require('@mojaloop/central-services-logger')
+const Logger = require('./lib/logger')
 
 /**
  * Describes Event Recorder interface
@@ -39,6 +39,9 @@ const logWithLevel = async (message: EventMessage | TypeMessageMetadata): Promis
       if (message && ('metadata' in message) && ('event' in message.metadata!)) {
         type = message.metadata!.event.type!
         action = message.metadata!.event.action!
+      } else if (message && ('event' in message)) {
+        type = message.event.type!
+        action = message.event.action!
       } else {
         type = EventType.log
         action = LogEventAction.info
@@ -46,8 +49,7 @@ const logWithLevel = async (message: EventMessage | TypeMessageMetadata): Promis
 
       if (type === EventType.log && Object.values(LogEventAction).includes(<LogEventAction>action)) {
         Logger.log(action, JSON.stringify(message, null, 2))
-      }
-      else {
+      } else {
         Logger.log(type, JSON.stringify(message, null, 2))
       }
 
@@ -96,7 +98,14 @@ class DefaultSidecarRecorder implements IEventRecorder {
     return this
   }
 
-  preProcess = (event: EventMessage): EventMessage => {
+  preProcess = (event: EventMessage): EventMessage | TypeMessageMetadata => {
+    return event
+  }
+
+  logLoad = (event: EventMessage): EventMessage | TypeMessageMetadata => {
+    if (Config.EVENT_LOGGER_LOG_METADATA_ONLY) {
+      return event.metadata!
+    }
     return event
   }
 
@@ -105,9 +114,9 @@ class DefaultSidecarRecorder implements IEventRecorder {
   }
 
   async record(event: EventMessage, doLog: boolean = true): Promise<any> {
-    doLog && await logWithLevel(event)
+    doLog && await logWithLevel(this.logLoad(event))
     let updatedEvent = this.preProcess(event)
-    let result = await this.recorder.log(updatedEvent)
+    let result = await this.recorder.log(<EventMessage>updatedEvent)
       return this.postProcess(result)
   }
 }
@@ -124,8 +133,15 @@ class DefaultSidecarRecorderAsync implements IEventRecorder {
     return event
   }
 
+  logLoad = (event: EventMessage): EventMessage | TypeMessageMetadata => {
+    if (Config.EVENT_LOGGER_LOG_METADATA_ONLY) {
+      return event.metadata!
+    }
+    return event
+  }
+
   async record(event: EventMessage, doLog: boolean = true, callback?: (result: any) => void): Promise<any> {
-    doLog && logWithLevel(event)
+    doLog && logWithLevel(this.logLoad(event))
     let updatedEvent = this.preProcess(event)
     let result = this.recorder.log(updatedEvent)
     if (callback) {
