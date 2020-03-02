@@ -479,15 +479,18 @@ const actionDictionary = ((): { [key: string]: Array<AuditEventAction | LogEvent
 })()
 
 const logFilterMap = ((): Map<string, Array<TypeEventTypeAction['action']>> => {
-  const filterMap = new Map()
+  let filterMap = new Map()
 
   const getActionValue = (key: string, value: string): Array<string> => {
     const actionValue = (value === '*') ? actionDictionary[key] : [value]
     return actionValue
   }
 
-  Config.EVENT_LOGGER_LOG_FILTER.forEach(filter => {
-    let [key, value] = filter.split(':')
+  Config.EVENT_LOGGER_LOG_FILTER.split(',').forEach(filter => {
+    let [key, value] = filter.trim().split(':')
+    if (key === '*') {
+      return filterMap = new Map(Object.entries(actionDictionary))
+    }
     const valueToAdd = getActionValue(key, value)
     if (!filterMap.has(key)) {
       filterMap.set(key, valueToAdd)
@@ -530,5 +533,6 @@ export {
   TypeEventTypeAction,
   TraceTags,
   HttpRequestOptions,
-  logFilterMap
+  logFilterMap,
+  actionDictionary
 }

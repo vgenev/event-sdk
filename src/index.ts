@@ -63,7 +63,8 @@ import {
   TypeEventTypeAction,
   EventStateMetadata,
   TypeEventAction,
-  HttpRequestOptions
+  HttpRequestOptions,
+  actionDictionary
  } from "./model/EventMessage"
 
 // Re-export definitions and components on the public API
@@ -102,5 +103,6 @@ export {
   EventPostProcessor,
   EventPreProcessor,
   HttpRequestOptions,
-  DefaultSidecarRecorderAsync
+  DefaultSidecarRecorderAsync,
+  actionDictionary
 }

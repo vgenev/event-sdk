@@ -31,10 +31,10 @@
 'use strict'
 
 // Mock out logging to make output less verbose
-jest.mock('@mojaloop/central-services-logger')
+// jest.mock('@mojaloop/central-services-logger')
 
 import Uuid from 'uuid/v4'
-import '@mojaloop/central-services-logger'
+// import '@mojaloop/central-services-logger'
 
 import { EventLoggingServiceClient } from '../../src/transport/EventLoggingServiceClient'
 import { EventMessage } from '../../src/model/EventMessage'
