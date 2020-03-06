@@ -24,21 +24,18 @@ abstract class ATracer {
 
 class Tracer implements ATracer {
 
-  private static getOwnVendorTracestate = (tracestateHeader: string): { [key: string] : string } | undefined => {
+  private static getOwnVendorTracestateParentId = (tracestateHeader: string): { [key: string] : string } | undefined => {
     let tracestateArray = (tracestateHeader.split(','))
     let resultMap: { [key: string]: any } = {}
   
     for (let rawStates of tracestateArray) {
       let states = rawStates.trim()
-      let [vendorRaw, tracestateRaw] = states.split('=')
+      let [vendorRaw] = states.split('=')
       let vendor = vendorRaw.trim()
-      resultMap[vendor] = {
-        vendor,
-        parentId: tracestateRaw.trim()
-      }
+      resultMap[vendor] = { vendor, state: rawStates }
     }
     const tracestate = (Config.EVENT_LOGGER_VENDOR_PREFIX in resultMap) ? resultMap[Config.EVENT_LOGGER_VENDOR_PREFIX] : {}
-    return Util.tracestateDecoder(tracestate.vendor, tracestate.parentId)
+    return Util.tracestateDecoder(tracestate.vendor, tracestate.state)
   }
 
     /**
@@ -67,7 +64,7 @@ class Tracer implements ATracer {
     }
       
     if (!!spanContext.tags && !!spanContext.tags.tracestate) {
-      const tracestateDecoded = spanContext.tags.tracestate ? this.getOwnVendorTracestate(spanContext.tags.tracestate) : undefined
+      const tracestateDecoded = spanContext.tags.tracestate ? this.getOwnVendorTracestateParentId(spanContext.tags.tracestate) : undefined
       const parentId = (!!tracestateDecoded && !!tracestateDecoded.parentId) ? tracestateDecoded.parentId : undefined 
       resultContext = (!!tracestateDecoded && tracestateDecoded.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX) ?
       {
