@@ -113,7 +113,7 @@ describe('Span', () => {
       const spanContext = parentSpan.getContext()
 
       // Assert
-      expect(spanContext).toMatchObject({ tags: { tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${spanContext.spanId}` } })
+      expect(spanContext).toMatchObject({ tags: { tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=spanId:${spanContext.spanId}` } })
       expect(resultRequest).toMatchObject({ headers: { tracestate: spanContext.tags.tracestate } })
     })
 
@@ -127,7 +127,7 @@ describe('Span', () => {
       const spanContext = parentSpan.getContext()
       
       // Assert
-      expect(spanContext).not.toMatchObject({ tags: { tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${spanContext.spanId}` } })
+      expect(spanContext).not.toMatchObject({ tags: { tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=spanId:${spanContext.spanId}` } })
     })
 
   })

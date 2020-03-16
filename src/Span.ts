@@ -30,7 +30,6 @@ import {
 import { EventLoggingServiceClient } from './transport/EventLoggingServiceClient';
 import Config from './lib/config'
 import Util from './lib/util'
-import { DateTime } from 'luxon'
 
 type RecorderKeys = 'defaultRecorder' | 'logRecorder' | 'auditRecorder' | 'traceRecorder'
 
@@ -241,14 +240,17 @@ class Span implements Partial<ISpan> {
   }
 
   setTracestateTags(tags: TraceTags): this {
-    let curentTraceStateMap = {}
+    let stateHashMap = { _rest: '' }
     if (!!this.spanContext.tags && !!this.spanContext.tags.tracestate) {
-      curentTraceStateMap = Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, this.spanContext.tags.tracestate)
+      stateHashMap = Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, this.spanContext.tags.tracestate)
     }
-    const tracestateToSet = { ...curentTraceStateMap, ...tags }
-    const newContext = {...this.spanContext, ...{ tags: {...this.spanContext.tags, ...{ tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Util.hashMapToString(tracestateToSet)}` } } } }
-    const newTag  = encodeTracestate(newContext)
-    this.setTags({ tracestate: newTag })
+    const rest = stateHashMap._rest
+    delete stateHashMap._rest
+    const tracestateToSet = { ...stateHashMap, ...tags }
+    // const newContext = {...this.spanContext, ...{ tags: {...this.spanContext.tags, ...{ tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Util.hashMapToString(tracestateToSet)},${rest}` } } } }
+    // const newTag  = createW3CTracestate(newContext)
+    const newTags = { ...this.spanContext.tags, ...{ tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Util.hashMapToString(tracestateToSet)}${rest}` } }
+    this.setTags(newTags)
     return this
   }
 
@@ -257,7 +259,13 @@ class Span implements Partial<ISpan> {
    */
   getTracestateTags(): TraceTags {
     const { tracestate } = this.getTags()
-    return !!tracestate ? Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, tracestate) : {}
+    if (tracestate) {
+      const tagsMap = Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, tracestate)
+      delete tagsMap._rest
+      return tagsMap
+    } else {
+      return {}
+    }
   }
 
   /**
@@ -540,10 +548,15 @@ const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, heade
 }
 
 const encodeTracestate = (context: TypeSpanContext): string => {
+  let stateHashMap = { _rest: '' }
   const { spanId } = context
-  const ownTraceStateMap = (!!context.tags && !!context.tags.tracestate) ? Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, context.tags.tracestate) : { spanId }
-  const newOpaqueValueMap = { ...ownTraceStateMap, ...{ spanId } }
+  if ((!!context.tags && !!context.tags.tracestate)) {
+    stateHashMap = Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, context.tags.tracestate)
+  }
+  const newOpaqueValueMap = { ...stateHashMap, ...{ spanId } }
+  delete newOpaqueValueMap._rest
   let opaqueValue = Util.hashMapToString(newOpaqueValueMap)
+  // return stateHashMap.rest ? `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue},${stateHashMap.rest}` : `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`
   return `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`
 }
 

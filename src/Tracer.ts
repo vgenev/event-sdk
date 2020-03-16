@@ -64,7 +64,7 @@ class Tracer implements ATracer {
     }
       
     if (!!spanContext.tags && !!spanContext.tags.tracestate) {
-      const tracestateDecoded = spanContext.tags.tracestate ? this.getOwnVendorTracestateParentId(spanContext.tags.tracestate) : undefined
+      const tracestateDecoded = (!!spanContext.tags.tracestate && spanContext.tags.tracestate.includes(Config.EVENT_LOGGER_VENDOR_PREFIX)) ? this.getOwnVendorTracestateParentId(spanContext.tags.tracestate) : undefined
       const parentId = (!!tracestateDecoded && !!tracestateDecoded.parentId) ? tracestateDecoded.parentId : undefined 
       resultContext = (!!tracestateDecoded && tracestateDecoded.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX) ?
       {
