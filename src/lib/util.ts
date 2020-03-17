@@ -65,6 +65,35 @@ function shouldOverrideEvent(overrideDict: { [index: string]: boolean }, eventTy
   return false
 }
 
+function hashMapToString (obj: { [key: string] : string }): string {
+  let result = ''
+  Object.entries(obj).forEach(kv => {
+    const [k, v] = kv
+    result = result + `${k}:${v};`
+  })
+  return result.slice(0, -1)
+} 
+
+const getOwnTracestateMap = (vendor: string, tracestate: string): { [key: string]: string, _rest: string } => {
+  if (!tracestate.includes(vendor)) {
+    return { _rest: tracestate }
+  }
+  const stateHashMap: { [key: string]: string, _rest: string } = { _rest: '' }
+  const t = tracestate
+    .split(',') // get each vendor
+    .filter(ts => ts.split('=')[0] === vendor)[0] //get own vendor
+    
+    t.split('=')[1] // get tracestate value
+    .split(';') // get each keyvalue pair
+    .map(kv => kv.split(':')) //get each key:value from pair
+    .forEach(entry => {
+      const [key, value] = entry
+      stateHashMap[key] = value
+      stateHashMap._rest = tracestate.replace(t, '').replace(',,', ',').replace(/,$/, '')
+    }) // add key:value to final map
+    return stateHashMap
+}
+
 /**
  * @function traceStateDecoder
  * 
@@ -72,9 +101,10 @@ function shouldOverrideEvent(overrideDict: { [index: string]: boolean }, eventTy
  */
 function tracestateDecoder(vendor: string | undefined, tracestate: string): { [key: string]: string } {
   vendor = !!vendor ? vendor : 'unknownVendor'
+  const { spanId } = getOwnTracestateMap(vendor, tracestate)
   return {
     vendor,
-    parentId: tracestate
+    parentId: spanId
   }
 }
 
@@ -102,5 +132,7 @@ export default {
   eventAsyncOverrides,
   shouldOverrideEvent,
   shouldLogToConsole,
-  tracestateDecoder
+  tracestateDecoder,
+  hashMapToString,
+  getOwnTracestateMap
 }

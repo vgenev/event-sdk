@@ -94,6 +94,7 @@ describe('Tracer', () => {
       // Assert
       const tags = childB.getContext().tags!
       expect(tags['tracestate']).not.toBeDefined()
+      expect(childB.getTracestateTags()).toEqual({})
     })
 
     it('creates a child span without the vendor prefix tag when EVENT_LOGGER_TRACESTATE_HEADER_ENABLED is false', () => {
@@ -308,6 +309,8 @@ describe('Tracer', () => {
       expect(IIIChild.spanContext.service).toBe('service4')
 
       let IVChild = Tracer.createChildSpanFromContext('service4', { ...extractedContext, ...{tags: { tracestate: 'a=121' } } })
+      IVChild.setTracestateTags({ bar: 'baz' })
+      expect(IVChild.getTracestateTags()).toEqual({ bar: 'baz', spanId: IVChild.getContext().spanId })
       // expect(IIChild.spanContext.spanId).toBe(IVChild.spanContext.parentSpanId)
       // expect(tracer.spanContext.traceId).toBe(IVChild.spanContext.traceId)
       // expect(IIIChild.spanContext.service).toBe('service4')
