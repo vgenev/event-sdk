@@ -247,8 +247,6 @@ class Span implements Partial<ISpan> {
     const rest = stateHashMap._rest
     delete stateHashMap._rest
     const tracestateToSet = { ...stateHashMap, ...tags }
-    // const newContext = {...this.spanContext, ...{ tags: {...this.spanContext.tags, ...{ tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Util.hashMapToString(tracestateToSet)},${rest}` } } } }
-    // const newTag  = createW3CTracestate(newContext)
     const newTags = { ...this.spanContext.tags, ...{ tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Util.hashMapToString(tracestateToSet)}${rest}` } }
     this.setTags(newTags)
     return this
