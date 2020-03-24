@@ -120,7 +120,7 @@ const main = async () => {
 
   IVChild.setTracestateTags({ bar: 'baz' })
   IVChild.setTracestateTags({ foo: 'b' })
-  console.log(IVChild.getTracestateTags())
+  // console.log(IVChild.getTracestateTags())
 
   // Logger.info(JSON.stringify(context, null, 2))
   const spanFromHttp = Tracer.createChildSpanFromContext('http_span', context)

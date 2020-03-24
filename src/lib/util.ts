@@ -28,7 +28,6 @@
 'use strict'
 
 import { EventType, TypeEventTypeAction, logFilterMap } from "../model/EventMessage"
-
 /**
  * @function eventAsyncOverrides
  * @description Given a list of comma separated strings, build a map containing the strings, 
@@ -66,31 +65,29 @@ function shouldOverrideEvent(overrideDict: { [index: string]: boolean }, eventTy
 }
 
 function hashMapToString (obj: { [key: string] : string }): string {
-  let result = ''
-  Object.entries(obj).forEach(kv => {
+  return Object.entries(obj).reduce((r, kv) => {
     const [k, v] = kv
-    result = result + `${k}:${v};`
-  })
-  return result.slice(0, -1)
+    return (r + `${k}:${v};`)
+  }, '').slice(0, -1)
 } 
 
 const getOwnTracestateMap = (vendor: string, tracestate: string): { [key: string]: string, _rest: string } => {
   if (!tracestate.includes(vendor)) {
-    return { _rest: tracestate }
+    return { _rest: tracestate } // _rest keeps the other vendors tracestate
   }
   const stateHashMap: { [key: string]: string, _rest: string } = { _rest: '' }
-  const t = tracestate
+  const ownTracestate = tracestate // ownTracestate holds string value of own vendor tracestate
     .split(',') // get each vendor
     .filter(ts => ts.split('=')[0] === vendor)[0] //get own vendor
     
-    t.split('=')[1] // get tracestate value
+    ownTracestate.split('=')[1] // get tracestate value of own vendor
     .split(';') // get each keyvalue pair
     .map(kv => kv.split(':')) //get each key:value from pair
     .forEach(entry => {
       const [key, value] = entry
       stateHashMap[key] = value
-      stateHashMap._rest = tracestate.replace(t, '').replace(',,', ',').replace(/,$/, '')
     }) // add key:value to final map
+    stateHashMap._rest = tracestate.replace(ownTracestate, '').replace(',,', ',').replace(/,$/, '') // updates the _rest value to have only other vendors tracestate
     return stateHashMap
 }
 

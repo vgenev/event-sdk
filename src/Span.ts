@@ -231,6 +231,7 @@ class Span implements Partial<ISpan> {
     this.spanContext = Object.freeze(new EventTraceMetadata(newContext))
     return this
   }
+  
   /**
    * Returns tags values
    */
@@ -239,6 +240,10 @@ class Span implements Partial<ISpan> {
     return !!tags ? tags : {}
   }
 
+  /**
+   * Sets tags, persisted in the tracestate as key value pair
+   * @param tags key-value pairs with tags
+   */
   setTracestateTags(tags: TraceTags): this {
     let stateHashMap = { _rest: '' }
     if (!!this.spanContext.tags && !!this.spanContext.tags.tracestate) {
@@ -253,7 +258,7 @@ class Span implements Partial<ISpan> {
   }
 
   /**
-   * Returns tags, persisted in tracestate as hash map
+   * Returns tags, persisted in tracestate as key value pair.
    */
   getTracestateTags(): TraceTags {
     const { tracestate } = this.getTags()
@@ -554,7 +559,6 @@ const encodeTracestate = (context: TypeSpanContext): string => {
   const newOpaqueValueMap = { ...stateHashMap, ...{ spanId } }
   delete newOpaqueValueMap._rest
   let opaqueValue = Util.hashMapToString(newOpaqueValueMap)
-  // return stateHashMap.rest ? `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue},${stateHashMap.rest}` : `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`
   return `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`
 }
 
