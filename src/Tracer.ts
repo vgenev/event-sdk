@@ -23,22 +23,7 @@ abstract class ATracer {
 }
 
 class Tracer implements ATracer {
-
-  private static getOwnVendorTracestateParentId = (tracestateHeader: string): { [key: string] : string } | undefined => {
-    let tracestateArray = (tracestateHeader.split(','))
-    let resultMap: { [key: string]: any } = {}
-  
-    for (let rawStates of tracestateArray) {
-      let states = rawStates.trim()
-      let [vendorRaw] = states.split('=')
-      let vendor = vendorRaw.trim()
-      resultMap[vendor] = { vendor, state: rawStates }
-    }
-    const tracestate = (Config.EVENT_LOGGER_VENDOR_PREFIX in resultMap) ? resultMap[Config.EVENT_LOGGER_VENDOR_PREFIX] : {}
-    return Util.tracestateDecoder(tracestate.vendor, tracestate.state)
-  }
-
-    /**
+  /**
    * Creates new span from new trace
    * @param service name of the service which will be asociated with the newly created span
    * @param tags optional tags for the span
@@ -64,7 +49,7 @@ class Tracer implements ATracer {
     }
       
     if (!!spanContext.tags && !!spanContext.tags.tracestate) {
-      const tracestateDecoded = (!!spanContext.tags.tracestate && spanContext.tags.tracestate.includes(Config.EVENT_LOGGER_VENDOR_PREFIX)) ? this.getOwnVendorTracestateParentId(spanContext.tags.tracestate) : undefined
+      const tracestateDecoded = (!!spanContext.tags.tracestate && spanContext.tags.tracestate.includes(Config.EVENT_LOGGER_VENDOR_PREFIX)) ? Util.tracestateDecoder(Config.EVENT_LOGGER_VENDOR_PREFIX, spanContext.tags.tracestate) : undefined
       const parentId = (!!tracestateDecoded && !!tracestateDecoded.parentId) ? tracestateDecoded.parentId : undefined 
       resultContext = (!!tracestateDecoded && tracestateDecoded.vendor === Config.EVENT_LOGGER_VENDOR_PREFIX) ?
       {
@@ -182,8 +167,14 @@ class Tracer implements ATracer {
           flags: context.flags,
           sampled 
         })
+        const tracestates = request.headers.tracestate ? Util.getTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, request.headers.tracestate).tracestates : {}
+
         if (request.headers.tracestate || Config.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED) {
-          spanContext = {...spanContext, ...{ tags: { tracestate: request.headers.tracestate } }}
+          spanContext = {
+            ...spanContext,
+            ...{ tracestates },
+            ...{ tags: { tracestate: request.headers.tracestate } }
+          }
         }
         return <TypeSpanContext>spanContext
       }
