@@ -97,8 +97,9 @@ type ContextOptions = {
  * @param getChild Defines a method to get child span
  * @param setTags Defines a method to set tags to the span
  * @param getTags Returns current tags
- * @param setTracestateTags Sets tags to tracestate
- * @param getTracestateMap Returns current tracestate map
+ * @param setTracestateTags Sets tags to configured vendor and passes them to the tracestate header as base64 encoded JSON
+ * @param getTracestateTags Gets the tags stored into configured vendor tracestate as JSON
+ * @param getTracestates Gets the tracestate as key value pairs as key is the vendor, and for the configured vendor, the value is another key value pairs list, decoded from the tracestate header 
  * @param injectContextToMessage Defnies a method to inject current span context into message carrier
  * @param injectContextToHttpRequest Defnies a method to inject current span context into http request
  */
@@ -122,6 +123,7 @@ interface ISpan {
   getTags: () => TraceTags
   setTracestateTags: (tags: TraceTags) => Span
   getTracestateTags: () => TraceTags
+  getTracestates: () => { [key: string]: TraceTags | string }
   injectContextToMessage: (message: { [key: string]: any }, injectOptions: ContextOptions) => { [key: string]: any },
   injectContextToHttpRequest: (request: { [key: string]: any }, type?: HttpRequestOptions) => { [key: string]: any }
 }
@@ -141,10 +143,17 @@ class Span implements Partial<ISpan> {
     spanContext: EventTraceMetadata,
     recorders?: Recorders,
     defaultTagsSetter?: (message: TypeOfMessage) => any) {
-    this.spanContext = Object.freeze(spanContext)
     this.defaultTagsSetter = defaultTagsSetter ? defaultTagsSetter : this.defaultTagsSetter
     this.recorders = recorders ? recorders : { defaultRecorder }
+    if (!!spanContext.tags && !!spanContext.tags.tracestate) {
+      spanContext.tracestates = Util.getTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, spanContext.tags.tracestate).tracestates
+      if (!spanContext.tracestates[Config.EVENT_LOGGER_VENDOR_PREFIX]) {
+        spanContext.tracestates[Config.EVENT_LOGGER_VENDOR_PREFIX] = { spanId: spanContext.spanId }
+      }
+    }
+    this.spanContext = spanContext
     this.defaultTagsSetter()
+    this.spanContext = Object.freeze(this.spanContext)
     return this
   }
 
@@ -154,8 +163,8 @@ class Span implements Partial<ISpan> {
    */
 
   defaultTagsSetter(message?: TypeOfMessage): Span {
-    const w3cHeaders = getTracestateTag(this.spanContext)
-    !!w3cHeaders && this.setTags({ ...this.spanContext.tags, ...w3cHeaders })
+    const w3cHeaders = getTracestate(this.spanContext)
+    !!w3cHeaders && this.setTags(Object.assign(this.spanContext.tags, w3cHeaders))
     return this
   }
 
@@ -226,6 +235,7 @@ class Span implements Partial<ISpan> {
   setTags(tags: TraceTags): this {
     let newContext: TypeSpanContext = new EventTraceMetadata(this.getContext())
     for (let key in tags) {
+      if (key === 'tracestate' || key === 'traceparent') continue
       newContext.tags![key] = tags[key]
     }
     this.spanContext = Object.freeze(new EventTraceMetadata(newContext))
@@ -241,35 +251,33 @@ class Span implements Partial<ISpan> {
   }
 
   /**
-   * Sets tags, persisted in the tracestate as key value pair
+   * Sets tags, persisted in the tracestate header as key value pairs as base64 encoded string
    * @param tags key-value pairs with tags
    */
   setTracestateTags(tags: TraceTags): this {
-    let stateHashMap = { _rest: '' }
-    if (!!this.spanContext.tags && !!this.spanContext.tags.tracestate) {
-      stateHashMap = Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, this.spanContext.tags.tracestate)
-    }
-    const rest = stateHashMap._rest
-    delete stateHashMap._rest
-    const tracestateToSet = { ...stateHashMap, ...tags }
-    const newTags = { ...this.spanContext.tags, ...{ tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Util.hashMapToString(tracestateToSet)}${rest}` } }
-    this.setTags(newTags)
+    if (this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX])
+      this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX] = Object.assign(this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX], tags)
     return this
   }
 
   /**
-   * Returns tags, persisted in tracestate as key value pair.
+   * Returns the tracestates object per vendor, as configured vendor tracestate is decoded key value pair with tags
+   */
+  getTracestates(): { [key: string]: TraceTags | string } {
+    return this.spanContext.tracestates!
+  }
+
+  /**
+   * Returns the tracestates object per vendor, as configured vendor tracestate is decoded key value pair with tags
    */
   getTracestateTags(): TraceTags {
-    const { tracestate } = this.getTags()
-    if (tracestate) {
-      const tagsMap = Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, tracestate)
-      delete tagsMap._rest
-      return tagsMap
+    if (Config.EVENT_LOGGER_VENDOR_PREFIX in this.spanContext.tracestates!) {
+      return this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX] as TraceTags
     } else {
       return {}
     }
   }
+
 
   /**
   * Finishes the current span and its trace and sends the data to the tracing framework.
@@ -551,15 +559,24 @@ const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, heade
 }
 
 const encodeTracestate = (context: TypeSpanContext): string => {
-  let stateHashMap = { _rest: '' }
   const { spanId } = context
+  let tracestatesMap: { [key: string]: any } = {}
+  tracestatesMap[Config.EVENT_LOGGER_VENDOR_PREFIX] = {}
+  let ownTraceStateString = ''
+  let restTraceStateString = ''
+
   if ((!!context.tags && !!context.tags.tracestate)) {
-    stateHashMap = Util.getOwnTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, context.tags.tracestate)
-  }
-  const newOpaqueValueMap = { ...stateHashMap, ...{ spanId } }
-  delete newOpaqueValueMap._rest
-  let opaqueValue = Util.hashMapToString(newOpaqueValueMap)
-  return `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${opaqueValue}`
+    const { tracestates, ownTraceState, restTraceState } = Util.getTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, context.tags.tracestate)
+    tracestatesMap = tracestates
+    ownTraceStateString = ownTraceState
+    restTraceStateString = restTraceState
+  }  
+  const newOpaqueValueMap = ((typeof tracestatesMap[Config.EVENT_LOGGER_VENDOR_PREFIX]) === 'object')
+    ? Object.assign(tracestatesMap[Config.EVENT_LOGGER_VENDOR_PREFIX], { spanId })
+    : null
+  let opaqueValue = newOpaqueValueMap ? JSON.stringify(newOpaqueValueMap) : `${Config.EVENT_LOGGER_VENDOR_PREFIX}=spanId:${spanId}`
+  
+  return `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Buffer.from(opaqueValue).toString('base64')}${restTraceStateString}`
 }
 
 const createW3CTracestate = (spanContext: TypeSpanContext, tracestate?: string): string => {
@@ -607,7 +624,7 @@ const createW3Ctreaceparent = (spanContext: TypeSpanContext): string => {
   return W3CHeaders.toString()
 }
 
-const getTracestateTag = (spanContext: TypeSpanContext): { [key: string]: string } | false => {
+const getTracestate = (spanContext: TypeSpanContext): TraceTags | false => {
   let tracestate
   if (!!Config.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED || (!!spanContext.tags && !!spanContext.tags!.tracestate)) {
     let currentTracestate = undefined
@@ -624,6 +641,5 @@ export {
   ContextOptions,
   Recorders,
   setHttpHeader,
-  createW3CTracestate,
-  getTracestateTag
+  createW3CTracestate
 }

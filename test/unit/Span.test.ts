@@ -113,7 +113,8 @@ describe('Span', () => {
       const spanContext = parentSpan.getContext()
 
       // Assert
-      expect(spanContext).toMatchObject({ tags: { tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=spanId:${spanContext.spanId}` } })
+      const ts = Buffer.from(`{"spanId":"${spanContext.spanId}"}`).toString('base64')
+      expect(spanContext).toMatchObject({ tags: { tracestate: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${ts}`} })
       expect(resultRequest).toMatchObject({ headers: { tracestate: spanContext.tags.tracestate } })
     })
 

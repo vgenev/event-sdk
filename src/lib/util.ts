@@ -27,7 +27,8 @@
 
 'use strict'
 
-import { EventType, TypeEventTypeAction, logFilterMap } from "../model/EventMessage"
+import { EventType, TypeEventTypeAction, logFilterMap, TraceTags } from "../model/EventMessage"
+
 /**
  * @function eventAsyncOverrides
  * @description Given a list of comma separated strings, build a map containing the strings, 
@@ -64,31 +65,27 @@ function shouldOverrideEvent(overrideDict: { [index: string]: boolean }, eventTy
   return false
 }
 
-function hashMapToString (obj: { [key: string] : string }): string {
-  return Object.entries(obj).reduce((r, kv) => {
-    const [k, v] = kv
-    return (r + `${k}:${v};`)
-  }, '').slice(0, -1)
-} 
-
-const getOwnTracestateMap = (vendor: string, tracestate: string): { [key: string]: string, _rest: string } => {
-  if (!tracestate.includes(vendor)) {
-    return { _rest: tracestate } // _rest keeps the other vendors tracestate
-  }
-  const stateHashMap: { [key: string]: string, _rest: string } = { _rest: '' }
-  const ownTracestate = tracestate // ownTracestate holds string value of own vendor tracestate
-    .split(',') // get each vendor
+const getTracestateMap = (vendor: string, tracestate: string): { [key: string]: any } => {
+  let ownTraceState = tracestate
+    .split(',')
     .filter(ts => ts.split('=')[0] === vendor)[0] //get own vendor
-    
-    ownTracestate.split('=')[1] // get tracestate value of own vendor
-    .split(';') // get each keyvalue pair
-    .map(kv => kv.split(':')) //get each key:value from pair
-    .forEach(entry => {
-      const [key, value] = entry
-      stateHashMap[key] = value
-    }) // add key:value to final map
-    stateHashMap._rest = tracestate.replace(ownTracestate, '').replace(',,', ',').replace(/,$/, '') // updates the _rest value to have only other vendors tracestate
-    return stateHashMap
+
+  const restTraceState = tracestate.replace(ownTraceState, '').replace(',,', ',').replace(/,$/, '')
+  
+  let tracestates = {}
+  tracestate
+    .split(',')
+    .map(ts => ts.split('='))
+    .map(([k, v]) => {
+      if (k === vendor) {
+        v = JSON.parse(Buffer.from(v, 'base64').toString())
+      }
+      return { [k]: v }
+    })
+    .forEach(ts => {
+      tracestates = { ...tracestates, ...ts }
+    })
+  return { tracestates, ownTraceState, restTraceState }  
 }
 
 /**
@@ -96,9 +93,9 @@ const getOwnTracestateMap = (vendor: string, tracestate: string): { [key: string
  * 
  * @description A default implementation of a tracestateDecoder, which defaults vendor to 'unknownVendor'
  */
-function tracestateDecoder(vendor: string | undefined, tracestate: string): { [key: string]: string } {
-  vendor = !!vendor ? vendor : 'unknownVendor'
-  const { spanId } = getOwnTracestateMap(vendor, tracestate)
+function tracestateDecoder(vendor: string, tracestate: string): TraceTags {
+  const { tracestates } = getTracestateMap(vendor, tracestate)
+  const { spanId } = tracestates[vendor]
   return {
     vendor,
     parentId: spanId
@@ -130,6 +127,5 @@ export default {
   shouldOverrideEvent,
   shouldLogToConsole,
   tracestateDecoder,
-  hashMapToString,
-  getOwnTracestateMap
+  getTracestateMap
 }

@@ -215,7 +215,8 @@ type TypeSpanContext = {
   readonly parentSpanId?: string,
   readonly startTimestamp?: string | Date,
   finishTimestamp?: string,
-  tags?: TraceTags
+  tags?: TraceTags,
+  tracestates?: { [key: string]: TraceTags | string }
 }
 
 // type requiredSampled = Required<{ readonly sampled: 0|1 }>
@@ -231,7 +232,8 @@ class EventTraceMetadata implements TypeSpanContext {
   parentSpanId?: string
   startTimestamp?: string = (new Date()).toISOString() // ISO 8601
   finishTimestamp?: string
-  tags?: { [key: string]: string }
+  tags?: TraceTags
+  tracestates: { [key: string]: TraceTags | string }
 
   constructor(spanContext: Partial<TypeSpanContext>) {
     let {
@@ -243,6 +245,7 @@ class EventTraceMetadata implements TypeSpanContext {
       flags,
       startTimestamp,
       tags = {},
+      tracestates = {},
       finishTimestamp
     } = spanContext
     this.service = service
@@ -261,6 +264,7 @@ class EventTraceMetadata implements TypeSpanContext {
     this.sampled = sampled // ? sampled : this.sampled
     this.flags = flags // ? flags : this.flags
     this.tags = tags
+    this.tracestates = tracestates
     if (startTimestamp instanceof Date) {
       this.startTimestamp = startTimestamp.toISOString() // ISO 8601
     } else if (startTimestamp) {
