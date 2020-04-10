@@ -33,7 +33,7 @@ const { AuditEventAction } = require('../../dist/index')
 const EventSDK = require('../../dist/index')
 // const { DefaultLoggerRecorder } = require('../../dist/Recorder')
 
-// const Logger = require('@mojaloop/central-services-logger')
+const Logger = require('@mojaloop/central-services-logger')
 
 function sleep (ms) {
   return new Promise(resolve => {
@@ -65,7 +65,7 @@ const request = {
     'user-agent': 'curl/7.59.0',
     accept: '*/*',
     traceparent: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
-    tracestate: 'af=spanId:b7ad6b7169203331,acmevendor=spanId:aaad6b7169203331'
+    tracestate: 'af=spanId:b7ad6b7169203331,acmevendor=eyJzcGFuSWQiOiIyMDNmODljMjM3NDhjZmIxIiwidGltZUFwaVByZXBhcmUiOiIyMjgzMjMyIiwidGltZUFwaUZ1bGZpbCI6IjI4MjMyMjMyIn0'
   }
 }
 
@@ -106,8 +106,8 @@ const main = async () => {
   await parentSpan.finish(event)
 
   // // Injects trace context to a message carrier. When the trace is carried across few services, the trace context can be injects in the carrier that transports the data.
-  // const messageWithContext = await IIChildSpan.injectContextToMessage(event)
-  await sleep(2000)
+  const messageWithContext = await IIChildSpan.injectContextToMessage(event)
+  // await sleep(2000)
   const requestHeadersWithContext = await IIChildSpan.injectContextToHttpRequest(request)
 
   const httpFromRequest = await Tracer.extractContextFromHttpRequest(request)
@@ -115,12 +115,12 @@ const main = async () => {
   const IVChild = Tracer.createChildSpanFromContext('child III service', httpFromRequest) //, { defaultRecorder: new DefaultLoggerRecorder() })
   // Logger.info(JSON.stringify(requestHeadersWithContext, null, 2))
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
-  // const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
+  const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
   const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
-
+  Logger.info(JSON.stringify(contextFromMessage, null, 2))
   IVChild.setTracestateTags({ bar: 'baz' })
   IVChild.setTracestateTags({ foo: 'b' })
-  // console.log(IVChild.getTracestateTags())
+  Logger.info(JSON.stringify(IVChild.getTracestateTags(), null, 2))
 
   // Logger.info(JSON.stringify(context, null, 2))
   const spanFromHttp = Tracer.createChildSpanFromContext('http_span', context)
