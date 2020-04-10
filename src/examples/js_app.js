@@ -117,10 +117,10 @@ const main = async () => {
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
   const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
   const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
-  Logger.info(JSON.stringify(contextFromMessage))
+  Logger.info(JSON.stringify(contextFromMessage, null, 2))
   IVChild.setTracestateTags({ bar: 'baz' })
   IVChild.setTracestateTags({ foo: 'b' })
-  // console.log(IVChild.getTracestateTags())
+  Logger.info(JSON.stringify(IVChild.getTracestateTags(), null, 2))
 
   // Logger.info(JSON.stringify(context, null, 2))
   const spanFromHttp = Tracer.createChildSpanFromContext('http_span', context)
