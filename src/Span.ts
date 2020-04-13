@@ -269,8 +269,7 @@ class Span implements Partial<ISpan> {
    * @param tags key-value pairs with tags
    */
   setTracestateTags(tags: TraceTags): this {
-    // if (this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX])
-      this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX] = Object.assign(this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX], tags)
+    this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX] = Object.assign(this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX], tags)
     return this
   }
 
