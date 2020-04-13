@@ -311,9 +311,9 @@ describe('Tracer', () => {
 
       let IVChild = Tracer.createChildSpanFromContext('service4', { ...extractedContext })
       IVChild.setTracestateTags({ bar: 'baz' })
-      expect(IVChild.getContext().tracestates[mockConfig.EVENT_LOGGER_VENDOR_PREFIX]).toEqual({ bar: 'baz', spanId: IIChild.getContext().spanId })
-      expect(IVChild.getTracestateTags()).toEqual({ bar: 'baz', spanId: IIChild.getContext().spanId })
-      expect(IVChild.getTracestates()[mockConfig.EVENT_LOGGER_VENDOR_PREFIX]).toEqual({ bar: 'baz', spanId: IIChild.getContext().spanId })
+      expect(IVChild.getContext().tracestates[mockConfig.EVENT_LOGGER_VENDOR_PREFIX]).toEqual({ bar: 'baz', spanId: IVChild.getContext().spanId })
+      expect(IVChild.getTracestateTags()).toEqual({ bar: 'baz', spanId: IVChild.getContext().spanId })
+      expect(IVChild.getTracestates()[mockConfig.EVENT_LOGGER_VENDOR_PREFIX]).toEqual({ bar: 'baz', spanId: IVChild.getContext().spanId })
       // expect(IIChild.spanContext.spanId).toBe(IVChild.spanContext.parentSpanId)
       // expect(tracer.spanContext.traceId).toBe(IVChild.spanContext.traceId)
       // expect(IIIChild.spanContext.service).toBe('service4')
