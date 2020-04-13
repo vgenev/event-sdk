@@ -97,7 +97,7 @@ describe('Tracer', () => {
       expect(childB.getTracestateTags()).toEqual({})
     })
 
-    it('creates a child span without the vendor prefix tag when EVENT_LOGGER_TRACESTATE_HEADER_ENABLED is false', () => {
+    it('creates a child span without the vendor prefix tag when EVENT_LOGGER_TRACESTATE_HEADER_ENABLED is true', () => {
       // Arrange
       mockConfig.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED = true
       mockConfig.EVENT_LOGGER_VENDOR_PREFIX = "TEST_VENDOR"
@@ -309,11 +309,11 @@ describe('Tracer', () => {
       expect(tracer.spanContext.traceId).toBe(IIIChild.spanContext.traceId)
       expect(IIIChild.spanContext.service).toBe('service4')
 
-      let IVChild = Tracer.createChildSpanFromContext('service4', { ...extractedContext, ...{tags: { tracestate: 'a=121' } } })
+      let IVChild = Tracer.createChildSpanFromContext('service4', { ...extractedContext })
       IVChild.setTracestateTags({ bar: 'baz' })
-      expect(IVChild.getContext().tracestates[mockConfig.EVENT_LOGGER_VENDOR_PREFIX]).toEqual({ bar: 'baz', spanId: IVChild.getContext().spanId })
-      expect(IVChild.getTracestateTags()).toEqual({ bar: 'baz', spanId: IVChild.getContext().spanId })
-      expect(IVChild.getTracestates()[mockConfig.EVENT_LOGGER_VENDOR_PREFIX]).toEqual({ bar: 'baz', spanId: IVChild.getContext().spanId })
+      expect(IVChild.getContext().tracestates[mockConfig.EVENT_LOGGER_VENDOR_PREFIX]).toEqual({ bar: 'baz', spanId: IIChild.getContext().spanId })
+      expect(IVChild.getTracestateTags()).toEqual({ bar: 'baz', spanId: IIChild.getContext().spanId })
+      expect(IVChild.getTracestates()[mockConfig.EVENT_LOGGER_VENDOR_PREFIX]).toEqual({ bar: 'baz', spanId: IIChild.getContext().spanId })
       // expect(IIChild.spanContext.spanId).toBe(IVChild.spanContext.parentSpanId)
       // expect(tracer.spanContext.traceId).toBe(IVChild.spanContext.traceId)
       // expect(IIIChild.spanContext.service).toBe('service4')
@@ -362,6 +362,21 @@ describe('Tracer', () => {
       let newContextA = Tracer.extractContextFromHttpRequest(header)
       expect(newContextA).not.toBeUndefined()
 
+      const request = {
+        headers: {
+          host: 'localhost:4000',
+          'user-agent': 'curl/7.59.0',
+          accept: '*/*',
+          traceparent: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+          tracestate: 'af=spanId:b7ad6b7169203331' // ,acmevendor=eyJzcGFuSWQiOiIyMDNmODljMjM3NDhjZmIxIiwidGltZUFwaVByZXBhcmUiOiIyMjgzMjMyIiwidGltZUFwaUZ1bGZpbCI6IjI4MjMyMjMyIn0'
+        }
+      }
+      
+      let newContext0 = Tracer.extractContextFromHttpRequest(request)
+      const zeroChild = Tracer.createChildSpanFromContext('child III service', newContext0) //, { defaultRecorder: new DefaultLoggerRecorder() })
+
+      expect(zeroChild).not.toBeUndefined()
+
       header = await IIChild.injectContextToHttpRequest({ headers: { tracestate: 'm=dadfafa,j=123,mojaloop=dfasdfads' } }, HttpRequestOptions.xb3)
       let newContextB = Tracer.extractContextFromHttpRequest(header, HttpRequestOptions.xb3)
       expect(newContextB).not.toBeUndefined()
@@ -372,7 +387,8 @@ describe('Tracer', () => {
 
       let finishtime = new Date()
       await tracer.finish('message', undefined, finishtime)
-      await IIChild.finish()
+      let a = async () => await IIChild.finish()
+      await expect(a()).not.toBeFalsy()
       
       // Throws when new trying to finish already finished trace
       let action = async () => await tracer.finish()

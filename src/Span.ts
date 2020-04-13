@@ -164,8 +164,22 @@ class Span implements Partial<ISpan> {
 
   defaultTagsSetter(message?: TypeOfMessage): Span {
     const w3cHeaders = getTracestate(this.spanContext)
-    !!w3cHeaders && this.setTags(Object.assign(this.spanContext.tags, w3cHeaders))
+    if (w3cHeaders) {
+      this.setTags(Object.assign(this.spanContext.tags, w3cHeaders))
+      if (!(Config.EVENT_LOGGER_VENDOR_PREFIX in this.getTracestates())) {
+        this.setTracestates(Object.assign(this.spanContext.tracestates, Util.getTracestateMap(Config.EVENT_LOGGER_VENDOR_PREFIX, w3cHeaders.tracestate).tracestates))
+      }
+    }
     return this
+  }
+
+  setTracestates(tracestates: {[key: string]: TraceTags | string }): this {
+    let newContext: TypeSpanContext = new EventTraceMetadata(this.getContext())
+    for (let key in tracestates) {
+      newContext.tracestates![key] = tracestates[key]
+    }
+    this.spanContext = Object.freeze(new EventTraceMetadata(newContext))
+    return this    
   }
 
   /**
@@ -255,8 +269,7 @@ class Span implements Partial<ISpan> {
    * @param tags key-value pairs with tags
    */
   setTracestateTags(tags: TraceTags): this {
-    if (this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX])
-      this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX] = Object.assign(this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX], tags)
+    this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX] = Object.assign(this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX], tags)
     return this
   }
 
@@ -574,9 +587,9 @@ const encodeTracestate = (context: TypeSpanContext): string => {
   const newOpaqueValueMap = ((typeof tracestatesMap[Config.EVENT_LOGGER_VENDOR_PREFIX]) === 'object')
     ? Object.assign(tracestatesMap[Config.EVENT_LOGGER_VENDOR_PREFIX], { spanId })
     : null
-  let opaqueValue = newOpaqueValueMap ? JSON.stringify(newOpaqueValueMap) : `${Config.EVENT_LOGGER_VENDOR_PREFIX}=spanId:${spanId}`
+  let opaqueValue = newOpaqueValueMap ? JSON.stringify(newOpaqueValueMap) : `{"${Config.EVENT_LOGGER_VENDOR_PREFIX}"="spanId":"${spanId}"}`
   
-  return `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Buffer.from(opaqueValue).toString('base64')}${restTraceStateString}`
+  return `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Buffer.from(opaqueValue).toString('base64')}` //${restTraceStateString}`
 }
 
 const createW3CTracestate = (spanContext: TypeSpanContext, tracestate?: string): string => {
@@ -630,7 +643,7 @@ const getTracestate = (spanContext: TypeSpanContext): TraceTags | false => {
     let currentTracestate = undefined
     if (!!spanContext.tags && !!spanContext.tags.tracestate) currentTracestate = spanContext.tags.tracestate
     tracestate = createW3CTracestate(spanContext, currentTracestate)
-    if (tracestate) return { tracestate }
+    return { tracestate }
   }
   return false
 }

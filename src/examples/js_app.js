@@ -65,7 +65,7 @@ const request = {
     'user-agent': 'curl/7.59.0',
     accept: '*/*',
     traceparent: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
-    tracestate: 'af=spanId:b7ad6b7169203331,acmevendor=eyJzcGFuSWQiOiIyMDNmODljMjM3NDhjZmIxIiwidGltZUFwaVByZXBhcmUiOiIyMjgzMjMyIiwidGltZUFwaUZ1bGZpbCI6IjI4MjMyMjMyIn0'
+    tracestate: 'af=spanId:b7ad6b7169203331' // ,acmevendor=eyJzcGFuSWQiOiIyMDNmODljMjM3NDhjZmIxIiwidGltZUFwaVByZXBhcmUiOiIyMjgzMjMyIiwidGltZUFwaUZ1bGZpbCI6IjI4MjMyMjMyIn0'
   }
 }
 
