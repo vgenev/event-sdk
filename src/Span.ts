@@ -256,7 +256,7 @@ class Span implements Partial<ISpan> {
     return this
   }
 
-  private _setTracestateTag(tags: { ['tracestate']: string} ): this {
+  private _setTagTracestate(tags: { ['tracestate']: string} ): this {
     let newContext: TypeSpanContext = new EventTraceMetadata(this.getContext())
     newContext.tags!.tracestate = tags.tracestate
     this.spanContext = Object.freeze(new EventTraceMetadata(newContext))
@@ -278,7 +278,7 @@ class Span implements Partial<ISpan> {
   setTracestateTags(tags: TraceTags): this {
     this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX] = Object.assign(this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX], tags)
     const { ownTraceStateString, restTraceStateString } = encodeTracestate(this.spanContext)
-    this._setTracestateTag({tracestate: `${ownTraceStateString}${restTraceStateString}`})
+    this._setTagTracestate({tracestate: `${ownTraceStateString}${restTraceStateString}`})
     return this
   }
 
