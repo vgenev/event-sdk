@@ -255,6 +255,13 @@ class Span implements Partial<ISpan> {
     this.spanContext = Object.freeze(new EventTraceMetadata(newContext))
     return this
   }
+
+  private _setTracestateTag(tags: { ['tracestate']: string} ): this {
+    let newContext: TypeSpanContext = new EventTraceMetadata(this.getContext())
+    newContext.tags!.tracestate = tags.tracestate
+    this.spanContext = Object.freeze(new EventTraceMetadata(newContext))
+    return this
+  }
   
   /**
    * Returns tags values
@@ -270,6 +277,8 @@ class Span implements Partial<ISpan> {
    */
   setTracestateTags(tags: TraceTags): this {
     this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX] = Object.assign(this.spanContext.tracestates![Config.EVENT_LOGGER_VENDOR_PREFIX], tags)
+    const { ownTraceStateString, restTraceStateString } = encodeTracestate(this.spanContext)
+    this._setTracestateTag({tracestate: `${ownTraceStateString}${restTraceStateString}`})
     return this
   }
 
@@ -571,7 +580,7 @@ const setHttpHeader = (context: TypeSpanContext, type: HttpRequestOptions, heade
   }
 }
 
-const encodeTracestate = (context: TypeSpanContext): string => {
+const encodeTracestate = (context: TypeSpanContext): { ['ownTraceStateString']: string, ['restTraceStateString']: string } => {
   const { spanId } = context
   let tracestatesMap: { [key: string]: any } = {}
   tracestatesMap[Config.EVENT_LOGGER_VENDOR_PREFIX] = {}
@@ -583,17 +592,18 @@ const encodeTracestate = (context: TypeSpanContext): string => {
     tracestatesMap = tracestates
     ownTraceStateString = ownTraceState
     restTraceStateString = restTraceState
-  }  
+  }
+  if (context.tracestates && context.tracestates[Config.EVENT_LOGGER_VENDOR_PREFIX]) tracestatesMap = context.tracestates
   const newOpaqueValueMap = ((typeof tracestatesMap[Config.EVENT_LOGGER_VENDOR_PREFIX]) === 'object')
     ? Object.assign(tracestatesMap[Config.EVENT_LOGGER_VENDOR_PREFIX], { spanId })
     : null
-  let opaqueValue = newOpaqueValueMap ? JSON.stringify(newOpaqueValueMap) : `{"${Config.EVENT_LOGGER_VENDOR_PREFIX}"="spanId":"${spanId}"}`
+  let opaqueValue = newOpaqueValueMap ? JSON.stringify(newOpaqueValueMap) : `{"spanId":"${spanId}"}`
   
-  return `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Buffer.from(opaqueValue).toString('base64')}` //${restTraceStateString}`
+  return { ownTraceStateString: `${Config.EVENT_LOGGER_VENDOR_PREFIX}=${Buffer.from(opaqueValue).toString('base64')}`, restTraceStateString }
 }
 
 const createW3CTracestate = (spanContext: TypeSpanContext, tracestate?: string): string => {
-  const newTracestate = encodeTracestate(spanContext)
+  const newTracestate = encodeTracestate(spanContext).ownTraceStateString
   if (!tracestate && Config.EVENT_LOGGER_TRACESTATE_HEADER_ENABLED) {
     return newTracestate
   }
