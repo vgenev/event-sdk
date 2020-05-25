@@ -1,6 +1,6 @@
 {
   "name": "@mojaloop/event-sdk",
-  "version": "9.5.1",
+  "version": "9.5.2",
   "description": "Shared code for Event Logging",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -49,7 +49,6 @@
     "Miguel de Barros <miguel.debarros@modusbox.com>",
     "Ramiro González Maciel <ramiro@modusbox.com>",
     "Valentin Genev <valentin.genev@modusbox.com>",
-    "Miguel de Barros <miguel.debarros@modusbox.com>",
     "Lewis Daly <lewisd@crosslaketech.com"
   ],
   "license": "Apache-2.0",

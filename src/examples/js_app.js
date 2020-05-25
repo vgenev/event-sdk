@@ -72,6 +72,7 @@ const request = {
 const main = async () => {
   // Creates a new parent span for given service
   // this sets new traceId and new spanId.
+
   const parentSpan = Tracer.createSpan('parent service')
   const IIChildSpan = parentSpan.getChild('child fin service')
 
@@ -113,7 +114,7 @@ const main = async () => {
   const httpFromRequest = await Tracer.extractContextFromHttpRequest(request)
 
   const IVChild = Tracer.createChildSpanFromContext('child III service', httpFromRequest) //, { defaultRecorder: new DefaultLoggerRecorder() })
-  // Logger.info(JSON.stringify(requestHeadersWithContext, null, 2))
+  Logger.info(JSON.stringify(requestHeadersWithContext, null, 2))
   // Extracts trace context from message carrier. When the message is received from different service, the trace context is extracted by that method.
   const contextFromMessage = Tracer.extractContextFromMessage(messageWithContext)
   const context = Tracer.extractContextFromHttpRequest(requestHeadersWithContext)
