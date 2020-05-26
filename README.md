@@ -41,9 +41,22 @@ Edit the file in `./config/default.json` to configure the logger, or set the fol
 | `EVENT_SDK_SERVER_PORT` | The port for the gRPC server to listen on. | `50055` | Any valid port value |
 | `EVENT_SDK_SIDECAR_DISABLED` | Enables or disables the logging to event sidecar. | `true` | `true`, `false` |
 | ~~`EVENT_SDK_SIDECAR_WITH_LOGGER`~~ | _DEPRECATED BY `EVENT_SDK_LOG_FILTER`_ - If true, the events will be logged to the host console, as well as sent to the sidecar. Only applicable if the event sidecar is enabled. | `false` | `true`, `false` |
-| `EVENT_SDK_VENDOR_PREFIX` | Prefix for vendor specific tracestate handler. For more information refer to [w3c spec](https://github.com/w3c/trace-context/blob/master/spec/20-http_header_format.md#tracestate-header) | `acmevendor` | Any string |
+| `EVENT_SDK_VENDOR_PREFIX` | Prefix for vendor specific tracestate handler. For more information refer [here](#tracestate-format-and-methods) | `acmevendor` | Any string |
 | `EVENT_SDK_TRACESTATE_HEADER_ENABLED` | If enabled, the tracestate value is kept updated with every child and is inserted into the span tags. Otherwise, the tracestate is only updated if `injectContextToHttpRequest` is called and the `tracestate` is included into the request headers. | `false` | `true`, `false` |
 | `EVENT_SDK_TRACEID_PER_VENDOR` | If enabled, when vendor of the parent span is different from the vendor set by `EVENT_SDK_VENDOR_PREFIX` the traceId will be new and the parent traceId will be stored as a tag: `corelationTraceId` . Otherwise, the traceId is persisted. | `false` | `true`, `false` |
+
+## Tracestate format and methods
+_Note: Tags in the tracestate are supported from version [v9.4.1](https://github.com/mojaloop/event-sdk/releases/tag/v9.4.1). Since [v9.5.2](https://github.com/mojaloop/event-sdk/releases/tag/v9.5.2) tracestate is base64 encoded string. To be able to use the tracestate correctly accross all services, they should have same version of event-sdk and [central-services-shared](https://github.com/mojaloop/central-services-shared) librarires._
+
+### Format
+Tracestate header can be used to preserve vendor specific information across various connected systems in multivendor setup. The  format is according to the [w3c specifications](https://github.com/w3c/trace-context/blob/master/spec/20-http_header_format.md#tracestate-header).
+Tracestate header example value: `acmevendor=eyJzcGFuSWQiOiI2Njg2Nzk1MDBiMGUzYzQwIiwgInRyYW5zZmVyX3R4X21zOjE1OTA0MDc0NjUifQ==`, where the vendor is `acmevendor` and the value is base64 encoded key value pair as `spanId` key is set automatically. When decoded:  `{"spanId":"668679500b0e3c40", "transfer_tx_ms:1590407465"}`
+
+### Methods to access the tracestate are:
+* setTracestateTags - sets user tags into the tracestate
+* getTracestates - Returns the tracestates object per vendor, as configured vendor tracestate is decoded key value pair with tags
+* getTracestateTags - Returns the tracestate tags for the configured vendor as key value pairs
+
 
 ## Current Supported Events
 

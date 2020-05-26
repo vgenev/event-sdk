@@ -290,7 +290,7 @@ class Span implements Partial<ISpan> {
   }
 
   /**
-   * Returns the tracestates object per vendor, as configured vendor tracestate is decoded key value pair with tags
+   * Returns the tracestate tags for the configured vendor as key value pairs
    */
   getTracestateTags(): TraceTags {
     if (Config.EVENT_LOGGER_VENDOR_PREFIX in this.spanContext.tracestates!) {
