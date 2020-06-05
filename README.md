@@ -155,7 +155,7 @@ Examples:
   const anotherChildSpan = Tracer.extractContextFromMessage(message)
   ```
 
-  2. When the span is created as a new trace or as a child of a parent, before sending out HTTP request, the traceparent and tracestate headers
+  2. When the span is created as a new trace or as a child of a parent, before sending out HTTP request, the traceparent and tracestate headers should be injected in the request
 
   ```js
   
